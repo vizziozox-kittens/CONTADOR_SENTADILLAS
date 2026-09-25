@@ -1,4 +1,3 @@
-
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
@@ -233,6 +232,7 @@ function getRedirectUri() {
 
 const server =
     http.createServer(app);
+
 
 // ============================================================
 // WEBSOCKET

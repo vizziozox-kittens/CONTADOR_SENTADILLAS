@@ -1,4 +1,3 @@
-
 const { spawn } = require("child_process");
 const path = require("path");
 
@@ -27,4 +26,3 @@ server.on("exit", (code) => {
     console.log("");
     console.log(`🛑 Squat Twitch Server terminó. Código: ${code}`);
 });
-
