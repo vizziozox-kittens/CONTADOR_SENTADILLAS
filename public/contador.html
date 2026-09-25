@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Contador de Sentadillas</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+
+            margin: 0;
+            padding: 0;
+
+            width: 100%;
+            height: 100%;
+
+            overflow: hidden;
+
+            background: transparent;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
+
+
+        #app {
+
+            position: relative;
+
+            width: 100%;
+            height: 100%;
+        }
+
+
+        /* =====================================================
+           CONTADOR
+        ====================================================== */
+
+        #counterBox {
+
+            position: absolute;
+
+            top: 30px;
+            right: 30px;
+
+            min-width: 240px;
+
+            padding:
+                18px
+                30px
+                20px;
+
+            border-radius: 20px;
+
+            background:
+                rgba(10, 10, 18, 0.90);
+
+            border:
+                2px solid
+                rgba(145, 71, 255, 0.90);
+
+            box-shadow:
+                0 0 30px
+                rgba(145, 71, 255, 0.30);
+
+            text-align: center;
+
+            color: white;
+
+            z-index: 20;
+        }
+
+
+        #counterLabel {
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            letter-spacing: 2px;
+
+            color: #c9b3ff;
+
+            margin-bottom: 4px;
+        }
+
+
+        #counter {
+
+            font-size: 82px;
+
+            line-height: 0.95;
+
+            font-weight: 900;
+
+            color: white;
+
+            text-shadow:
+                0 0 18px
+                rgba(145, 71, 255, 0.75);
+        }
+
+
+        #counterSub {
+
+            margin-top: 8px;
+
+            font-size: 11px;
+
+            letter-spacing: 1.5px;
+
+            color: #9ca3af;
+        }
+
+
+        .counterPulse {
+
+            animation:
+                counterPulse
+                0.35s
+                ease;
+        }
+
+
+        @keyframes counterPulse {
+
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div id="app">
+
+
+    <div id="counterBox">
+
+        <div id="counterLabel">
+            SENTADILLAS
+        </div>
+
+
+        <div id="counter">
+            0
+        </div>
+
+
+        <div id="counterSub">
+            PENDIENTES
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   ELEMENTOS
+============================================================ */
+
+const counterElement =
+    document.getElementById("counter");
+
+const counterBox =
+    document.getElementById("counterBox");
+
+
+/* ============================================================
+   VARIABLES
+============================================================ */
+
+let counter = 0;
+
+let socket = null;
+
+
+/* ============================================================
+   ACTUALIZAR CONTADOR
+============================================================ */
+
+function updateCounter(value) {
+
+    const newValue =
+        Math.max(
+            0,
+            Math.floor(
+                Number(value) || 0
+            )
+        );
+
+
+    if (newValue !== counter) {
+
+        counter = newValue;
+
+        counterElement.textContent =
+            counter;
+
+
+        counterBox.classList.remove(
+            "counterPulse"
+        );
+
+
+        void counterBox.offsetWidth;
+
+
+        counterBox.classList.add(
+            "counterPulse"
+        );
+
+    } else {
+
+        counterElement.textContent =
+            counter;
+
+    }
+
+}
+
+
+/* ============================================================
+   CARGAR CONTADOR
+============================================================ */
+
+async function loadCounter() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/squats",
+                {
+                    cache: "no-store"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "No se pudo obtener el contador"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        updateCounter(
+            data.pendingSquats
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error cargando contador:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   WEBSOCKET
+============================================================ */
+
+function connectWebSocket() {
+
+    if (
+        socket &&
+        (
+            socket.readyState ===
+            WebSocket.OPEN ||
+
+            socket.readyState ===
+            WebSocket.CONNECTING
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const protocol =
+        location.protocol === "https:"
+            ? "wss:"
+            : "ws:";
+
+
+    socket =
+        new WebSocket(
+            `${protocol}//${location.host}/ws`
+        );
+
+
+    socket.addEventListener(
+        "open",
+        () => {
+
+            console.log(
+                "🟢 Contador conectado"
+            );
+
+        }
+    );
+
+
+    socket.addEventListener(
+        "message",
+        event => {
+
+            try {
+
+                const message =
+                    JSON.parse(
+                        event.data
+                    );
+
+
+                if (
+                    message.type ===
+                    "counter:update"
+                ) {
+
+                    updateCounter(
+                        message.data
+                            ?.pendingSquats
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Error leyendo WebSocket:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+
+    socket.addEventListener(
+        "close",
+        () => {
+
+            console.log(
+                "🔴 WebSocket desconectado"
+            );
+
+
+            setTimeout(
+                connectWebSocket,
+                2000
+            );
+
+        }
+    );
+
+
+    socket.addEventListener(
+        "error",
+        error => {
+
+            console.error(
+                "Error WebSocket:",
+                error
+            );
+
+        }
+    );
+
+}
+
+
+/* ============================================================
+   INICIO
+============================================================ */
+
+loadCounter();
+
+connectWebSocket();
+
+
+</script>
+
+</body>
+
+</html>

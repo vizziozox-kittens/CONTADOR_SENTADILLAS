@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SquatBeast</title>
+
+    <!-- MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- =====================================================
+         BARRA LATERAL
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+            <div class="brand-icon"></div>
+
+            <div class="brand-text">
+                <h1>SquatBeast</h1>
+                <span>Detector de sentadillas</span>
+            </div>
+        </div>
+
+
+        <div class="sidebar-section-title">
+            PRINCIPAL
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <button
+                class="nav-item active"
+                data-view="inicio"
+            >
+                <span class="nav-icon">📊</span>
+                <span>Inicio</span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-view="camara"
+            >
+                <span class="nav-icon">📷</span>
+                <span>Cámara</span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-view="detector"
+            >
+                <span class="nav-icon">🎯</span>
+                <span>Detector</span>
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-section-title">
+            TWITCH
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <button
+                class="nav-item"
+                data-view="twitch"
+            >
+                <span class="nav-icon">🟣</span>
+                <span>Conexión</span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-view="recompensas"
+            >
+                <span class="nav-icon">🎁</span>
+                <span>Recompensas</span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-view="bits"
+            >
+                <span class="nav-icon">💎</span>
+                <span>Bits</span>
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-section-title">
+            HERRAMIENTAS
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <button
+                class="nav-item"
+                data-view="obs"
+            >
+                <span class="nav-icon">🖥️</span>
+                <span>OBS</span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-view="configuracion"
+            >
+                <span class="nav-icon">⚙️</span>
+                <span>Configuración</span>
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="connection-mini">
+
+                <span
+                    id="sidebarConnectionDot"
+                    class="connection-dot"
+                ></span>
+
+                <div>
+                    <strong>Twitch</strong>
+                    <small id="sidebarConnectionText">
+                        Desconectado
+                    </small>
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+    ====================================================== -->
+
+    <main class="main-content">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+
+                <span
+                    id="pageCategory"
+                    class="page-category"
+                >
+                    PANEL PRINCIPAL
+                </span>
+
+                <h2 id="pageTitle">
+                    Inicio
+                </h2>
+
+                <p id="pageDescription">
+                    Controla tu detector de sentadillas y Twitch desde un solo lugar.
+                </p>
+
+            </div>
+
+
+            <div class="topbar-status">
+
+                <span
+                    id="topStatusDot"
+                    class="status-dot"
+                ></span>
+
+                <span id="topStatusText">
+                    Sistema listo
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             VISTA: INICIO
+        ================================================== -->
+
+        <section
+            class="view active"
+            id="view-inicio"
+        >
+
+            <div class="welcome-card">
+
+                <div class="welcome-content">
+
+                    <span class="welcome-label">
+                        SQUAT TWITCH
+                    </span>
+
+                    <h1>
+                        Controla tus sentadillas
+                        <span>desde Twitch</span>
+                    </h1>
+
+                    <p>
+                        Administra el detector, las recompensas,
+                        los Bits y el contador de sentadillas desde
+                        un único panel.
+                    </p>
+
+                </div>
+
+
+                <div class="welcome-icon">
+                    
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-grid">
+
+
+                <!-- CONTADOR -->
+
+                <div class="dashboard-card counter-dashboard-card">
+
+                    <div class="card-header">
+
+                        <div class="card-header-left">
+
+                            <div class="card-icon purple">
+                                🔢
+                            </div>
+
+                            <div>
+                                <h3>
+                                    Sentadillas pendientes
+                                </h3>
+
+                                <p>
+                                    Contador actual
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="big-counter">
+
+                        <span id="counter">
+                            0
+                        </span>
+
+                        <small>
+                            SENTADILLAS
+                        </small>
+
+                    </div>
+
+
+                    <div class="state-box">
+
+                        <span>
+                            ESTADO
+                        </span>
+
+                        <strong id="state">
+                            Esperando...
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TWITCH -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-header">
+
+                        <div class="card-header-left">
+
+                            <div class="card-icon twitch">
+                                🟣
+                            </div>
+
+                            <div>
+                                <h3>
+                                    Twitch
+                                </h3>
+
+                                <p>
+                                    Estado de conexión
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="twitchStatus"
+                        class="twitch-status"
+                    >
+                        🔴 No conectado
+                    </div>
+
+
+                    <button
+                        class="dashboard-action"
+                        data-view-target="twitch"
+                    >
+                        🟣 Configurar Twitch
+                    </button>
+
+                </div>
+
+
+                <!-- CÁMARA -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-header">
+
+                        <div class="card-header-left">
+
+                            <div class="card-icon">
+                                📷
+                            </div>
+
+                            <div>
+                                <h3>
+                                    Cámara
+                                </h3>
+
+                                <p>
+                                    Detector de movimiento
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="mini-status">
+                        <span
+                            id="status"
+                            class="status-dot"
+                        ></span>
+
+                        Cámara detenida
+                    </div>
+
+
+                    <button
+                        class="dashboard-action"
+                        data-view-target="camara"
+                    >
+                        📷 Abrir cámara
+                    </button>
+
+                </div>
+
+
+                <!-- OBS -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-header">
+
+                        <div class="card-header-left">
+
+                            <div class="card-icon">
+                                🖥️
+                            </div>
+
+                            <div>
+                                <h3>
+                                    OBS
+                                </h3>
+
+                                <p>
+                                    Overlay para tu stream
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <p class="card-description">
+                        Utiliza el contador de sentadillas
+                        directamente en OBS.
+                    </p>
+
+
+                    <button
+                        class="dashboard-action"
+                        data-view-target="obs"
+                    >
+                        🖥️ Configurar OBS
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACCESOS RÁPIDOS -->
+
+            <div class="section-title">
+
+                <div>
+                    <span>
+                        ACCESOS RÁPIDOS
+                    </span>
+
+                    <h2>
+                        Herramientas
+                    </h2>
+                </div>
+
+            </div>
+
+
+            <div class="quick-grid">
+
+                <button
+                    class="quick-card"
+                    data-view-target="detector"
+                >
+                    <span class="quick-icon">🎯</span>
+
+                    <div>
+                        <strong>
+                            Detector
+                        </strong>
+
+                        <small>
+                            Controlar detección
+                        </small>
+                    </div>
+
+                    <span class="quick-arrow">
+                        →
+                    </span>
+                </button>
+
+
+                <button
+                    class="quick-card"
+                    data-view-target="recompensas"
+                >
+                    <span class="quick-icon">🎁</span>
+
+                    <div>
+                        <strong>
+                            Recompensas
+                        </strong>
+
+                        <small>
+                            Configurar puntos de canal
+                        </small>
+                    </div>
+
+                    <span class="quick-arrow">
+                        →
+                    </span>
+                </button>
+
+
+                <button
+                    class="quick-card"
+                    data-view-target="bits"
+                >
+                    <span class="quick-icon">💎</span>
+
+                    <div>
+                        <strong>
+                            Bits
+                        </strong>
+
+                        <small>
+                            Configurar equivalencias
+                        </small>
+                    </div>
+
+                    <span class="quick-arrow">
+                        →
+                    </span>
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: CÁMARA
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-camara"
+        >
+
+            <div class="page-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <div class="heading-icon">
+                            📷
+                        </div>
+
+                        <div>
+                            <h2>
+                                Cámara
+                            </h2>
+
+                            <p>
+                                Vista de la cámara y detección corporal.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div
+                        id="cameraPageStatus"
+                        class="heading-status"
+                    >
+                        Cámara detenida
+                    </div>
+
+                </div>
+
+
+                <div class="camera-container">
+
+                    <video
+                        id="video"
+                        autoplay
+                        playsinline
+                    ></video>
+
+                    <canvas
+                        id="canvas"
+                    ></canvas>
+
+                </div>
+
+
+                <div class="camera-controls">
+
+                    <button
+                        id="startButton"
+                        class="button primary"
+                    >
+                        🎥 Iniciar cámara
+                    </button>
+
+
+                    <button
+                        id="pauseButton"
+                        class="button secondary"
+                        disabled
+                    >
+                        ⏸ Pausar detector
+                    </button>
+
+
+                    <button
+                        id="stopCameraButton"
+                        class="button danger"
+                        disabled
+                    >
+                        ⏹ Quitar cámara
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: DETECTOR
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-detector"
+        >
+
+            <div class="settings-layout">
+
+                <div class="page-card">
+
+                    <div class="section-heading">
+
+                        <div>
+
+                            <div class="heading-icon">
+                                🎯
+                            </div>
+
+                            <div>
+                                <h2>
+                                    Detector
+                                </h2>
+
+                                <p>
+                                    Controla cómo se modifica el contador.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="mode-buttons">
+
+                        <button
+                            id="addModeButton"
+                            class="mode-button active"
+                        >
+                            ➕ Sumar
+                        </button>
+
+
+                        <button
+                            id="subtractModeButton"
+                            class="mode-button subtract"
+                        >
+                            ➖ Restar
+                        </button>
+
+                    </div>
+
+
+                    <div class="mode-info">
+
+                        <span>
+                            MODO ACTUAL
+                        </span>
+
+                        <strong id="modeText">
+                            ➕ Cada sentadilla suma 1
+                        </strong>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <button
+                            id="resetButton"
+                            class="button danger detector-reset-button"
+                        >
+                            🔄 Reiniciar contador
+                        </button>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Establecer contador manualmente
+                        </label>
+
+                        <div class="input-button-row">
+
+                            <input
+                                id="counterInput"
+                                type="number"
+                                min="0"
+                                placeholder="Valor del contador"
+                            >
+
+                            <button
+                                id="setCounterButton"
+                                class="button primary"
+                            >
+                                Establecer
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="page-card">
+
+                    <div class="section-heading">
+
+                        <div>
+
+                            <div class="heading-icon">
+                                🔢
+                            </div>
+
+                            <div>
+                                <h2>
+                                    Estado
+                                </h2>
+
+                                <p>
+                                    Contador actual.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="detector-counter">
+
+                        <span id="detectorCounter">
+                            0
+                        </span>
+
+                        <small>
+                            SENTADILLAS PENDIENTES
+                        </small>
+
+                    </div>
+
+
+                    <div class="state-box large">
+
+                        <span>
+                            ESTADO DEL DETECTOR
+                        </span>
+
+                        <strong id="detectorState">
+                            Esperando...
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: TWITCH
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-twitch"
+        >
+
+            <div class="page-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <div class="heading-icon twitch-heading">
+                            🟣
+                        </div>
+
+                        <div>
+                            <h2>
+                                Conexión con Twitch
+                            </h2>
+
+                            <p>
+                                Conecta tu canal para recibir recompensas y Bits.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="twitchStatusConnection"
+                    class="connection-status-box"
+                >
+                    🔴 No conectado
+                </div>
+
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label>
+                            Client ID
+                        </label>
+
+                        <input
+                            id="clientIdInput"
+                            type="text"
+                            placeholder="Client ID de Twitch"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Configuración segura
+                        </label>
+
+                        <div class="info-card" style="margin:0; padding:14px;">
+                            El Client Secret se configura en el servidor y nunca se muestra en el navegador.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="button-row">
+
+                    <button
+                        id="connectTwitchButton"
+                        class="twitch-button"
+                    >
+                        🟣 Conectar con Twitch
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <div class="info-icon">
+                    💡
+                </div>
+
+                <div>
+                    <strong>
+                        ¿Qué hace esta conexión?
+                    </strong>
+
+                    <p>
+                        Permite que Squat Twitch reciba los eventos
+                        de tu canal para convertir recompensas y Bits
+                        en sentadillas pendientes.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: RECOMPENSAS
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-recompensas"
+        >
+
+            <div class="page-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <div class="heading-icon">
+                            🎁
+                        </div>
+
+                        <div>
+                            <h2>
+                                Recompensas
+                            </h2>
+
+                            <p>
+                                Configura cuántas sentadillas vale cada recompensa.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="rewardsContainer"
+                    class="rewards-container"
+                >
+
+                    <div class="rewards-title">
+                        🎁 Recompensas de tu canal
+                    </div>
+
+                    <p class="rewards-description">
+                        Estas son las recompensas que tienes creadas
+                        en Twitch. Define cuántas sentadillas vale cada una.
+                    </p>
+
+
+                    <div id="rewardsList">
+                    </div>
+
+
+                    <button
+                        id="saveRewardsButton"
+                        class="button primary"
+                    >
+                        💾 Guardar valores de recompensas
+                    </button>
+
+                </div>
+
+
+                <div class="empty-rewards">
+
+                    <div>
+                        🎁
+                    </div>
+
+                    <strong>
+                        Conecta Twitch para cargar tus recompensas
+                    </strong>
+
+                    <p>
+                        Una vez conectado tu canal,
+                        las recompensas aparecerán aquí.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: BITS
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-bits"
+        >
+
+            <div class="page-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <div class="heading-icon">
+                            💎
+                        </div>
+
+                        <div>
+                            <h2>
+                                Bits
+                            </h2>
+
+                            <p>
+                                Define cuántas sentadillas genera una cantidad de Bits.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="bits-config">
+
+                    <div class="bits-explanation">
+
+                        <div class="bits-big-icon">
+                            💎
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Conversión de Bits
+                            </strong>
+
+                            <p>
+                                Por ejemplo, si configuras 100 Bits = 10 sentadillas,
+                                cada 100 Bits recibidos agregarán 10 sentadillas.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="bits-row-large">
+
+                        <div class="form-group">
+
+                            <label>
+                                Cada
+                            </label>
+
+                            <div class="input-with-label">
+
+                                <input
+                                    id="bitsAmountInput"
+                                    type="number"
+                                    min="1"
+                                    value="100"
+                                >
+
+                                <span>
+                                    Bits
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="bits-equals">
+                            =
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>
+                                Equivalen a
+                            </label>
+
+                            <div class="input-with-label">
+
+                                <input
+                                    id="bitsSquatsInput"
+                                    type="number"
+                                    min="1"
+                                    value="10"
+                                >
+
+                                <span>
+                                    sentadillas
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="saveBitsButton"
+                        class="button primary save-bits-button"
+                    >
+                        💾 Guardar configuración de Bits
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: OBS
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-obs"
+        >
+
+            <div class="page-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <div class="heading-icon">
+                            🖥️
+                        </div>
+
+                        <div>
+                            <h2>
+                                OBS
+                            </h2>
+
+                            <p>
+                                Configura el contador para mostrarlo en tu transmisión.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="obs-preview">
+
+                    <div class="obs-counter-preview">
+
+                        <div>
+                            SENTADILLAS
+                        </div>
+
+                        <strong>
+                            0
+                        </strong>
+
+                        <span>
+                            PENDIENTES
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="obs-info-grid">
+
+                    <div class="info-card">
+
+                        <div class="info-icon">
+                            1
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Abre OBS
+                            </strong>
+
+                            <p>
+                                Agrega una fuente de navegador a tu escena.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-card">
+
+                        <div class="info-icon">
+                            2
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Utiliza Obs.html
+                            </strong>
+
+                            <p>
+                                Usa el archivo de overlay incluido con la aplicación.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VISTA: CONFIGURACIÓN
+        ================================================== -->
+
+        <section
+            class="view"
+            id="view-configuracion"
+        >
+
+            <div class="page-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <div class="heading-icon">
+                            ⚙️
+                        </div>
+
+                        <div>
+                            <h2>
+                                Configuración
+                            </h2>
+
+                            <p>
+                                Opciones generales de Squat Twitch.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="configuration-list">
+
+                    <div class="configuration-item">
+
+                        <div class="configuration-icon">
+                            
+                        </div>
+
+                        <div>
+                            <strong>
+                                Squat Twitch
+                            </strong>
+
+                            <p>
+                                Detector de sentadillas para transmisiones.
+                            </p>
+                        </div>
+
+                        <span class="version-badge">
+                            ACTIVO
+                        </span>
+
+                    </div>
+
+
+                    <div class="configuration-item">
+
+                        <div class="configuration-icon">
+                            🟣
+                        </div>
+
+                        <div>
+                            <strong>
+                                Twitch
+                            </strong>
+
+                            <p>
+                                Configuración del canal y conexión.
+                            </p>
+                        </div>
+
+                        <button
+                            class="small-action"
+                            data-view-target="twitch"
+                        >
+                            Abrir
+                        </button>
+
+                    </div>
+
+
+                    <div class="configuration-item">
+
+                        <div class="configuration-icon">
+                            🎁
+                        </div>
+
+                        <div>
+                            <strong>
+                                Recompensas
+                            </strong>
+
+                            <p>
+                                Valores de sentadillas por recompensa.
+                            </p>
+                        </div>
+
+                        <button
+                            class="small-action"
+                            data-view-target="recompensas"
+                        >
+                            Abrir
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- =========================================================
+     NAVEGACIÓN DEL FRONTEND
+========================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const navItems =
+        document.querySelectorAll(".nav-item");
+
+    const views =
+        document.querySelectorAll(".view");
+
+    const targetButtons =
+        document.querySelectorAll("[data-view-target]");
+
+    const pageTitle =
+        document.getElementById("pageTitle");
+
+    const pageCategory =
+        document.getElementById("pageCategory");
+
+    const pageDescription =
+        document.getElementById("pageDescription");
+
+
+    const pages = {
+
+        inicio: {
+            title: "Inicio",
+            category: "PANEL PRINCIPAL",
+            description:
+                "Controla tu detector de sentadillas y Twitch desde un solo lugar."
+        },
+
+        camara: {
+            title: "Cámara",
+            category: "DETECCIÓN",
+            description:
+                "Vista de la cámara y detección corporal."
+        },
+
+        detector: {
+            title: "Detector",
+            category: "DETECCIÓN",
+            description:
+                "Controla cómo se modifica el contador."
+        },
+
+        twitch: {
+            title: "Conexión",
+            category: "TWITCH",
+            description:
+                "Conecta tu canal de Twitch con Squat Twitch."
+        },
+
+        recompensas: {
+            title: "Recompensas",
+            category: "TWITCH",
+            description:
+                "Configura cuántas sentadillas vale cada recompensa."
+        },
+
+        bits: {
+            title: "Bits",
+            category: "TWITCH",
+            description:
+                "Configura la conversión de Bits a sentadillas."
+        },
+
+        obs: {
+            title: "OBS",
+            category: "HERRAMIENTAS",
+            description:
+                "Configura el contador para mostrarlo en tu transmisión."
+        },
+
+        configuracion: {
+            title: "Configuración",
+            category: "SISTEMA",
+            description:
+                "Opciones generales de Squat Twitch."
+        }
+
+    };
+
+
+    function openView(viewName) {
+
+        views.forEach(view => {
+
+            view.classList.remove("active");
+
+        });
+
+
+        const selectedView =
+            document.getElementById(
+                "view-" + viewName
+            );
+
+
+        if (selectedView) {
+
+            selectedView.classList.add("active");
+
+        }
+
+
+        navItems.forEach(item => {
+
+            item.classList.remove("active");
+
+            if (
+                item.dataset.view === viewName
+            ) {
+
+                item.classList.add("active");
+
+            }
+
+        });
+
+
+        const page =
+            pages[viewName];
+
+        if (!page) return;
+
+
+        pageTitle.textContent =
+            page.title;
+
+        pageCategory.textContent =
+            page.category;
+
+        pageDescription.textContent =
+            page.description;
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+
+    navItems.forEach(item => {
+
+        item.addEventListener(
+            "click",
+            () => {
+
+                openView(
+                    item.dataset.view
+                );
+
+            }
+        );
+
+    });
+
+
+    targetButtons.forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                openView(
+                    button.dataset.viewTarget
+                );
+
+            }
+        );
+
+    });
+
+
+    /* Mantener sincronizado el contador */
+
+    const originalCounter =
+        document.getElementById("counter");
+
+    const detectorCounter =
+        document.getElementById("detectorCounter");
+
+    const detectorState =
+        document.getElementById("detectorState");
+
+
+    if (originalCounter && detectorCounter) {
+
+        const observer =
+            new MutationObserver(() => {
+
+                detectorCounter.textContent =
+                    originalCounter.textContent;
+
+            });
+
+
+        observer.observe(
+            originalCounter,
+            {
+                childList: true,
+                characterData: true,
+                subtree: true
+            }
+        );
+
+    }
+
+
+    const state =
+        document.getElementById("state");
+
+
+    if (state && detectorState) {
+
+        const stateObserver =
+            new MutationObserver(() => {
+
+                detectorState.textContent =
+                    state.textContent;
+
+            });
+
+
+        stateObserver.observe(
+            state,
+            {
+                childList: true,
+                characterData: true,
+                subtree: true
+            }
+        );
+
+    }
+
+
+    /* Sincronizar estado de Twitch */
+
+    const twitchStatus =
+        document.getElementById(
+            "twitchStatus"
+        );
+
+    const twitchConnectionStatus =
+        document.getElementById(
+            "twitchStatusConnection"
+        );
+
+    const sidebarConnectionText =
+        document.getElementById(
+            "sidebarConnectionText"
+        );
+
+    const sidebarConnectionDot =
+        document.getElementById(
+            "sidebarConnectionDot"
+        );
+
+    const topStatusText =
+        document.getElementById(
+            "topStatusText"
+        );
+
+    const topStatusDot =
+        document.getElementById(
+            "topStatusDot"
+        );
+
+
+    if (twitchStatus) {
+
+        const twitchObserver =
+            new MutationObserver(() => {
+
+                const text =
+                    twitchStatus.textContent.trim();
+
+                if (twitchConnectionStatus) {
+
+                    twitchConnectionStatus.textContent =
+                        text;
+
+                }
+
+
+                if (
+                    text.toLowerCase().includes(
+                        "conectado"
+                    ) &&
+                    !text.toLowerCase().includes(
+                        "no conectado"
+                    )
+                ) {
+
+                    sidebarConnectionText.textContent =
+                        "Conectado";
+
+                    sidebarConnectionDot.classList.add(
+                        "connected"
+                    );
+
+                    topStatusText.textContent =
+                        "Twitch conectado";
+
+                    topStatusDot.classList.add(
+                        "connected"
+                    );
+
+                    twitchStatus.classList.add(
+                        "connected"
+                    );
+
+                } else {
+
+                    sidebarConnectionText.textContent =
+                        "Desconectado";
+
+                    sidebarConnectionDot.classList.remove(
+                        "connected"
+                    );
+
+                    topStatusText.textContent =
+                        "Sistema listo";
+
+                    topStatusDot.classList.remove(
+                        "connected"
+                    );
+
+                }
+
+            });
+
+
+        twitchObserver.observe(
+            twitchStatus,
+            {
+                childList: true,
+                characterData: true,
+                subtree: true
+            }
+        );
+
+    }
+
+
+    /*
+     * IMPORTANTE:
+     * No cambiamos el script.js principal.
+     * Esta navegación solo controla el frontend.
+     */
+
+});
+
+</script>
+
+<script src="script.js"></script>
+
+</body>
+</html>

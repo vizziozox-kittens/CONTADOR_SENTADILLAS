@@ -1,0 +1,20 @@
+{
+  "name": "squat-twitch",
+  "version": "1.0.0",
+  "description": "Contador de sentadillas conectado con Twitch",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "electron": "^44.4.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

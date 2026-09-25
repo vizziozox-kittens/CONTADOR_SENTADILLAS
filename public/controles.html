@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Controles Squat Twitch</title>
+
+    <style>
+
+        html,
+        body {
+
+            margin: 0;
+            padding: 0;
+
+            width: 100%;
+            height: 100%;
+
+            overflow: hidden;
+
+            background: transparent;
+
+            font-family: Arial, sans-serif;
+
+        }
+
+
+        /*
+        ========================================================
+        PANEL DE CONTROLES
+        ========================================================
+        */
+
+        #controlPanel {
+
+            position: fixed;
+
+            left: 20px;
+            bottom: 20px;
+
+            width: 320px;
+
+            padding: 18px;
+
+            background: rgba(15, 15, 20, 0.95);
+
+            border-radius: 16px;
+
+            color: white;
+
+            z-index: 1000;
+
+            box-sizing: border-box;
+
+        }
+
+
+        #controlPanel h2 {
+
+            margin-top: 0;
+            margin-bottom: 15px;
+
+            font-size: 20px;
+
+        }
+
+
+        button {
+
+            width: 100%;
+
+            padding: 12px;
+
+            margin-top: 8px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            cursor: pointer;
+
+            font-size: 15px;
+
+            font-weight: bold;
+
+        }
+
+
+        #btnCamera {
+
+            background: #9147ff;
+
+            color: white;
+
+        }
+
+
+        #btnPause {
+
+            background: #f59e0b;
+
+            color: white;
+
+        }
+
+
+        #btnStop {
+
+            background: #dc2626;
+
+            color: white;
+
+        }
+
+
+        #btnReset {
+
+            background: #374151;
+
+            color: white;
+
+        }
+
+
+        button:disabled {
+
+            opacity: 0.5;
+
+            cursor: not-allowed;
+
+        }
+
+
+        #cameraStatus {
+
+            margin-top: 15px;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            background: #27272a;
+
+            font-size: 14px;
+
+        }
+
+
+        #detectorStatus {
+
+            margin-top: 8px;
+
+            font-size: 14px;
+
+        }
+
+
+        /*
+        ========================================================
+        CÁMARA
+        ========================================================
+        */
+
+        #cameraContainer {
+
+            position: fixed;
+
+            left: 0;
+            top: 0;
+
+            width: 100%;
+            height: 100%;
+
+            pointer-events: none;
+
+            display: none;
+
+        }
+
+
+        #video {
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            transform: scaleX(-1);
+
+            /*
+            Cámara invisible para OBS.
+            */
+
+            opacity: 0.001;
+
+        }
+
+
+        #canvas {
+
+            position: absolute;
+
+            left: 0;
+            top: 0;
+
+            width: 100%;
+            height: 100%;
+
+            opacity: 0;
+
+        }
+
+
+        /*
+        ========================================================
+        MODO TRANSPARENTE
+        ========================================================
+        */
+
+        /*
+        Cuando la página se utilice como fuente de OBS,
+        podemos ocultar completamente el panel.
+        */
+
+        body.obs-mode #controlPanel {
+
+            display: none;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         CÁMARA
+    ====================================================== -->
+
+    <div id="cameraContainer">
+
+        <video
+            id="video"
+            autoplay
+            muted
+            playsinline>
+        </video>
+
+        <canvas id="canvas"></canvas>
+
+    </div>
+
+
+    <!-- =====================================================
+         CONTROLES
+    ====================================================== -->
+
+    <div id="controlPanel">
+
+        <h2>
+            🏋️ Controles de sentadillas
+        </h2>
+
+
+        <button id="btnCamera">
+
+            🎥 CONECTAR CÁMARA
+
+        </button>
+
+
+        <button
+            id="btnPause"
+            disabled>
+
+            ⏸ PAUSAR DETECTOR
+
+        </button>
+
+
+        <button
+            id="btnStop"
+            disabled>
+
+            ⏹ DESACTIVAR CÁMARA
+
+        </button>
+
+
+        <button id="btnReset">
+
+            🔄 REINICIAR CONTADOR
+
+        </button>
+
+
+        <div id="cameraStatus">
+
+            🔴 Cámara desconectada
+
+        </div>
+
+
+        <div id="detectorStatus">
+
+            Detector: detenido
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MEDIAPIPE
+    ====================================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+
+
+    <script>
+
+        /*
+        ========================================================
+        ELEMENTOS
+        ========================================================
+        */
+
+        const video =
+            document.getElementById("video");
+
+        const canvas =
+            document.getElementById("canvas");
+
+        const ctx =
+            canvas.getContext("2d");
+
+        const cameraContainer =
+            document.getElementById(
+                "cameraContainer"
+            );
+
+        const btnCamera =
+            document.getElementById(
+                "btnCamera"
+            );
+
+        const btnPause =
+            document.getElementById(
+                "btnPause"
+            );
+
+        const btnStop =
+            document.getElementById(
+                "btnStop"
+            );
+
+        const btnReset =
+            document.getElementById(
+                "btnReset"
+            );
+
+        const cameraStatus =
+            document.getElementById(
+                "cameraStatus"
+            );
+
+        const detectorStatus =
+            document.getElementById(
+                "detectorStatus"
+            );
+
+
+        /*
+        ========================================================
+        VARIABLES
+        ========================================================
+        */
+
+        let stream = null;
+
+        let detectorPaused = false;
+
+        let pose = null;
+
+        let cameraLoopRunning = false;
+
+
+        /*
+        ========================================================
+        DETECTOR
+        ========================================================
+        */
+
+        const CALIBRATION_FRAMES = 25;
+
+        const DOWN_THRESHOLD = 0.045;
+
+        const BOTTOM_THRESHOLD = 0.075;
+
+        const MIN_TIME_BETWEEN_SQUATS = 700;
+
+
+        let state = "CALIBRATING";
+
+        let calibrationFrames = 0;
+
+        let baselineHip = null;
+
+        let smoothedHip = null;
+
+        let lastSquatTime = 0;
+
+        let previousHip = null;
+
+
+        /*
+        ========================================================
+        WEBSOCKET
+        ========================================================
+        */
+
+        let socket = null;
+
+
+        function connectWebSocket() {
+
+            try {
+
+                const protocol =
+                    location.protocol === "https:"
+                        ? "wss:"
+                        : "ws:";
+
+
+                socket =
+                    new WebSocket(
+                        `${protocol}//${location.host}/ws`
+                    );
+
+
+                socket.onopen = () => {
+
+                    console.log(
+                        "🟢 WebSocket conectado"
+                    );
+
+                };
+
+
+                socket.onclose = () => {
+
+                    console.log(
+                        "🔴 WebSocket desconectado"
+                    );
+
+                    setTimeout(
+                        connectWebSocket,
+                        2000
+                    );
+
+                };
+
+
+                socket.onerror = error => {
+
+                    console.error(
+                        "WebSocket:",
+                        error
+                    );
+
+                };
+
+            } catch (error) {
+
+                console.error(
+                    "Error WebSocket:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+        ========================================================
+        REGISTRAR SENTADILLA
+        ========================================================
+        */
+
+        async function registerSquat() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/squats/change",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    amount: -1
+
+                                })
+
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "Sentadilla registrada:",
+                    data
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Error registrando sentadilla:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+        ========================================================
+        REINICIAR
+        ========================================================
+        */
+
+        async function resetCounter() {
+
+            try {
+
+                await fetch(
+                    "/api/squats/reset",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        }
+
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Error reiniciando:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+        ========================================================
+        MEDIAPIPE
+        ========================================================
+        */
+
+        function initializePose() {
+
+            pose =
+                new Pose({
+
+                    locateFile:
+                        file => {
+
+                            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+
+                        }
+
+                });
+
+
+            pose.setOptions({
+
+                modelComplexity: 1,
+
+                smoothLandmarks: true,
+
+                enableSegmentation: false,
+
+                smoothSegmentation: false,
+
+                minDetectionConfidence: 0.55,
+
+                minTrackingConfidence: 0.55
+
+            });
+
+
+            pose.onResults(
+                processPoseResults
+            );
+
+        }
+
+
+        /*
+        ========================================================
+        PROCESAR CUERPO
+        ========================================================
+        */
+
+        function processPoseResults(results) {
+
+            if (
+                detectorPaused
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !results.poseLandmarks
+            ) {
+
+                detectorStatus.textContent =
+                    "Detector: cuerpo no encontrado";
+
+                return;
+
+            }
+
+
+            const landmarks =
+                results.poseLandmarks;
+
+
+            const leftShoulder =
+                landmarks[11];
+
+            const rightShoulder =
+                landmarks[12];
+
+            const leftHip =
+                landmarks[23];
+
+            const rightHip =
+                landmarks[24];
+
+
+            if (
+                !leftShoulder ||
+                !rightShoulder ||
+                !leftHip ||
+                !rightHip
+            ) {
+
+                return;
+
+            }
+
+
+            const shoulderX =
+                (
+                    leftShoulder.x +
+                    rightShoulder.x
+                ) / 2;
+
+
+            const shoulderY =
+                (
+                    leftShoulder.y +
+                    rightShoulder.y
+                ) / 2;
+
+
+            const hipX =
+                (
+                    leftHip.x +
+                    rightHip.x
+                ) / 2;
+
+
+            const hipY =
+                (
+                    leftHip.y +
+                    rightHip.y
+                ) / 2;
+
+
+            const torsoSize =
+                Math.abs(
+                    hipY -
+                    shoulderY
+                );
+
+
+            if (
+                torsoSize < 0.05
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+            ====================================================
+            CALIBRACIÓN
+            ====================================================
+            */
+
+            if (
+                calibrationFrames <
+                CALIBRATION_FRAMES
+            ) {
+
+                calibrationFrames++;
+
+                if (
+                    baselineHip === null
+                ) {
+
+                    baselineHip =
+                        hipY;
+
+                } else {
+
+                    baselineHip =
+                        baselineHip * 0.9 +
+                        hipY * 0.1;
+
+                }
+
+
+                detectorStatus.textContent =
+                    `Detector: calibrando ${calibrationFrames}/${CALIBRATION_FRAMES}`;
+
+                return;
+
+            }
+
+
+            /*
+            ====================================================
+            DELTA NORMALIZADO
+            ====================================================
+            */
+
+            const rawDelta =
+                (
+                    hipY -
+                    baselineHip
+                ) /
+                torsoSize;
+
+
+            if (
+                smoothedHip === null
+            ) {
+
+                smoothedHip =
+                    rawDelta;
+
+            } else {
+
+                smoothedHip =
+                    smoothedHip * 0.70 +
+                    rawDelta * 0.30;
+
+            }
+
+
+            const currentHip =
+                smoothedHip;
+
+
+            let velocity = 0;
+
+
+            if (
+                previousHip !== null
+            ) {
+
+                velocity =
+                    currentHip -
+                    previousHip;
+
+            }
+
+
+            previousHip =
+                currentHip;
+
+
+            /*
+            ====================================================
+            MÁQUINA DE ESTADOS
+            ====================================================
+            */
+
+            switch (state) {
+
+
+                case "CALIBRATING":
+
+                    state =
+                        "STANDING";
+
+                    break;
+
+
+                case "STANDING":
+
+                    detectorStatus.textContent =
+                        "Detector: 🟢 de pie";
+
+
+                    if (
+                        currentHip >
+                        DOWN_THRESHOLD
+                    ) {
+
+                        state =
+                            "DESCENDING";
+
+                    }
+
+                    break;
+
+
+                case "DESCENDING":
+
+                    detectorStatus.textContent =
+                        "Detector: ⬇️ bajando";
+
+
+                    if (
+                        currentHip >
+                        BOTTOM_THRESHOLD
+                    ) {
+
+                        state =
+                            "BOTTOM";
+
+                    }
+
+                    else if (
+                        currentHip <
+                        DOWN_THRESHOLD * 0.5
+                    ) {
+
+                        state =
+                            "STANDING";
+
+                    }
+
+                    break;
+
+
+                case "BOTTOM":
+
+                    detectorStatus.textContent =
+                        "Detector: 🔽 abajo";
+
+
+                    if (
+                        currentHip <
+                        BOTTOM_THRESHOLD
+                    ) {
+
+                        state =
+                            "ASCENDING";
+
+                    }
+
+                    break;
+
+
+                case "ASCENDING":
+
+                    detectorStatus.textContent =
+                        "Detector: ⬆️ subiendo";
+
+
+                    if (
+                        currentHip <
+                        DOWN_THRESHOLD * 0.5
+                    ) {
+
+                        const now =
+                            Date.now();
+
+
+                        if (
+                            now -
+                            lastSquatTime >=
+                            MIN_TIME_BETWEEN_SQUATS
+                        ) {
+
+                            lastSquatTime =
+                                now;
+
+
+                            registerSquat();
+
+                            console.log(
+                                "🏋️ SENTADILLA DETECTADA"
+                            );
+
+                        }
+
+
+                        state =
+                            "STANDING";
+
+                    }
+
+                    break;
+
+            }
+
+        }
+
+
+        /*
+        ========================================================
+        PROCESAR CÁMARA
+        ========================================================
+        */
+
+        async function processCamera() {
+
+            if (
+                cameraLoopRunning
+            ) {
+
+                return;
+
+            }
+
+
+            cameraLoopRunning =
+                true;
+
+
+            async function loop() {
+
+                if (
+                    !stream
+                ) {
+
+                    cameraLoopRunning =
+                        false;
+
+                    return;
+
+                }
+
+
+                if (
+                    !detectorPaused &&
+                    video.readyState >= 2
+                ) {
+
+                    try {
+
+                        await pose.send({
+
+                            image:
+                                video
+
+                        });
+
+                    } catch (error) {
+
+                        console.error(
+                            "Pose:",
+                            error
+                        );
+
+                    }
+
+                }
+
+
+                requestAnimationFrame(
+                    loop
+                );
+
+            }
+
+
+            loop();
+
+        }
+
+
+        /*
+        ========================================================
+        CONECTAR CÁMARA
+        ========================================================
+        */
+
+        async function connectCamera() {
+
+            try {
+
+                cameraStatus.textContent =
+                    "🟡 Solicitando acceso a la cámara...";
+
+
+                stream =
+                    await navigator
+                        .mediaDevices
+                        .getUserMedia({
+
+                            video: {
+
+                                width: {
+                                    ideal: 1280
+                                },
+
+                                height: {
+                                    ideal: 720
+                                },
+
+                                facingMode:
+                                    "user"
+
+                            },
+
+                            audio: false
+
+                        });
+
+
+                video.srcObject =
+                    stream;
+
+
+                await video.play();
+
+
+                cameraContainer.style.display =
+                    "block";
+
+
+                cameraStatus.textContent =
+                    "🟢 Cámara conectada";
+
+
+                detectorStatus.textContent =
+                    "Detector: calibrando...";
+
+
+                btnCamera.disabled =
+                    true;
+
+
+                btnPause.disabled =
+                    false;
+
+
+                btnStop.disabled =
+                    false;
+
+
+                /*
+                Reiniciar detector
+                */
+
+                state =
+                    "CALIBRATING";
+
+                calibrationFrames =
+                    0;
+
+                baselineHip =
+                    null;
+
+                smoothedHip =
+                    null;
+
+                previousHip =
+                    null;
+
+
+                processCamera();
+
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Error cámara:",
+                    error
+                );
+
+
+                cameraStatus.textContent =
+                    "🔴 No se pudo conectar la cámara";
+
+                alert(
+                    "No se pudo acceder a la cámara.\n\n" +
+                    error.message
+                );
+
+            }
+
+        }
+
+
+        /*
+        ========================================================
+        PAUSAR
+        ========================================================
+        */
+
+        function pauseDetector() {
+
+            detectorPaused =
+                !detectorPaused;
+
+
+            if (
+                detectorPaused
+            ) {
+
+                btnPause.textContent =
+                    "▶️ REANUDAR DETECTOR";
+
+                detectorStatus.textContent =
+                    "Detector: ⏸ pausado";
+
+            } else {
+
+                btnPause.textContent =
+                    "⏸ PAUSAR DETECTOR";
+
+                detectorStatus.textContent =
+                    "Detector: 🟢 activo";
+
+            }
+
+        }
+
+
+        /*
+        ========================================================
+        DESACTIVAR
+        ========================================================
+        */
+
+        function stopCamera() {
+
+            if (
+                stream
+            ) {
+
+                stream
+                    .getTracks()
+                    .forEach(
+                        track => {
+                            track.stop();
+                        }
+                    );
+
+            }
+
+
+            stream =
+                null;
+
+
+            video.srcObject =
+                null;
+
+
+            cameraContainer.style.display =
+                "none";
+
+
+            detectorPaused =
+                false;
+
+
+            state =
+                "CALIBRATING";
+
+
+            calibrationFrames =
+                0;
+
+
+            baselineHip =
+                null;
+
+
+            smoothedHip =
+                null;
+
+
+            previousHip =
+                null;
+
+
+            btnCamera.disabled =
+                false;
+
+
+            btnPause.disabled =
+                true;
+
+
+            btnStop.disabled =
+                true;
+
+
+            btnPause.textContent =
+                "⏸ PAUSAR DETECTOR";
+
+
+            cameraStatus.textContent =
+                "🔴 Cámara desconectada";
+
+
+            detectorStatus.textContent =
+                "Detector: detenido";
+
+        }
+
+
+        /*
+        ========================================================
+        BOTONES
+        ========================================================
+        */
+
+        btnCamera.addEventListener(
+            "click",
+            connectCamera
+        );
+
+
+        btnPause.addEventListener(
+            "click",
+            pauseDetector
+        );
+
+
+        btnStop.addEventListener(
+            "click",
+            stopCamera
+        );
+
+
+        btnReset.addEventListener(
+            "click",
+            resetCounter
+        );
+
+
+        /*
+        ========================================================
+        INICIALIZAR
+        ========================================================
+        */
+
+        initializePose();
+
+        connectWebSocket();
+
+
+        /*
+        ========================================================
+        MODO OBS
+        ========================================================
+        */
+
+        /*
+        Si agregamos ?obs=1 a la URL:
+
+        https://TU-DOMINIO/controles.html?obs=1
+
+        el panel desaparece visualmente.
+
+        */
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        if (
+            params.get("obs") === "1"
+        ) {
+
+            document.body.classList.add(
+                "obs-mode"
+            );
+
+        }
+
+    </script>
+
+</body>
+
+</html>

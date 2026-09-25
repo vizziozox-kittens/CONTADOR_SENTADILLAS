@@ -1,0 +1,14 @@
+{
+  "clientId": "",
+  "redirectUri": "",
+  "rewards": [
+    {
+      "name": "sentadilla",
+      "squats": 20
+    }
+  ],
+  "bits": {
+    "bits": 10,
+    "squats": 10
+  }
+}

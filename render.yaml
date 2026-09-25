@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: squat-twitch
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /prueba
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PUBLIC_URL
+        sync: false
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: TWITCH_REDIRECT_URI
+        sync: false

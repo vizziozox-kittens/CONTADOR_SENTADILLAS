@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Squat Twitch OBS</title>
+
+    <!-- =====================================================
+         MEDIAPIPE
+    ====================================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        html,
+        body {
+
+            margin: 0;
+
+            padding: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            overflow: hidden;
+
+            background: transparent;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+        }
+
+
+        /* =====================================================
+           CONTENEDOR GENERAL
+        ====================================================== */
+
+        #app {
+
+            position: relative;
+
+            width: 100%;
+
+            height: 100%;
+
+        }
+
+
+        /* =====================================================
+           CONTADOR
+        ====================================================== */
+
+        #counterBox {
+
+            position: absolute;
+
+            top: 30px;
+
+            right: 30px;
+
+            min-width: 240px;
+
+            padding: 18px 30px 20px;
+
+            border-radius: 20px;
+
+            background:
+                rgba(10, 10, 18, 0.90);
+
+            border:
+                2px solid
+                rgba(145, 71, 255, 0.90);
+
+            box-shadow:
+                0 0 30px
+                rgba(145, 71, 255, 0.30);
+
+            text-align: center;
+
+            color: white;
+
+            z-index: 20;
+
+        }
+
+
+        #counterLabel {
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            letter-spacing: 2px;
+
+            color: #c9b3ff;
+
+            margin-bottom: 4px;
+
+        }
+
+
+        #counter {
+
+            font-size: 82px;
+
+            line-height: 0.95;
+
+            font-weight: 900;
+
+            color: white;
+
+            text-shadow:
+                0 0 18px
+                rgba(145, 71, 255, 0.75);
+
+        }
+
+
+        #counterSub {
+
+            margin-top: 8px;
+
+            font-size: 11px;
+
+            letter-spacing: 1.5px;
+
+            color: #9ca3af;
+
+        }
+
+
+        .counterPulse {
+
+            animation:
+                counterPulse 0.35s ease;
+
+        }
+
+
+        @keyframes counterPulse {
+
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+
+        }
+
+
+        /* =====================================================
+           CÁMARA
+        ====================================================== */
+
+        #cameraContainer {
+
+            position: absolute;
+
+            inset: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            overflow: hidden;
+
+            display: none;
+
+        }
+
+
+        #video {
+
+            position: absolute;
+
+            width: 100%;
+
+            height: 100%;
+
+            object-fit: cover;
+
+            transform: scaleX(-1);
+
+            opacity: 0.001;
+
+        }
+
+
+        #canvas {
+
+            position: absolute;
+
+            inset: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            pointer-events: none;
+
+        }
+
+
+        /* =====================================================
+           ESTADO
+        ====================================================== */
+
+        #statusBox {
+
+            position: absolute;
+
+            left: 30px;
+
+            top: 30px;
+
+            padding: 10px 16px;
+
+            border-radius: 12px;
+
+            background:
+                rgba(10, 10, 18, 0.88);
+
+            border:
+                1px solid
+                rgba(145, 71, 255, 0.65);
+
+            color: white;
+
+            font-size: 13px;
+
+            z-index: 30;
+
+            display: none;
+
+        }
+
+
+        #statusDot {
+
+            display: inline-block;
+
+            width: 8px;
+
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #777;
+
+            margin-right: 7px;
+
+        }
+
+
+        /* =====================================================
+           PANEL DE CONTROL
+        ====================================================== */
+
+        #controlPanel {
+
+            position: absolute;
+
+            left: 30px;
+
+            bottom: 30px;
+
+            width: 270px;
+
+            padding: 16px;
+
+            border-radius: 18px;
+
+            background:
+                rgba(10, 10, 18, 0.94);
+
+            border:
+                1px solid
+                rgba(145, 71, 255, 0.65);
+
+            box-shadow:
+                0 0 25px
+                rgba(0, 0, 0, 0.35);
+
+            z-index: 50;
+
+        }
+
+
+        #controlTitle {
+
+            color: white;
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+            margin-bottom: 12px;
+
+        }
+
+
+        .button {
+
+            width: 100%;
+
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 11px 12px;
+
+            margin-top: 8px;
+
+            color: white;
+
+            font-weight: 700;
+
+            font-size: 13px;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.15s ease,
+                opacity 0.15s ease;
+
+        }
+
+
+        .button:hover {
+
+            transform: translateY(-1px);
+
+        }
+
+
+        .button:disabled {
+
+            opacity: 0.45;
+
+            cursor: default;
+
+            transform: none;
+
+        }
+
+
+        #startCameraButton {
+
+            background: #9147ff;
+
+        }
+
+
+        #startCameraButton:hover {
+
+            background: #772ce8;
+
+        }
+
+
+        #pauseDetectorButton {
+
+            background: #3b4254;
+
+        }
+
+
+        #stopCameraButton {
+
+            background: #a33b3b;
+
+        }
+
+
+        #resetCounterButton {
+
+            background: #252d3d;
+
+        }
+
+
+        #detectorState {
+
+            margin-top: 12px;
+
+            padding: 9px;
+
+            border-radius: 9px;
+
+            background:
+                rgba(255,255,255,0.04);
+
+            color: #cbd5e1;
+
+            font-size: 12px;
+
+            text-align: center;
+
+        }
+
+
+        /* =====================================================
+           MENSAJE SIN CÁMARA
+        ====================================================== */
+
+        #cameraMessage {
+
+            position: absolute;
+
+            left: 50%;
+
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            padding: 14px 20px;
+
+            border-radius: 12px;
+
+            background:
+                rgba(10, 10, 18, 0.80);
+
+            border:
+                1px solid
+                rgba(145, 71, 255, 0.45);
+
+            color: #cbd5e1;
+
+            font-size: 13px;
+
+            display: none;
+
+            z-index: 10;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div id="app">
+
+
+    <!-- =====================================================
+         CONTADOR
+    ====================================================== -->
+
+    <div id="counterBox">
+
+        <div id="counterLabel">
+            SENTADILLAS
+        </div>
+
+        <div id="counter">
+            0
+        </div>
+
+        <div id="counterSub">
+            PENDIENTES
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CÁMARA
+    ====================================================== -->
+
+    <div id="cameraContainer">
+
+        <video
+            id="video"
+            autoplay
+            muted
+            playsinline
+        ></video>
+
+        <canvas
+            id="canvas"
+        ></canvas>
+
+    </div>
+
+
+    <!-- =====================================================
+         MENSAJE CUANDO LA CÁMARA ESTÁ APAGADA
+    ====================================================== -->
+
+    <div id="cameraMessage">
+
+        Cámara apagada
+
+    </div>
+
+
+    <!-- =====================================================
+         ESTADO
+    ====================================================== -->
+
+    <div id="statusBox">
+
+        <span id="statusDot"></span>
+
+        <span id="statusText">
+            Cámara apagada
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         CONTROLES
+    ====================================================== -->
+
+    <div id="controlPanel">
+
+        <div id="controlTitle">
+            🏋️ Control de sentadillas
+        </div>
+
+
+        <button
+            id="startCameraButton"
+            class="button"
+        >
+            🎥 Activar cámara
+        </button>
+
+
+        <button
+            id="pauseDetectorButton"
+            class="button"
+            disabled
+        >
+            ⏸ Pausar detector
+        </button>
+
+
+        <button
+            id="stopCameraButton"
+            class="button"
+            disabled
+        >
+            ⏹ Desactivar cámara
+        </button>
+
+
+        <button
+            id="resetCounterButton"
+            class="button"
+        >
+            🔄 Reiniciar contador
+        </button>
+
+
+        <div id="detectorState">
+
+            Detector apagado
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   ELEMENTOS
+============================================================ */
+
+const counterElement =
+    document.getElementById("counter");
+
+const counterBox =
+    document.getElementById("counterBox");
+
+const video =
+    document.getElementById("video");
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const cameraContainer =
+    document.getElementById("cameraContainer");
+
+const cameraMessage =
+    document.getElementById("cameraMessage");
+
+const statusBox =
+    document.getElementById("statusBox");
+
+const statusDot =
+    document.getElementById("statusDot");
+
+const statusText =
+    document.getElementById("statusText");
+
+const detectorState =
+    document.getElementById("detectorState");
+
+const startCameraButton =
+    document.getElementById(
+        "startCameraButton"
+    );
+
+const pauseDetectorButton =
+    document.getElementById(
+        "pauseDetectorButton"
+    );
+
+const stopCameraButton =
+    document.getElementById(
+        "stopCameraButton"
+    );
+
+const resetCounterButton =
+    document.getElementById(
+        "resetCounterButton"
+    );
+
+
+/* ============================================================
+   VARIABLES
+============================================================ */
+
+let stream = null;
+
+let detectorActive = false;
+
+let processingFrame = false;
+
+let socket = null;
+
+let counter = 0;
+
+
+/* ============================================================
+   ESTADOS DEL DETECTOR
+============================================================ */
+
+const STATE = {
+
+    CALIBRATING: "CALIBRATING",
+
+    STANDING: "STANDING",
+
+    DESCENDING: "DESCENDING",
+
+    BOTTOM: "BOTTOM",
+
+    ASCENDING: "ASCENDING"
+
+};
+
+
+let squatState =
+    STATE.CALIBRATING;
+
+let standingFrames = 0;
+
+let downFrames = 0;
+
+let bottomFrames = 0;
+
+let upFrames = 0;
+
+let baseline = null;
+
+let smoothedDown = 0;
+
+let previousDown = 0;
+
+let previousTime = 0;
+
+let lastSquatTime = 0;
+
+
+/* ============================================================
+   UMBRALES
+============================================================ */
+
+const CALIBRATION_FRAMES = 40;
+
+const DOWN_THRESHOLD = 0.035;
+
+const BOTTOM_THRESHOLD = 0.070;
+
+const MIN_TIME_BETWEEN_SQUATS = 850;
+const DOWN_EXIT_THRESHOLD = 0.030;
+const MIN_KNEE_ANGLE = 142;
+const MAX_KNEE_ANGLE_DIFFERENCE = 42;
+
+
+/* ============================================================
+   ACTUALIZAR CONTADOR
+============================================================ */
+
+function updateCounter(value) {
+
+    counter =
+        Math.max(
+            0,
+            Math.floor(
+                Number(value) || 0
+            )
+        );
+
+    counterElement.textContent =
+        counter;
+
+    counterBox.classList.remove(
+        "counterPulse"
+    );
+
+    void counterBox.offsetWidth;
+
+    counterBox.classList.add(
+        "counterPulse"
+    );
+
+}
+
+
+/* ============================================================
+   CARGAR CONTADOR
+============================================================ */
+
+async function loadCounter() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/squats"
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                "No se pudo obtener el contador"
+            );
+        }
+
+        const data =
+            await response.json();
+
+        updateCounter(
+            data.pendingSquats
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error cargando contador:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   WEBSOCKET
+============================================================ */
+
+function connectWebSocket() {
+
+    if (
+        socket &&
+        (
+            socket.readyState ===
+            WebSocket.OPEN ||
+
+            socket.readyState ===
+            WebSocket.CONNECTING
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const protocol =
+        location.protocol === "https:"
+            ? "wss:"
+            : "ws:";
+
+
+    socket =
+        new WebSocket(
+            `${protocol}//${location.host}/ws`
+        );
+
+
+    socket.addEventListener(
+        "open",
+        () => {
+
+            console.log(
+                "🟢 OBS conectado al servidor"
+            );
+
+        }
+    );
+
+
+    socket.addEventListener(
+        "message",
+        event => {
+
+            try {
+
+                const message =
+                    JSON.parse(
+                        event.data
+                    );
+
+
+                if (
+                    message.type ===
+                    "counter:update"
+                ) {
+
+                    updateCounter(
+                        message.data
+                            ?.pendingSquats
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Error WebSocket:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+
+    socket.addEventListener(
+        "close",
+        () => {
+
+            console.log(
+                "🔴 WebSocket desconectado"
+            );
+
+
+            setTimeout(
+                connectWebSocket,
+                2000
+            );
+
+        }
+    );
+
+}
+
+
+/* ============================================================
+   CAMBIAR CONTADOR
+============================================================ */
+
+async function registerSquat() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/squats/change",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            amount: -1
+                        })
+
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "No se pudo registrar la sentadilla"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        updateCounter(
+            data.pendingSquats
+        );
+
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "Error registrando sentadilla:",
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+/* ============================================================
+   REINICIAR CONTADOR
+============================================================ */
+
+async function resetCounter() {
+
+    try {
+
+        await fetch(
+            "/api/squats/reset",
+            {
+                method: "POST"
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error reiniciando contador:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   ESTADO VISUAL
+============================================================ */
+
+function setStatus(
+    text,
+    color
+) {
+
+    statusText.textContent =
+        text;
+
+    statusDot.style.background =
+        color;
+
+}
+
+
+/* ============================================================
+   ACTIVAR CÁMARA
+============================================================ */
+
+async function startCamera() {
+
+    if (stream) {
+        return;
+    }
+
+
+    try {
+
+        setStatus(
+            "Solicitando cámara...",
+            "#f59e0b"
+        );
+
+
+        stream =
+            await navigator
+                .mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        facingMode: "user",
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 720
+                        },
+
+                        frameRate: {
+                            ideal: 30
+                        }
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        video.srcObject =
+            stream;
+
+
+        await video.play();
+
+
+        cameraContainer.style.display =
+            "block";
+
+
+        cameraMessage.style.display =
+            "none";
+
+
+        statusBox.style.display =
+            "block";
+
+
+        startCameraButton.disabled =
+            true;
+
+
+        pauseDetectorButton.disabled =
+            false;
+
+
+        stopCameraButton.disabled =
+            false;
+
+
+        detectorActive =
+            true;
+
+
+        resetDetector();
+
+
+        detectorState.textContent =
+            "🟡 Calibrando...";
+
+
+        setStatus(
+            "Cámara activa",
+            "#22c55e"
+        );
+
+
+        console.log(
+            "🟢 Cámara activada"
+        );
+
+
+        processCamera();
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Error cámara:",
+            error
+        );
+
+
+        stream = null;
+
+
+        setStatus(
+            "No se pudo activar la cámara",
+            "#ef4444"
+        );
+
+
+        alert(
+            "No se pudo activar la cámara.\n\n" +
+            "Comprueba que OBS tenga permiso para usar la cámara."
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   DETENER CÁMARA
+============================================================ */
+
+function stopCamera() {
+
+    detectorActive =
+        false;
+
+
+    if (stream) {
+
+        stream
+            .getTracks()
+            .forEach(
+                track => {
+                    track.stop();
+                }
+            );
+
+    }
+
+
+    stream = null;
+
+    video.srcObject =
+        null;
+
+
+    cameraContainer.style.display =
+        "none";
+
+
+    cameraMessage.style.display =
+        "block";
+
+
+    startCameraButton.disabled =
+        false;
+
+
+    pauseDetectorButton.disabled =
+        true;
+
+
+    stopCameraButton.disabled =
+        true;
+
+
+    pauseDetectorButton.textContent =
+        "⏸ Pausar detector";
+
+
+    detectorState.textContent =
+        "Detector apagado";
+
+
+    setStatus(
+        "Cámara apagada",
+        "#777"
+    );
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    resetDetector();
+
+
+    console.log(
+        "🔴 Cámara apagada"
+    );
+
+}
+
+
+/* ============================================================
+   PAUSAR / CONTINUAR DETECTOR
+============================================================ */
+
+function toggleDetector() {
+
+    if (!stream) {
+        return;
+    }
+
+
+    detectorActive =
+        !detectorActive;
+
+
+    if (detectorActive) {
+
+        pauseDetectorButton.textContent =
+            "⏸ Pausar detector";
+
+
+        detectorState.textContent =
+            "🟢 Detector activo";
+
+
+        setStatus(
+            "Detectando sentadillas",
+            "#22c55e"
+        );
+
+
+        resetDetector();
+
+    } else {
+
+        pauseDetectorButton.textContent =
+            "▶ Continuar detector";
+
+
+        detectorState.textContent =
+            "⏸ Detector pausado";
+
+
+        setStatus(
+            "Cámara activa · detector pausado",
+            "#f59e0b"
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   EVENTOS BOTONES
+============================================================ */
+
+startCameraButton.addEventListener(
+    "click",
+    startCamera
+);
+
+
+stopCameraButton.addEventListener(
+    "click",
+    stopCamera
+);
+
+
+pauseDetectorButton.addEventListener(
+    "click",
+    toggleDetector
+);
+
+
+resetCounterButton.addEventListener(
+    "click",
+    resetCounter
+);
+
+
+/* ============================================================
+   REDIMENSIONAR CANVAS
+============================================================ */
+
+function resizeCanvas() {
+
+    if (
+        video.videoWidth &&
+        video.videoHeight
+    ) {
+
+        canvas.width =
+            video.videoWidth;
+
+        canvas.height =
+            video.videoHeight;
+
+    }
+
+}
+
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+
+/* ============================================================
+   DATOS DEL CUERPO
+============================================================ */
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function angle2D(a, b, c) {
+    const abx = a.x - b.x;
+    const aby = a.y - b.y;
+    const cbx = c.x - b.x;
+    const cby = c.y - b.y;
+    const m1 = Math.hypot(abx, aby);
+    const m2 = Math.hypot(cbx, cby);
+    if (!m1 || !m2) return null;
+    const cosine = clamp((abx * cbx + aby * cby) / (m1 * m2), -1, 1);
+    return Math.acos(cosine) * 180 / Math.PI;
+}
+
+function getBodyData(landmarks) {
+
+    const ids = [11, 12, 23, 24, 25, 26, 27, 28];
+    const visible = ids.filter(id => (landmarks[id]?.visibility || 0) >= 0.18).length;
+
+    if (visible < 6) return null;
+
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+
+    if (!leftShoulder || !rightShoulder || !leftHip || !rightHip) return null;
+
+    const shoulders = {
+        x: (leftShoulder.x + rightShoulder.x) / 2,
+        y: (leftShoulder.y + rightShoulder.y) / 2
+    };
+
+    const hips = {
+        x: (leftHip.x + rightHip.x) / 2,
+        y: (leftHip.y + rightHip.y) / 2
+    };
+
+    const torsoSize = Math.max(
+        Math.hypot(hips.x - shoulders.x, hips.y - shoulders.y),
+        0.001
+    );
+
+    const leftKneeAngle =
+        landmarks[23] && landmarks[25] && landmarks[27] &&
+        (landmarks[25].visibility || 0) >= 0.18 &&
+        (landmarks[27].visibility || 0) >= 0.18
+            ? angle2D(landmarks[23], landmarks[25], landmarks[27])
+            : null;
+
+    const rightKneeAngle =
+        landmarks[24] && landmarks[26] && landmarks[28] &&
+        (landmarks[26].visibility || 0) >= 0.18 &&
+        (landmarks[28].visibility || 0) >= 0.18
+            ? angle2D(landmarks[24], landmarks[26], landmarks[28])
+            : null;
+
+    let kneeAngle = null;
+    if (leftKneeAngle !== null && rightKneeAngle !== null) {
+        kneeAngle = (leftKneeAngle + rightKneeAngle) / 2;
+    } else if (leftKneeAngle !== null) {
+        kneeAngle = leftKneeAngle;
+    } else if (rightKneeAngle !== null) {
+        kneeAngle = rightKneeAngle;
+    }
+
+    const kneesAgree =
+        leftKneeAngle === null || rightKneeAngle === null ||
+        Math.abs(leftKneeAngle - rightKneeAngle) <= MAX_KNEE_ANGLE_DIFFERENCE;
+
+    return {
+        shoulders,
+        hips,
+        torsoSize,
+        leftKneeAngle,
+        rightKneeAngle,
+        kneeAngle,
+        kneesAgree
+    };
+}
+
+/* ============================================================
+   CALIBRAR
+============================================================ */
+
+function calibrateBody(
+    data
+) {
+
+    if (!baseline) {
+
+        baseline = {
+
+            shoulders: {
+                ...data.shoulders
+            },
+
+            hips: {
+                ...data.hips
+            },
+
+            torsoSize:
+                data.torsoSize,
+            kneeAngle:
+                data.kneeAngle ?? null
+
+        };
+
+        return;
+
+    }
+
+
+    const factor =
+        0.08;
+
+
+    baseline.shoulders.x +=
+        (
+            data.shoulders.x -
+            baseline.shoulders.x
+        ) * factor;
+
+
+    baseline.shoulders.y +=
+        (
+            data.shoulders.y -
+            baseline.shoulders.y
+        ) * factor;
+
+
+    baseline.hips.x +=
+        (
+            data.hips.x -
+            baseline.hips.x
+        ) * factor;
+
+
+    baseline.hips.y +=
+        (
+            data.hips.y -
+            baseline.hips.y
+        ) * factor;
+
+
+    baseline.torsoSize +=
+        (
+            data.torsoSize -
+            baseline.torsoSize
+        ) * factor;
+
+    if (data.kneeAngle !== null) {
+        baseline.kneeAngle =
+            baseline.kneeAngle === null
+                ? data.kneeAngle
+                : baseline.kneeAngle + (data.kneeAngle - baseline.kneeAngle) * factor;
+    }
+
+}
+
+
+/* ============================================================
+   MOVIMIENTO HACIA ABAJO
+============================================================ */
+
+function getDownAmount(data) {
+
+    if (!baseline) return 0;
+
+    const scale = Math.max(baseline.torsoSize, 0.001);
+    const hipDown = (data.hips.y - baseline.hips.y) / scale;
+    const centerY = (data.shoulders.y + data.hips.y) / 2;
+    const baseCenterY = (baseline.shoulders.y + baseline.hips.y) / 2;
+    const centerDown = (centerY - baseCenterY) / scale;
+
+    let score = hipDown * 0.72 + centerDown * 0.18;
+
+    if (data.kneeAngle !== null && baseline.kneeAngle !== null) {
+        const kneeFlex = clamp((baseline.kneeAngle - data.kneeAngle) / 55, 0, 1.35);
+        score += kneeFlex * 0.10;
+    }
+
+    return score;
+}
+
+
+/* ============================================================
+   REINICIAR DETECTOR
+============================================================ */
+
+function resetDetector() {
+
+    squatState =
+        STATE.CALIBRATING;
+
+
+    standingFrames = 0;
+
+    downFrames = 0;
+
+    bottomFrames = 0;
+
+    upFrames = 0;
+
+    baseline = null;
+
+    smoothedDown = 0;
+
+    previousDown = 0;
+
+    previousTime = 0;
+
+    lastSquatTime = 0;
+
+}
+
+
+/* ============================================================
+   MEDIAPIPE
+============================================================ */
+
+const pose =
+    new Pose({
+
+        locateFile:
+            file =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+
+    });
+
+
+pose.setOptions({
+
+    modelComplexity: 2,
+
+    smoothLandmarks: true,
+
+    enableSegmentation: false,
+
+    smoothSegmentation: false,
+
+    minDetectionConfidence: 0.45,
+
+    minTrackingConfidence: 0.45
+
+});
+
+
+pose.onResults(
+    results => {
+
+        if (!results.poseLandmarks) {
+
+            detectorState.textContent =
+                detectorActive
+                    ? "🧍 No se detecta el cuerpo"
+                    : "Detector pausado";
+
+            return;
+
+        }
+
+
+        resizeCanvas();
+        // No dibujamos puntos, cara ni esqueleto.
+        // MediaPipe sigue usando todos los landmarks internamente.
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (detectorActive) {
+
+            detectSquat(
+                results.poseLandmarks
+            );
+
+        }
+
+    }
+);
+
+
+/* ============================================================
+   DETECTAR SENTADILLA
+============================================================ */
+
+async function detectSquat(landmarks) {
+
+    const data = getBodyData(landmarks);
+
+    if (!data) {
+        detectorState.textContent = "🧍 Cuerpo no visible";
+        return;
+    }
+
+    const now = performance.now();
+    const rawDown = getDownAmount(data);
+
+    // Suavizado doble para reducir jitter sin perder velocidad.
+    smoothedDown = smoothedDown * 0.72 + rawDown * 0.28;
+
+    const velocity = previousTime
+        ? (smoothedDown - previousDown) /
+          Math.max((now - previousTime) / 1000, 0.001)
+        : 0;
+
+    previousDown = smoothedDown;
+    previousTime = now;
+
+    if (squatState === STATE.CALIBRATING) {
+        calibrateBody(data);
+        standingFrames++;
+
+        detectorState.textContent =
+            `🟡 Calibrando ${Math.min(100, Math.round(standingFrames / CALIBRATION_FRAMES * 100))}%`;
+
+        if (standingFrames >= CALIBRATION_FRAMES) {
+            squatState = STATE.STANDING;
+            smoothedDown = 0;
+            previousDown = 0;
+            detectorState.textContent = "🟢 Listo";
+        }
+        return;
+    }
+
+    // La línea base se adapta muy lentamente solo cuando realmente está de pie.
+    if (squatState === STATE.STANDING && Math.abs(smoothedDown) < DOWN_EXIT_THRESHOLD) {
+        calibrateBody(data);
+    }
+
+    if (squatState === STATE.STANDING) {
+        const kneeStarted =
+            data.kneeAngle !== null &&
+            baseline?.kneeAngle !== null &&
+            data.kneeAngle < baseline.kneeAngle - 8;
+
+        if ((smoothedDown > DOWN_THRESHOLD || kneeStarted) && velocity > 0.01) {
+            squatState = STATE.DESCENDING;
+            downFrames = 1;
+            detectorState.textContent = "⬇️ Bajando";
+        } else {
+            detectorState.textContent = "🟢 Listo";
+        }
+        return;
+    }
+
+    if (squatState === STATE.DESCENDING) {
+        if (smoothedDown > DOWN_THRESHOLD ||
+            (data.kneeAngle !== null && data.kneeAngle <= MIN_KNEE_ANGLE)) {
+            downFrames++;
+        }
+
+        const deepEnough =
+            smoothedDown >= BOTTOM_THRESHOLD ||
+            (data.kneeAngle !== null &&
+             data.kneeAngle <= MIN_KNEE_ANGLE &&
+             data.kneesAgree);
+
+        if (deepEnough && downFrames >= 2) {
+            squatState = STATE.BOTTOM;
+            bottomFrames = 0;
+            detectorState.textContent = "🔽 Fondo";
+            return;
+        }
+
+        if (smoothedDown < DOWN_EXIT_THRESHOLD && velocity < 0) {
+            squatState = STATE.STANDING;
+            detectorState.textContent = "🟢 Listo";
+            return;
+        }
+
+        detectorState.textContent = "⬇️ Bajando";
+        return;
+    }
+
+    if (squatState === STATE.BOTTOM) {
+        bottomFrames++;
+
+        // Esperamos una subida real. No hace falta salir instantáneamente del fondo.
+        if (velocity < -0.012 || smoothedDown < BOTTOM_THRESHOLD - 0.015) {
+            upFrames++;
+        } else {
+            upFrames = 0;
+        }
+
+        if (upFrames >= 2) {
+            squatState = STATE.ASCENDING;
+            upFrames = 0;
+            detectorState.textContent = "⬆️ Subiendo";
+        } else {
+            detectorState.textContent = "🔽 Fondo";
+        }
+        return;
+    }
+
+    if (squatState === STATE.ASCENDING) {
+        // Solo contamos al volver a una posición cercana a la inicial.
+        if (smoothedDown <= DOWN_EXIT_THRESHOLD) {
+            if (now - lastSquatTime >= MIN_TIME_BETWEEN_SQUATS) {
+                lastSquatTime = now;
+                const success = await registerSquat();
+                if (success) detectorState.textContent = "✅ ¡Sentadilla!";
+            }
+
+            squatState = STATE.STANDING;
+            upFrames = 0;
+            downFrames = 0;
+            bottomFrames = 0;
+        } else {
+            detectorState.textContent = "⬆️ Subiendo";
+        }
+    }
+}
+
+/* ============================================================
+   PROCESAR CÁMARA
+============================================================ */
+
+async function processCamera() {
+
+    if (!stream) {
+        return;
+    }
+
+
+    if (
+        video.readyState >=
+        HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+
+        if (!processingFrame) {
+
+            processingFrame = true;
+
+            try {
+
+                await pose.send({
+                    image: video
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "Error MediaPipe:",
+                    error
+                );
+
+            } finally {
+
+                processingFrame =
+                    false;
+
+            }
+
+        }
+
+    }
+
+
+    requestAnimationFrame(
+        processCamera
+    );
+
+}
+
+
+/* ============================================================
+   INICIO
+============================================================ */
+
+cameraMessage.style.display =
+    "block";
+
+
+statusBox.style.display =
+    "block";
+
+
+setStatus(
+    "Cámara apagada",
+    "#777"
+);
+
+
+loadCounter();
+
+
+connectWebSocket();
+
+</script>
+
+</body>
+
+</html>
