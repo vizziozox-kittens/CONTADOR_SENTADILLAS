@@ -1,3 +1,4 @@
+
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
@@ -232,7 +233,6 @@ function getRedirectUri() {
 
 const server =
     http.createServer(app);
-
 
 // ============================================================
 // WEBSOCKET
@@ -655,6 +655,12 @@ function broadcastCounter() {
 app.use(
     express.json()
 );
+
+// Permite que las páginas de este sitio soliciten acceso a la cámara.
+app.use((req, res, next) => {
+    res.setHeader("Permissions-Policy", "camera=(self), microphone=()");
+    next();
+});
 
 
 // ============================================================

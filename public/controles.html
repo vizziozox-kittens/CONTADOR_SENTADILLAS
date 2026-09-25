@@ -1,1202 +1,2159 @@
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+```
+<title>Controles Squat Twitch</title>
 
-    <title>Controles Squat Twitch</title>
+<style>
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        font-family: Arial, sans-serif;
+    }
 
-    <style>
+    /*
+    ========================================================
+    PANEL DE CONTROLES
+    ========================================================
+    */
 
-        html,
-        body {
+    #controlPanel {
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        width: 340px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        padding: 18px;
+        background: rgba(15, 15, 20, 0.95);
+        border-radius: 16px;
+        color: white;
+        z-index: 1000;
+        box-sizing: border-box;
+    }
 
-            margin: 0;
-            padding: 0;
+    #controlPanel h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 20px;
+    }
 
-            width: 100%;
-            height: 100%;
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 8px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: bold;
+    }
 
-            overflow: hidden;
+    button:hover:not(:disabled) {
+        filter: brightness(1.08);
+    }
 
-            background: transparent;
+    #btnCamera {
+        background: #9147ff;
+        color: white;
+    }
 
-            font-family: Arial, sans-serif;
+    #btnPause {
+        background: #f59e0b;
+        color: white;
+    }
 
-        }
+    #btnStop {
+        background: #dc2626;
+        color: white;
+    }
 
+    #btnReset {
+        background: #374151;
+        color: white;
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #cameraStatus {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        background: #27272a;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    #detectorStatus {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    /*
+    ========================================================
+    SELECTOR DE CÁMARA
+    ========================================================
+    */
+
+    #cameraSelectorContainer {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: #202024;
+        border: 1px solid #3f3f46;
+    }
+
+    #cameraSelectorContainer label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: #d4d4d8;
+    }
+
+    #cameraSelect {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 9px 10px;
+        border: 1px solid #52525b;
+        border-radius: 8px;
+        background: #111113;
+        color: white;
+        outline: none;
+    }
+
+    #cameraSelect:focus {
+        border-color: #9147ff;
+    }
+
+    #btnRefreshCameras {
+        background: #52525b;
+        color: white;
+        margin-top: 8px;
+        font-size: 13px;
+        padding: 9px;
+    }
+
+    .camera-help {
+        margin-top: 8px;
+        color: #a1a1aa;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    /*
+    ========================================================
+    CÁMARA
+    ========================================================
+    */
+
+    #cameraContainer {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        display: none;
+        z-index: 1;
+        background: black;
+    }
+
+    #video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
 
         /*
-        ========================================================
-        PANEL DE CONTROLES
-        ========================================================
+        IMPORTANTE:
+        Antes estaba en 0.001 y la cámara prácticamente
+        era invisible.
         */
 
-        #controlPanel {
-
-            position: fixed;
-
-            left: 20px;
-            bottom: 20px;
-
-            width: 320px;
-
-            padding: 18px;
-
-            background: rgba(15, 15, 20, 0.95);
-
-            border-radius: 16px;
-
-            color: white;
-
-            z-index: 1000;
-
-            box-sizing: border-box;
-
-        }
-
-
-        #controlPanel h2 {
-
-            margin-top: 0;
-            margin-bottom: 15px;
-
-            font-size: 20px;
-
-        }
-
-
-        button {
-
-            width: 100%;
-
-            padding: 12px;
-
-            margin-top: 8px;
-
-            border: none;
-
-            border-radius: 10px;
-
-            cursor: pointer;
-
-            font-size: 15px;
-
-            font-weight: bold;
-
-        }
-
-
-        #btnCamera {
-
-            background: #9147ff;
-
-            color: white;
-
-        }
-
-
-        #btnPause {
-
-            background: #f59e0b;
-
-            color: white;
-
-        }
-
-
-        #btnStop {
-
-            background: #dc2626;
-
-            color: white;
-
-        }
-
-
-        #btnReset {
-
-            background: #374151;
-
-            color: white;
-
-        }
-
-
-        button:disabled {
-
-            opacity: 0.5;
-
-            cursor: not-allowed;
-
-        }
-
-
-        #cameraStatus {
-
-            margin-top: 15px;
-
-            padding: 10px;
-
-            border-radius: 8px;
-
-            background: #27272a;
-
-            font-size: 14px;
-
-        }
-
-
-        #detectorStatus {
-
-            margin-top: 8px;
-
-            font-size: 14px;
-
-        }
-
-
-        /*
-        ========================================================
-        CÁMARA
-        ========================================================
-        */
-
-        #cameraContainer {
-
-            position: fixed;
-
-            left: 0;
-            top: 0;
-
-            width: 100%;
-            height: 100%;
-
-            pointer-events: none;
-
-            display: none;
-
-        }
-
-
-        #video {
-
-            width: 100%;
-            height: 100%;
-
-            object-fit: cover;
-
-            transform: scaleX(-1);
-
-            /*
-            Cámara invisible para OBS.
-            */
-
-            opacity: 0.001;
-
-        }
-
-
-        #canvas {
-
-            position: absolute;
-
-            left: 0;
-            top: 0;
-
-            width: 100%;
-            height: 100%;
-
-            opacity: 0;
-
-        }
-
-
-        /*
-        ========================================================
-        MODO TRANSPARENTE
-        ========================================================
-        */
-
-        /*
-        Cuando la página se utilice como fuente de OBS,
-        podemos ocultar completamente el panel.
-        */
-
-        body.obs-mode #controlPanel {
-
-            display: none;
-
-        }
-
-    </style>
+        opacity: 1;
+    }
+
+    #canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+    }
+
+    /*
+    ========================================================
+    OBS
+    ========================================================
+    */
+
+    #btnObsSettings {
+        background: #4b5563;
+        color: white;
+    }
+
+    #btnObsSettings.back-mode {
+        background: #374151;
+    }
+
+    #obsStatus {
+        margin-top: 10px;
+        padding: 9px 10px;
+        border-radius: 8px;
+        background: #18181b;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    #obsSettings {
+        display: none;
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: #202024;
+        border: 1px solid #3f3f46;
+    }
+
+    #obsSettings.open {
+        display: block;
+    }
+
+    #obsSettings h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+    }
+
+    #obsSettings label {
+        display: block;
+        margin-top: 9px;
+        margin-bottom: 4px;
+        font-size: 12px;
+        color: #d4d4d8;
+    }
+
+    #obsSettings input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 9px 10px;
+        border: 1px solid #52525b;
+        border-radius: 8px;
+        background: #111113;
+        color: white;
+        outline: none;
+    }
+
+    #obsSettings input:focus {
+        border-color: #9147ff;
+    }
+
+    #obsSettingsActions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    #obsSettingsActions button {
+        margin-top: 0;
+        flex: 1;
+        padding: 10px;
+    }
+
+    #btnObsConnect {
+        background: #9147ff;
+        color: white;
+    }
+
+    #btnObsDisconnect {
+        background: #52525b;
+        color: white;
+    }
+
+    .obs-help {
+        margin-top: 8px;
+        color: #a1a1aa;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    /*
+    ========================================================
+    MODO OBS
+    ========================================================
+    */
+
+    body.obs-mode #controlPanel {
+        display: none;
+    }
+
+    body.obs-mode #cameraContainer {
+        display: block;
+    }
+
+    body.obs-mode #video {
+        opacity: 1;
+    }
+</style>
+```
 
 </head>
 
-
 <body>
 
+```
+<!-- =====================================================
+     CÁMARA
+====================================================== -->
 
-    <!-- =====================================================
-         CÁMARA
-    ====================================================== -->
+<div id="cameraContainer">
 
-    <div id="cameraContainer">
+    <video
+        id="video"
+        autoplay
+        muted
+        playsinline>
+    </video>
 
-        <video
-            id="video"
-            autoplay
-            muted
-            playsinline>
-        </video>
+    <canvas id="canvas"></canvas>
 
-        <canvas id="canvas"></canvas>
+</div>
+
+
+<!-- =====================================================
+     CONTROLES
+====================================================== -->
+
+<div id="controlPanel">
+
+    <h2>
+        🏋️ Controles de sentadillas
+    </h2>
+
+    <button id="btnCamera">
+        🎥 ACTIVAR CÁMARA
+    </button>
+
+    <button
+        id="btnPause"
+        disabled>
+        ⏸ PAUSAR DETECTOR
+    </button>
+
+    <button
+        id="btnStop"
+        disabled>
+        ⏹ DESACTIVAR CÁMARA
+    </button>
+
+    <button id="btnReset">
+        🔄 REINICIAR CONTADOR
+    </button>
+
+
+    <div id="cameraSelectorContainer">
+
+        <label for="cameraSelect">
+            Cámara que utilizará el detector
+        </label>
+
+        <select id="cameraSelect">
+            <option value="">
+                Primero permite el acceso a la cámara
+            </option>
+        </select>
+
+        <button
+            id="btnRefreshCameras"
+            type="button">
+            🔄 ACTUALIZAR CÁMARAS
+        </button>
+
+        <div class="camera-help">
+            Si OBS está utilizando tu cámara física,
+            puedes seleccionar "OBS Virtual Camera"
+            para que el detector utilice esa señal.
+        </div>
 
     </div>
 
 
-    <!-- =====================================================
-         CONTROLES
-    ====================================================== -->
+    <div id="cameraStatus">
+        🔴 Cámara desconectada
+    </div>
 
-    <div id="controlPanel">
+    <div id="detectorStatus">
+        Detector: detenido
+    </div>
 
-        <h2>
-            🏋️ Controles de sentadillas
-        </h2>
-
-
-        <button id="btnCamera">
-
-            🎥 CONECTAR CÁMARA
-
-        </button>
+    <div id="obsStatus">
+        🟡 OBS: no conectado
+    </div>
 
 
-        <button
-            id="btnPause"
-            disabled>
-
-            ⏸ PAUSAR DETECTOR
-
-        </button>
+    <button
+        id="btnObsSettings"
+        type="button">
+        ⚙️ CONFIGURAR OBS
+    </button>
 
 
-        <button
-            id="btnStop"
-            disabled>
+    <div id="obsSettings">
 
-            ⏹ DESACTIVAR CÁMARA
+        <h3>
+            Configuración de OBS
+        </h3>
 
-        </button>
+        <label for="obsHost">
+            Host
+        </label>
+
+        <input
+            id="obsHost"
+            type="text"
+            value="127.0.0.1"
+            autocomplete="off">
 
 
-        <button id="btnReset">
+        <label for="obsPort">
+            Puerto
+        </label>
 
-            🔄 REINICIAR CONTADOR
+        <input
+            id="obsPort"
+            type="number"
+            value="4455"
+            min="1"
+            max="65535"
+            inputmode="numeric">
 
-        </button>
+
+        <label for="obsPassword">
+            Contraseña de WebSocket
+        </label>
+
+        <input
+            id="obsPassword"
+            type="password"
+            autocomplete="off"
+            placeholder="Contraseña de OBS">
 
 
-        <div id="cameraStatus">
+        <label for="obsScene">
+            Escena donde está la cámara
+        </label>
 
-            🔴 Cámara desconectada
+        <input
+            id="obsScene"
+            type="text"
+            placeholder="Ej.: Principal"
+            autocomplete="off">
+
+
+        <label for="obsSource">
+            Nombre exacto de la fuente de cámara
+        </label>
+
+        <input
+            id="obsSource"
+            type="text"
+            placeholder="Ej.: Cámara"
+            autocomplete="off">
+
+
+        <div id="obsSettingsActions">
+
+            <button
+                id="btnObsConnect"
+                type="button">
+                🔌 CONECTAR OBS
+            </button>
+
+            <button
+                id="btnObsDisconnect"
+                type="button">
+                ⛔ DESCONECTAR
+            </button>
 
         </div>
 
 
-        <div id="detectorStatus">
-
-            Detector: detenido
-
+        <div class="obs-help">
+            La configuración se guarda en este navegador.
+            La contraseña se guarda localmente y no se envía
+            a nuestro servidor; solo se usa para autenticarse
+            con OBS.
         </div>
 
     </div>
 
-
-    <!-- =====================================================
-         MEDIAPIPE
-    ====================================================== -->
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+</div>
 
 
-    <script>
+<!-- =====================================================
+     OBS WEBSOCKET
+====================================================== -->
 
-        /*
-        ========================================================
-        ELEMENTOS
-        ========================================================
-        */
+<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.8/dist/obs-ws.global.js"></script>
 
-        const video =
-            document.getElementById("video");
 
-        const canvas =
-            document.getElementById("canvas");
+<!-- =====================================================
+     MEDIAPIPE
+====================================================== -->
 
-        const ctx =
-            canvas.getContext("2d");
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
-        const cameraContainer =
-            document.getElementById(
-                "cameraContainer"
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+
+
+<script>
+
+    /*
+    ========================================================
+    ELEMENTOS
+    ========================================================
+    */
+
+    const video =
+        document.getElementById("video");
+
+    const canvas =
+        document.getElementById("canvas");
+
+    const ctx =
+        canvas.getContext("2d");
+
+    const cameraContainer =
+        document.getElementById("cameraContainer");
+
+    const btnCamera =
+        document.getElementById("btnCamera");
+
+    const btnPause =
+        document.getElementById("btnPause");
+
+    const btnStop =
+        document.getElementById("btnStop");
+
+    const btnReset =
+        document.getElementById("btnReset");
+
+    const cameraStatus =
+        document.getElementById("cameraStatus");
+
+    const detectorStatus =
+        document.getElementById("detectorStatus");
+
+    const cameraSelect =
+        document.getElementById("cameraSelect");
+
+    const btnRefreshCameras =
+        document.getElementById("btnRefreshCameras");
+
+    const obsStatus =
+        document.getElementById("obsStatus");
+
+    const btnObsSettings =
+        document.getElementById("btnObsSettings");
+
+    const obsSettings =
+        document.getElementById("obsSettings");
+
+    const obsHost =
+        document.getElementById("obsHost");
+
+    const obsPort =
+        document.getElementById("obsPort");
+
+    const obsPassword =
+        document.getElementById("obsPassword");
+
+    const obsScene =
+        document.getElementById("obsScene");
+
+    const obsSource =
+        document.getElementById("obsSource");
+
+    const btnObsConnect =
+        document.getElementById("btnObsConnect");
+
+    const btnObsDisconnect =
+        document.getElementById("btnObsDisconnect");
+
+
+    /*
+    ========================================================
+    VARIABLES
+    ========================================================
+    */
+
+    let stream = null;
+
+    let detectorPaused = false;
+
+    let pose = null;
+
+    let cameraLoopRunning = false;
+
+
+    /*
+    ========================================================
+    DETECTOR
+    ========================================================
+    */
+
+    const CALIBRATION_FRAMES = 25;
+
+    const DOWN_THRESHOLD = 0.045;
+
+    const BOTTOM_THRESHOLD = 0.075;
+
+    const MIN_TIME_BETWEEN_SQUATS = 700;
+
+
+    let state = "CALIBRATING";
+
+    let calibrationFrames = 0;
+
+    let baselineHip = null;
+
+    let smoothedHip = null;
+
+    let lastSquatTime = 0;
+
+    let previousHip = null;
+
+
+    /*
+    ========================================================
+    OBS WEBSOCKET
+    ========================================================
+    */
+
+    let obs = null;
+
+    let obsConnected = false;
+
+    let obsSceneItemId = null;
+
+
+    function setObsStatus(message) {
+
+        obsStatus.textContent = message;
+
+    }
+
+
+    function getObsConfig() {
+
+        const host =
+            obsHost.value.trim() ||
+            "127.0.0.1";
+
+        const port =
+            Number(obsPort.value) ||
+            4455;
+
+        const password =
+            obsPassword.value;
+
+        const sceneName =
+            obsScene.value.trim();
+
+        const sourceName =
+            obsSource.value.trim();
+
+
+        if (!sceneName || !sourceName) {
+
+            throw new Error(
+                "Indica la escena y el nombre exacto de la fuente de cámara."
             );
 
-        const btnCamera =
-            document.getElementById(
-                "btnCamera"
+        }
+
+
+        if (
+            !Number.isInteger(port) ||
+            port < 1 ||
+            port > 65535
+        ) {
+
+            throw new Error(
+                "El puerto de OBS no es válido."
             );
 
-        const btnPause =
-            document.getElementById(
-                "btnPause"
+        }
+
+
+        return {
+            host,
+            port,
+            password,
+            sceneName,
+            sourceName
+        };
+
+    }
+
+
+    function saveObsConfig() {
+
+        localStorage.setItem(
+            "squatObsConfig",
+            JSON.stringify({
+
+                host:
+                    obsHost.value.trim() ||
+                    "127.0.0.1",
+
+                port:
+                    Number(obsPort.value) ||
+                    4455,
+
+                password:
+                    obsPassword.value,
+
+                sceneName:
+                    obsScene.value.trim(),
+
+                sourceName:
+                    obsSource.value.trim()
+
+            })
+        );
+
+    }
+
+
+    function loadObsConfig() {
+
+        try {
+
+            const saved =
+                JSON.parse(
+                    localStorage.getItem(
+                        "squatObsConfig"
+                    ) || "null"
+                );
+
+
+            if (!saved)
+                return;
+
+
+            obsHost.value =
+                saved.host ||
+                "127.0.0.1";
+
+            obsPort.value =
+                saved.port ||
+                4455;
+
+            obsPassword.value =
+                saved.password ||
+                "";
+
+            obsScene.value =
+                saved.sceneName ||
+                "";
+
+            obsSource.value =
+                saved.sourceName ||
+                "";
+
+        } catch (error) {
+
+            console.warn(
+                "No se pudo cargar la configuración de OBS:",
+                error
             );
 
-        const btnStop =
-            document.getElementById(
-                "btnStop"
+        }
+
+    }
+
+
+    async function refreshOBSSceneState() {
+
+        if (
+            !obsConnected ||
+            !obs ||
+            obsSceneItemId === null
+        ) {
+
+            return null;
+
+        }
+
+
+        const config =
+            getObsConfig();
+
+
+        const result =
+            await obs.call(
+                "GetSceneItemEnabled",
+                {
+
+                    sceneName:
+                        config.sceneName,
+
+                    sceneItemId:
+                        obsSceneItemId
+
+                }
             );
 
-        const btnReset =
-            document.getElementById(
-                "btnReset"
+
+        return Boolean(
+            result.sceneItemEnabled
+        );
+
+    }
+
+
+    async function updateOBSStatusWithSourceState() {
+
+        const config =
+            getObsConfig();
+
+
+        const enabled =
+            await refreshOBSSceneState();
+
+
+        setObsStatus(
+
+            `🟢 OBS conectado · Escena: ${config.sceneName} · Fuente: ${config.sourceName} · Estado: ${enabled ? "visible" : "oculta"}`
+
+        );
+
+    }
+
+
+    async function connectOBS(showAlert = true) {
+
+        try {
+
+            const config =
+                getObsConfig();
+
+
+            saveObsConfig();
+
+
+            if (obs) {
+
+                try {
+
+                    await obs.disconnect();
+
+                } catch (_) {}
+
+            }
+
+
+            if (
+                typeof OBSWebSocket ===
+                "undefined"
+            ) {
+
+                throw new Error(
+                    "No se pudo cargar la librería de OBS WebSocket."
+                );
+
+            }
+
+
+            obs =
+                new OBSWebSocket();
+
+
+            setObsStatus(
+                "🟡 Conectando con OBS..."
             );
 
-        const cameraStatus =
-            document.getElementById(
-                "cameraStatus"
+
+            await obs.connect(
+
+                `ws://${config.host}:${config.port}`,
+
+                config.password ||
+                undefined
+
             );
 
-        const detectorStatus =
-            document.getElementById(
-                "detectorStatus"
-            );
+
+            obsConnected = true;
+
+            obsSceneItemId = null;
 
 
-        /*
-        ========================================================
-        VARIABLES
-        ========================================================
-        */
-
-        let stream = null;
-
-        let detectorPaused = false;
-
-        let pose = null;
-
-        let cameraLoopRunning = false;
+            const sceneItems =
+                await obs.call(
+                    "GetSceneItemList",
+                    {
+                        sceneName:
+                            config.sceneName
+                    }
+                );
 
 
-        /*
-        ========================================================
-        DETECTOR
-        ========================================================
-        */
+            const item =
+                (
+                    sceneItems.sceneItems ||
+                    []
+                ).find(
 
-        const CALIBRATION_FRAMES = 25;
+                    sceneItem =>
+                        sceneItem.sourceName ===
+                        config.sourceName
 
-        const DOWN_THRESHOLD = 0.045;
-
-        const BOTTOM_THRESHOLD = 0.075;
-
-        const MIN_TIME_BETWEEN_SQUATS = 700;
+                );
 
 
-        let state = "CALIBRATING";
+            if (!item) {
 
-        let calibrationFrames = 0;
+                throw new Error(
 
-        let baselineHip = null;
+                    `No encontré la fuente "${config.sourceName}" dentro de la escena "${config.sceneName}".`
 
-        let smoothedHip = null;
+                );
 
-        let lastSquatTime = 0;
-
-        let previousHip = null;
+            }
 
 
-        /*
-        ========================================================
-        WEBSOCKET
-        ========================================================
-        */
-
-        let socket = null;
+            obsSceneItemId =
+                item.sceneItemId;
 
 
-        function connectWebSocket() {
-
-            try {
-
-                const protocol =
-                    location.protocol === "https:"
-                        ? "wss:"
-                        : "ws:";
+            await updateOBSStatusWithSourceState();
 
 
-                socket =
-                    new WebSocket(
-                        `${protocol}//${location.host}/ws`
+            btnObsConnect.textContent =
+                "🟢 OBS CONECTADO";
+
+            btnObsConnect.disabled =
+                true;
+
+
+            obs.once(
+                "ConnectionClosed",
+                () => {
+
+                    obsConnected =
+                        false;
+
+                    obsSceneItemId =
+                        null;
+
+                    setObsStatus(
+                        "🔴 OBS: conexión cerrada"
                     );
 
+                    btnObsConnect.textContent =
+                        "🔌 CONECTAR OBS";
 
-                socket.onopen = () => {
+                    btnObsConnect.disabled =
+                        false;
 
-                    console.log(
-                        "🟢 WebSocket conectado"
-                    );
-
-                };
-
-
-                socket.onclose = () => {
-
-                    console.log(
-                        "🔴 WebSocket desconectado"
-                    );
-
-                    setTimeout(
-                        connectWebSocket,
-                        2000
-                    );
-
-                };
+                }
+            );
 
 
-                socket.onerror = error => {
+            console.log(
+                "OBS conectado correctamente",
+                {
+                    sceneName:
+                        config.sceneName,
 
-                    console.error(
-                        "WebSocket:",
+                    sourceName:
+                        config.sourceName,
+
+                    sceneItemId:
+                        obsSceneItemId
+                }
+            );
+
+
+            return true;
+
+
+        } catch (error) {
+
+            obsConnected =
+                false;
+
+            obsSceneItemId =
+                null;
+
+            setObsStatus(
+                "🔴 OBS: no conectado"
+            );
+
+            btnObsConnect.textContent =
+                "🔌 CONECTAR OBS";
+
+            btnObsConnect.disabled =
+                false;
+
+
+            console.error(
+                "Error conectando con OBS:",
+                error
+            );
+
+
+            if (showAlert) {
+
+                alert(
+
+                    "No se pudo conectar con OBS.\n\n" +
+
+                    (
+                        error?.message ||
                         error
-                    );
+                    ) +
 
-                };
+                    "\n\nRevisa que WebSocket esté habilitado en OBS, que el puerto sea correcto y que la contraseña coincida."
 
-            } catch (error) {
-
-                console.error(
-                    "Error WebSocket:",
-                    error
                 );
 
             }
 
+
+            return false;
+
         }
 
-
-        /*
-        ========================================================
-        REGISTRAR SENTADILLA
-        ========================================================
-        */
-
-        async function registerSquat() {
-
-            try {
-
-                const response =
-                    await fetch(
-                        "/api/squats/change",
-                        {
-
-                            method: "POST",
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json"
-
-                            },
-
-                            body:
-                                JSON.stringify({
-
-                                    amount: -1
-
-                                })
-
-                        }
-                    );
+    }
 
 
-                const data =
-                    await response.json();
+    async function disconnectOBS() {
 
+        try {
 
-                console.log(
-                    "Sentadilla registrada:",
-                    data
-                );
+            if (obs) {
 
-
-            } catch (error) {
-
-                console.error(
-                    "Error registrando sentadilla:",
-                    error
-                );
+                await obs.disconnect();
 
             }
 
+        } catch (error) {
+
+            console.warn(
+                "Error desconectando OBS:",
+                error
+            );
+
+        } finally {
+
+            obsConnected =
+                false;
+
+            obsSceneItemId =
+                null;
+
+            setObsStatus(
+                "🟡 OBS: desconectado"
+            );
+
+            btnObsConnect.textContent =
+                "🔌 CONECTAR OBS";
+
+            btnObsConnect.disabled =
+                false;
+
+        }
+
+    }
+
+
+    async function setOBSSceneCamera(enabled) {
+
+        if (
+            !obsConnected ||
+            !obs ||
+            obsSceneItemId === null
+        ) {
+
+            return false;
+
         }
 
 
-        /*
-        ========================================================
-        REINICIAR
-        ========================================================
-        */
+        const config =
+            getObsConfig();
 
-        async function resetCounter() {
 
-            try {
+        await obs.call(
+            "SetSceneItemEnabled",
+            {
 
+                sceneName:
+                    config.sceneName,
+
+                sceneItemId:
+                    obsSceneItemId,
+
+                sceneItemEnabled:
+                    enabled
+
+            }
+        );
+
+
+        const verifiedState =
+            await refreshOBSSceneState();
+
+
+        setObsStatus(
+
+            `🟢 OBS conectado · Escena: ${config.sceneName} · Fuente: ${config.sourceName} · Estado: ${verifiedState ? "visible" : "oculta"}`
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /*
+    ========================================================
+    REGISTRAR SENTADILLA
+    ========================================================
+    */
+
+    async function registerSquat() {
+
+        try {
+
+            const response =
                 await fetch(
-                    "/api/squats/reset",
+                    "/api/squats/change",
                     {
 
-                        method: "POST",
+                        method:
+                            "POST",
 
-                        headers: {
+                        headers:
+                            {
+                                "Content-Type":
+                                    "application/json"
+                            },
 
-                            "Content-Type":
-                                "application/json"
-
-                        }
+                        body:
+                            JSON.stringify({
+                                amount: -1
+                            })
 
                     }
                 );
 
-            } catch (error) {
 
-                console.error(
-                    "Error reiniciando:",
-                    error
-                );
+            const data =
+                await response.json();
 
-            }
+
+            console.log(
+                "Sentadilla registrada:",
+                data
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Error registrando sentadilla:",
+                error
+            );
 
         }
 
+    }
 
-        /*
-        ========================================================
-        MEDIAPIPE
-        ========================================================
-        */
 
-        function initializePose() {
+    /*
+    ========================================================
+    REINICIAR
+    ========================================================
+    */
 
-            pose =
-                new Pose({
+    async function resetCounter() {
 
-                    locateFile:
-                        file => {
+        try {
 
-                            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+            await fetch(
+                "/api/squats/reset",
+                {
 
+                    method:
+                        "POST",
+
+                    headers:
+                        {
+                            "Content-Type":
+                                "application/json"
                         }
 
-                });
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Error reiniciando:",
+                error
+            );
+
+        }
+
+    }
 
 
-            pose.setOptions({
+    /*
+    ========================================================
+    MEDIAPIPE
+    ========================================================
+    */
 
-                modelComplexity: 1,
+    function initializePose() {
 
-                smoothLandmarks: true,
+        pose =
+            new Pose({
 
-                enableSegmentation: false,
+                locateFile:
+                    file => {
 
-                smoothSegmentation: false,
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
 
-                minDetectionConfidence: 0.55,
-
-                minTrackingConfidence: 0.55
+                    }
 
             });
 
 
-            pose.onResults(
-                processPoseResults
+        pose.setOptions({
+
+            modelComplexity:
+                1,
+
+            smoothLandmarks:
+                true,
+
+            enableSegmentation:
+                false,
+
+            smoothSegmentation:
+                false,
+
+            minDetectionConfidence:
+                0.55,
+
+            minTrackingConfidence:
+                0.55
+
+        });
+
+
+        pose.onResults(
+            processPoseResults
+        );
+
+    }
+
+
+    /*
+    ========================================================
+    PROCESAR CUERPO
+    ========================================================
+    */
+
+    function processPoseResults(results) {
+
+        if (detectorPaused) {
+
+            return;
+
+        }
+
+
+        if (!results.poseLandmarks) {
+
+            detectorStatus.textContent =
+                "Detector: cuerpo no encontrado";
+
+            return;
+
+        }
+
+
+        const landmarks =
+            results.poseLandmarks;
+
+
+        const leftShoulder =
+            landmarks[11];
+
+        const rightShoulder =
+            landmarks[12];
+
+        const leftHip =
+            landmarks[23];
+
+        const rightHip =
+            landmarks[24];
+
+
+        if (
+            !leftShoulder ||
+            !rightShoulder ||
+            !leftHip ||
+            !rightHip
+        ) {
+
+            return;
+
+        }
+
+
+        const shoulderX =
+            (
+                leftShoulder.x +
+                rightShoulder.x
+            ) / 2;
+
+
+        const shoulderY =
+            (
+                leftShoulder.y +
+                rightShoulder.y
+            ) / 2;
+
+
+        const hipX =
+            (
+                leftHip.x +
+                rightHip.x
+            ) / 2;
+
+
+        const hipY =
+            (
+                leftHip.y +
+                rightHip.y
+            ) / 2;
+
+
+        const torsoSize =
+            Math.abs(
+                hipY -
+                shoulderY
+            );
+
+
+        if (torsoSize < 0.05) {
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        CALIBRACIÓN
+        ====================================================
+        */
+
+        if (
+            calibrationFrames <
+            CALIBRATION_FRAMES
+        ) {
+
+            calibrationFrames++;
+
+
+            if (
+                baselineHip === null
+            ) {
+
+                baselineHip =
+                    hipY;
+
+            } else {
+
+                baselineHip =
+                    baselineHip * 0.9 +
+                    hipY * 0.1;
+
+            }
+
+
+            detectorStatus.textContent =
+                `Detector: calibrando ${calibrationFrames}/${CALIBRATION_FRAMES}`;
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        DELTA NORMALIZADO
+        ====================================================
+        */
+
+        const rawDelta =
+            (
+                hipY -
+                baselineHip
+            ) /
+            torsoSize;
+
+
+        if (
+            smoothedHip === null
+        ) {
+
+            smoothedHip =
+                rawDelta;
+
+        } else {
+
+            smoothedHip =
+                smoothedHip * 0.70 +
+                rawDelta * 0.30;
+
+        }
+
+
+        const currentHip =
+            smoothedHip;
+
+
+        let velocity = 0;
+
+
+        if (
+            previousHip !== null
+        ) {
+
+            velocity =
+                currentHip -
+                previousHip;
+
+        }
+
+
+        previousHip =
+            currentHip;
+
+
+        /*
+        ====================================================
+        MÁQUINA DE ESTADOS
+        ====================================================
+        */
+
+        switch (state) {
+
+            case "CALIBRATING":
+
+                state =
+                    "STANDING";
+
+                break;
+
+
+            case "STANDING":
+
+                detectorStatus.textContent =
+                    "Detector: 🟢 de pie";
+
+
+                if (
+                    currentHip >
+                    DOWN_THRESHOLD
+                ) {
+
+                    state =
+                        "DESCENDING";
+
+                }
+
+                break;
+
+
+            case "DESCENDING":
+
+                detectorStatus.textContent =
+                    "Detector: ⬇️ bajando";
+
+
+                if (
+                    currentHip >
+                    BOTTOM_THRESHOLD
+                ) {
+
+                    state =
+                        "BOTTOM";
+
+                } else if (
+                    currentHip <
+                    DOWN_THRESHOLD * 0.5
+                ) {
+
+                    state =
+                        "STANDING";
+
+                }
+
+                break;
+
+
+            case "BOTTOM":
+
+                detectorStatus.textContent =
+                    "Detector: 🔽 abajo";
+
+
+                if (
+                    currentHip <
+                    BOTTOM_THRESHOLD
+                ) {
+
+                    state =
+                        "ASCENDING";
+
+                }
+
+                break;
+
+
+            case "ASCENDING":
+
+                detectorStatus.textContent =
+                    "Detector: ⬆️ subiendo";
+
+
+                if (
+                    currentHip <
+                    DOWN_THRESHOLD * 0.5
+                ) {
+
+                    const now =
+                        Date.now();
+
+
+                    if (
+                        now -
+                        lastSquatTime >=
+                        MIN_TIME_BETWEEN_SQUATS
+                    ) {
+
+                        lastSquatTime =
+                            now;
+
+
+                        registerSquat();
+
+
+                        console.log(
+                            "🏋️ SENTADILLA DETECTADA"
+                        );
+
+                    }
+
+
+                    state =
+                        "STANDING";
+
+                }
+
+                break;
+
+        }
+
+    }
+
+
+    /*
+    ========================================================
+    PROCESAR CÁMARA
+    ========================================================
+    */
+
+    async function processCamera() {
+
+        if (
+            cameraLoopRunning
+        ) {
+
+            return;
+
+        }
+
+
+        cameraLoopRunning =
+            true;
+
+
+        async function loop() {
+
+            if (!stream) {
+
+                cameraLoopRunning =
+                    false;
+
+                return;
+
+            }
+
+
+            if (
+                !detectorPaused &&
+                video.readyState >= 2
+            ) {
+
+                try {
+
+                    await pose.send({
+                        image: video
+                    });
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Pose:",
+                        error
+                    );
+
+                }
+
+            }
+
+
+            requestAnimationFrame(
+                loop
             );
 
         }
 
 
-        /*
-        ========================================================
-        PROCESAR CUERPO
-        ========================================================
-        */
+        loop();
 
-        function processPoseResults(results) {
-
-            if (
-                detectorPaused
-            ) {
-
-                return;
-
-            }
+    }
 
 
-            if (
-                !results.poseLandmarks
-            ) {
+    /*
+    ========================================================
+    ERROR DE CÁMARA
+    ========================================================
+    */
 
-                detectorStatus.textContent =
-                    "Detector: cuerpo no encontrado";
+    function getCameraErrorMessage(error) {
 
-                return;
-
-            }
-
-
-            const landmarks =
-                results.poseLandmarks;
+        const name =
+            error?.name ||
+            "UnknownError";
 
 
-            const leftShoulder =
-                landmarks[11];
+        switch (name) {
 
-            const rightShoulder =
-                landmarks[12];
+            case "NotAllowedError":
 
-            const leftHip =
-                landmarks[23];
+            case "PermissionDeniedError":
 
-            const rightHip =
-                landmarks[24];
+                return "Permiso de cámara denegado. Pulsa el icono de cámara/permisos de la barra del navegador y permite la cámara para esta página. Después recarga la página.";
 
+            case "NotFoundError":
 
-            if (
-                !leftShoulder ||
-                !rightShoulder ||
-                !leftHip ||
-                !rightHip
-            ) {
+            case "DevicesNotFoundError":
 
-                return;
+                return "No se encontró ninguna cámara disponible en este equipo.";
 
-            }
+            case "NotReadableError":
 
+            case "TrackStartError":
 
-            const shoulderX =
-                (
-                    leftShoulder.x +
-                    rightShoulder.x
-                ) / 2;
+                return "La cámara existe, pero no se pudo iniciar. Probablemente está siendo utilizada por OBS, Zoom, Teams, otra pestaña o algún programa de Windows.";
 
+            case "OverconstrainedError":
 
-            const shoulderY =
-                (
-                    leftShoulder.y +
-                    rightShoulder.y
-                ) / 2;
+                return "La cámara no admite la configuración solicitada. Se intentará con una configuración básica.";
 
+            case "SecurityError":
 
-            const hipX =
-                (
-                    leftHip.x +
-                    rightHip.x
-                ) / 2;
+                return "El navegador bloqueó el acceso a la cámara por motivos de seguridad.";
 
+            case "AbortError":
 
-            const hipY =
-                (
-                    leftHip.y +
-                    rightHip.y
-                ) / 2;
+                return "El acceso a la cámara fue interrumpido antes de terminar de iniciarse.";
 
+            case "TypeError":
 
-            const torsoSize =
-                Math.abs(
-                    hipY -
-                    shoulderY
+                return "El navegador no tiene disponible el acceso a la cámara. Utiliza HTTPS o localhost.";
+
+            default:
+
+                return (
+                    error?.message ||
+                    "Error desconocido al acceder a la cámara."
                 );
-
-
-            if (
-                torsoSize < 0.05
-            ) {
-
-                return;
-
-            }
-
-
-            /*
-            ====================================================
-            CALIBRACIÓN
-            ====================================================
-            */
-
-            if (
-                calibrationFrames <
-                CALIBRATION_FRAMES
-            ) {
-
-                calibrationFrames++;
-
-                if (
-                    baselineHip === null
-                ) {
-
-                    baselineHip =
-                        hipY;
-
-                } else {
-
-                    baselineHip =
-                        baselineHip * 0.9 +
-                        hipY * 0.1;
-
-                }
-
-
-                detectorStatus.textContent =
-                    `Detector: calibrando ${calibrationFrames}/${CALIBRATION_FRAMES}`;
-
-                return;
-
-            }
-
-
-            /*
-            ====================================================
-            DELTA NORMALIZADO
-            ====================================================
-            */
-
-            const rawDelta =
-                (
-                    hipY -
-                    baselineHip
-                ) /
-                torsoSize;
-
-
-            if (
-                smoothedHip === null
-            ) {
-
-                smoothedHip =
-                    rawDelta;
-
-            } else {
-
-                smoothedHip =
-                    smoothedHip * 0.70 +
-                    rawDelta * 0.30;
-
-            }
-
-
-            const currentHip =
-                smoothedHip;
-
-
-            let velocity = 0;
-
-
-            if (
-                previousHip !== null
-            ) {
-
-                velocity =
-                    currentHip -
-                    previousHip;
-
-            }
-
-
-            previousHip =
-                currentHip;
-
-
-            /*
-            ====================================================
-            MÁQUINA DE ESTADOS
-            ====================================================
-            */
-
-            switch (state) {
-
-
-                case "CALIBRATING":
-
-                    state =
-                        "STANDING";
-
-                    break;
-
-
-                case "STANDING":
-
-                    detectorStatus.textContent =
-                        "Detector: 🟢 de pie";
-
-
-                    if (
-                        currentHip >
-                        DOWN_THRESHOLD
-                    ) {
-
-                        state =
-                            "DESCENDING";
-
-                    }
-
-                    break;
-
-
-                case "DESCENDING":
-
-                    detectorStatus.textContent =
-                        "Detector: ⬇️ bajando";
-
-
-                    if (
-                        currentHip >
-                        BOTTOM_THRESHOLD
-                    ) {
-
-                        state =
-                            "BOTTOM";
-
-                    }
-
-                    else if (
-                        currentHip <
-                        DOWN_THRESHOLD * 0.5
-                    ) {
-
-                        state =
-                            "STANDING";
-
-                    }
-
-                    break;
-
-
-                case "BOTTOM":
-
-                    detectorStatus.textContent =
-                        "Detector: 🔽 abajo";
-
-
-                    if (
-                        currentHip <
-                        BOTTOM_THRESHOLD
-                    ) {
-
-                        state =
-                            "ASCENDING";
-
-                    }
-
-                    break;
-
-
-                case "ASCENDING":
-
-                    detectorStatus.textContent =
-                        "Detector: ⬆️ subiendo";
-
-
-                    if (
-                        currentHip <
-                        DOWN_THRESHOLD * 0.5
-                    ) {
-
-                        const now =
-                            Date.now();
-
-
-                        if (
-                            now -
-                            lastSquatTime >=
-                            MIN_TIME_BETWEEN_SQUATS
-                        ) {
-
-                            lastSquatTime =
-                                now;
-
-
-                            registerSquat();
-
-                            console.log(
-                                "🏋️ SENTADILLA DETECTADA"
-                            );
-
-                        }
-
-
-                        state =
-                            "STANDING";
-
-                    }
-
-                    break;
-
-            }
 
         }
 
+    }
 
-        /*
-        ========================================================
-        PROCESAR CÁMARA
-        ========================================================
-        */
 
-        async function processCamera() {
+    /*
+    ========================================================
+    OBTENER CÁMARAS
+    ========================================================
+    */
+
+    async function loadCameras() {
+
+        try {
 
             if (
-                cameraLoopRunning
+                !navigator.mediaDevices ||
+                !navigator.mediaDevices.enumerateDevices
             ) {
+
+                throw new Error(
+                    "Este navegador no permite listar las cámaras."
+                );
+
+            }
+
+
+            const devices =
+                await navigator.mediaDevices.enumerateDevices();
+
+
+            const cameras =
+                devices.filter(
+                    device =>
+                        device.kind ===
+                        "videoinput"
+                );
+
+
+            const previousValue =
+                cameraSelect.value;
+
+
+            cameraSelect.innerHTML =
+                "";
+
+
+            if (cameras.length === 0) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+                option.value = "";
+
+                option.textContent =
+                    "No se encontraron cámaras";
+
+                cameraSelect.appendChild(
+                    option
+                );
 
                 return;
 
             }
 
 
-            cameraLoopRunning =
-                true;
+            cameras.forEach(
+                (camera, index) => {
 
-
-            async function loop() {
-
-                if (
-                    !stream
-                ) {
-
-                    cameraLoopRunning =
-                        false;
-
-                    return;
-
-                }
-
-
-                if (
-                    !detectorPaused &&
-                    video.readyState >= 2
-                ) {
-
-                    try {
-
-                        await pose.send({
-
-                            image:
-                                video
-
-                        });
-
-                    } catch (error) {
-
-                        console.error(
-                            "Pose:",
-                            error
+                    const option =
+                        document.createElement(
+                            "option"
                         );
 
+
+                    option.value =
+                        camera.deviceId;
+
+
+                    let label =
+                        camera.label;
+
+
+                    if (!label) {
+
+                        label =
+                            `Cámara ${index + 1}`;
+
                     }
 
+
+                    option.textContent =
+                        label;
+
+
+                    cameraSelect.appendChild(
+                        option
+                    );
+
                 }
+            );
 
 
-                requestAnimationFrame(
-                    loop
-                );
+            if (
+                previousValue &&
+                cameras.some(
+                    camera =>
+                        camera.deviceId ===
+                        previousValue
+                )
+            ) {
+
+                cameraSelect.value =
+                    previousValue;
 
             }
 
 
-            loop();
+        } catch (error) {
+
+            console.error(
+                "Error listando cámaras:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /*
+    ========================================================
+    SOLICITAR CÁMARA
+    ========================================================
+    */
+
+    async function requestCameraStream() {
+
+        if (!window.isSecureContext) {
+
+            throw new Error(
+                "Esta página no está en un contexto seguro. Usa HTTPS o localhost para acceder a la cámara."
+            );
 
         }
 
 
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            throw new Error(
+                "Este navegador no permite acceder a la cámara mediante getUserMedia."
+            );
+
+        }
+
+
+        const selectedDevice =
+            cameraSelect.value;
+
+
         /*
-        ========================================================
-        CONECTAR CÁMARA
-        ========================================================
+        PRIMER INTENTO:
+        cámara seleccionada.
         */
 
-        async function connectCamera() {
+        if (selectedDevice) {
 
             try {
 
-                cameraStatus.textContent =
-                    "🟡 Solicitando acceso a la cámara...";
+                return await navigator.mediaDevices.getUserMedia({
 
+                    video: {
 
-                stream =
-                    await navigator
-                        .mediaDevices
-                        .getUserMedia({
+                        deviceId: {
+                            exact:
+                                selectedDevice
+                        },
 
-                            video: {
+                        width: {
+                            ideal: 1280
+                        },
 
-                                width: {
-                                    ideal: 1280
-                                },
+                        height: {
+                            ideal: 720
+                        }
 
-                                height: {
-                                    ideal: 720
-                                },
+                    },
 
-                                facingMode:
-                                    "user"
+                    audio: false
 
-                            },
-
-                            audio: false
-
-                        });
-
-
-                video.srcObject =
-                    stream;
-
-
-                await video.play();
-
-
-                cameraContainer.style.display =
-                    "block";
-
-
-                cameraStatus.textContent =
-                    "🟢 Cámara conectada";
-
-
-                detectorStatus.textContent =
-                    "Detector: calibrando...";
-
-
-                btnCamera.disabled =
-                    true;
-
-
-                btnPause.disabled =
-                    false;
-
-
-                btnStop.disabled =
-                    false;
-
-
-                /*
-                Reiniciar detector
-                */
-
-                state =
-                    "CALIBRATING";
-
-                calibrationFrames =
-                    0;
-
-                baselineHip =
-                    null;
-
-                smoothedHip =
-                    null;
-
-                previousHip =
-                    null;
-
-
-                processCamera();
-
+                });
 
             } catch (error) {
 
-                console.error(
-                    "❌ Error cámara:",
+                console.warn(
+                    "No se pudo abrir la cámara seleccionada:",
                     error
                 );
 
 
-                cameraStatus.textContent =
-                    "🔴 No se pudo conectar la cámara";
+                if (
+                    error.name !==
+                    "OverconstrainedError"
+                ) {
 
-                alert(
-                    "No se pudo acceder a la cámara.\n\n" +
-                    error.message
+                    throw error;
+
+                }
+
+            }
+
+        }
+
+
+        /*
+        SEGUNDO INTENTO:
+        cualquier cámara.
+        */
+
+        return await navigator.mediaDevices.getUserMedia({
+
+            video: {
+
+                width: {
+                    ideal: 1280
+                },
+
+                height: {
+                    ideal: 720
+                }
+
+            },
+
+            audio: false
+
+        });
+
+    }
+
+
+    /*
+    ========================================================
+    CONECTAR CÁMARA
+    ========================================================
+    */
+
+    async function connectCamera() {
+
+        let cameraStream =
+            null;
+
+        let obsWasEnabledByThisClick =
+            false;
+
+
+        try {
+
+            btnCamera.disabled =
+                true;
+
+
+            cameraStatus.textContent =
+                "🟡 Solicitando permiso para usar la cámara...";
+
+
+            /*
+            IMPORTANTE:
+
+            Primero solicitamos la cámara.
+
+            No conectamos OBS antes porque OBS no es
+            necesario para obtener el stream del navegador.
+            */
+
+            cameraStream =
+                await requestCameraStream();
+
+
+            stream =
+                cameraStream;
+
+
+            video.srcObject =
+                stream;
+
+
+            cameraContainer.style.display =
+                "block";
+
+
+            try {
+
+                await video.play();
+
+            } catch (playError) {
+
+                throw new Error(
+                    "La cámara fue detectada, pero el vídeo no pudo iniciarse: " +
+                    getCameraErrorMessage(
+                        playError
+                    )
                 );
 
             }
 
-        }
+
+            /*
+            Ahora que la cámara funciona,
+            actualizamos la lista para obtener
+            correctamente los nombres.
+            */
+
+            await loadCameras();
 
 
-        /*
-        ========================================================
-        PAUSAR
-        ========================================================
-        */
+            /*
+            Intentamos conectar OBS solamente
+            si todavía no está conectado.
+            */
 
-        function pauseDetector() {
+            if (!obsConnected) {
 
-            detectorPaused =
-                !detectorPaused;
-
-
-            if (
-                detectorPaused
-            ) {
-
-                btnPause.textContent =
-                    "▶️ REANUDAR DETECTOR";
-
-                detectorStatus.textContent =
-                    "Detector: ⏸ pausado";
-
-            } else {
-
-                btnPause.textContent =
-                    "⏸ PAUSAR DETECTOR";
-
-                detectorStatus.textContent =
-                    "Detector: 🟢 activo";
+                await connectOBS(false);
 
             }
 
-        }
+
+            /*
+            Si existe una fuente de cámara
+            configurada en OBS, la hacemos visible.
+            */
+
+            try {
+
+                obsWasEnabledByThisClick =
+                    await setOBSSceneCamera(
+                        true
+                    );
 
 
-        /*
-        ========================================================
-        DESACTIVAR
-        ========================================================
-        */
+            } catch (obsError) {
 
-        function stopCamera() {
+                console.error(
+                    "No se pudo activar la fuente en OBS:",
+                    obsError
+                );
 
-            if (
-                stream
-            ) {
 
-                stream
+                setObsStatus(
+                    "🟡 Cámara activa · OBS no pudo mostrar la fuente"
+                );
+
+            }
+
+
+            cameraStatus.textContent =
+                obsWasEnabledByThisClick
+                    ? "🟢 Cámara conectada · OBS visible"
+                    : "🟢 Cámara conectada";
+
+
+            detectorStatus.textContent =
+                "Detector: calibrando...";
+
+
+            btnPause.disabled =
+                false;
+
+            btnStop.disabled =
+                false;
+
+
+            /*
+            Reiniciar detector.
+            */
+
+            state =
+                "CALIBRATING";
+
+            calibrationFrames =
+                0;
+
+            baselineHip =
+                null;
+
+            smoothedHip =
+                null;
+
+            previousHip =
+                null;
+
+            lastSquatTime =
+                0;
+
+            detectorPaused =
+                false;
+
+
+            btnPause.textContent =
+                "⏸ PAUSAR DETECTOR";
+
+
+            processCamera();
+
+
+            console.log(
+                "Cámara iniciada correctamente.",
+                {
+                    deviceId:
+                        cameraSelect.value
+                }
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "❌ Error cámara:",
+                error
+            );
+
+
+            if (cameraStream) {
+
+                cameraStream
                     .getTracks()
                     .forEach(
-                        track => {
-                            track.stop();
-                        }
+                        track =>
+                            track.stop()
                     );
 
             }
@@ -1214,129 +2171,418 @@
                 "none";
 
 
-            detectorPaused =
-                false;
-
-
-            state =
-                "CALIBRATING";
-
-
-            calibrationFrames =
-                0;
-
-
-            baselineHip =
-                null;
-
-
-            smoothedHip =
-                null;
-
-
-            previousHip =
-                null;
-
-
             btnCamera.disabled =
                 false;
 
-
             btnPause.disabled =
                 true;
-
 
             btnStop.disabled =
                 true;
 
 
-            btnPause.textContent =
-                "⏸ PAUSAR DETECTOR";
+            const detail =
+                getCameraErrorMessage(
+                    error
+                );
 
 
             cameraStatus.textContent =
-                "🔴 Cámara desconectada";
+                "🔴 Cámara: " +
+                detail;
 
 
             detectorStatus.textContent =
                 "Detector: detenido";
 
+
+            if (obsWasEnabledByThisClick) {
+
+                try {
+
+                    await setOBSSceneCamera(
+                        false
+                    );
+
+                } catch (obsError) {
+
+                    console.warn(
+                        "No se pudo restaurar la fuente de OBS:",
+                        obsError
+                    );
+
+                }
+
+            }
+
+
+            alert(
+
+                "No se pudo activar la cámara.\n\n" +
+
+                detail +
+
+                "\n\nCódigo del navegador: " +
+
+                (
+                    error?.name ||
+                    "desconocido"
+                )
+
+            );
+
         }
 
-
-        /*
-        ========================================================
-        BOTONES
-        ========================================================
-        */
-
-        btnCamera.addEventListener(
-            "click",
-            connectCamera
-        );
+    }
 
 
-        btnPause.addEventListener(
-            "click",
-            pauseDetector
-        );
+    /*
+    ========================================================
+    PAUSAR
+    ========================================================
+    */
 
+    function pauseDetector() {
 
-        btnStop.addEventListener(
-            "click",
-            stopCamera
-        );
-
-
-        btnReset.addEventListener(
-            "click",
-            resetCounter
-        );
-
-
-        /*
-        ========================================================
-        INICIALIZAR
-        ========================================================
-        */
-
-        initializePose();
-
-        connectWebSocket();
-
-
-        /*
-        ========================================================
-        MODO OBS
-        ========================================================
-        */
-
-        /*
-        Si agregamos ?obs=1 a la URL:
-
-        https://TU-DOMINIO/controles.html?obs=1
-
-        el panel desaparece visualmente.
-
-        */
-
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
+        detectorPaused =
+            !detectorPaused;
 
 
         if (
-            params.get("obs") === "1"
+            detectorPaused
         ) {
 
-            document.body.classList.add(
-                "obs-mode"
+            btnPause.textContent =
+                "▶️ REANUDAR DETECTOR";
+
+            detectorStatus.textContent =
+                "Detector: ⏸ pausado";
+
+
+        } else {
+
+            btnPause.textContent =
+                "⏸ PAUSAR DETECTOR";
+
+            detectorStatus.textContent =
+                "Detector: 🟢 activo";
+
+        }
+
+    }
+
+
+    /*
+    ========================================================
+    DESACTIVAR
+    ========================================================
+    */
+
+    async function stopCamera() {
+
+        try {
+
+            await setOBSSceneCamera(
+                false
+            );
+
+        } catch (error) {
+
+            console.error(
+                "No se pudo desactivar la fuente de OBS:",
+                error
             );
 
         }
 
-    </script>
+
+        if (stream) {
+
+            stream
+                .getTracks()
+                .forEach(
+                    track => {
+                        track.stop();
+                    }
+                );
+
+        }
+
+
+        stream =
+            null;
+
+
+        video.srcObject =
+            null;
+
+
+        cameraContainer.style.display =
+            "none";
+
+
+        detectorPaused =
+            false;
+
+
+        state =
+            "CALIBRATING";
+
+
+        calibrationFrames =
+            0;
+
+
+        baselineHip =
+            null;
+
+
+        smoothedHip =
+            null;
+
+
+        previousHip =
+            null;
+
+
+        btnCamera.disabled =
+            false;
+
+
+        btnPause.disabled =
+            true;
+
+
+        btnStop.disabled =
+            true;
+
+
+        btnPause.textContent =
+            "⏸ PAUSAR DETECTOR";
+
+
+        cameraStatus.textContent =
+            "🔴 Cámara desconectada";
+
+
+        detectorStatus.textContent =
+            "Detector: detenido";
+
+    }
+
+
+    /*
+    ========================================================
+    BOTONES
+    ========================================================
+    */
+
+    btnCamera.addEventListener(
+        "click",
+        connectCamera
+    );
+
+
+    btnPause.addEventListener(
+        "click",
+        pauseDetector
+    );
+
+
+    btnStop.addEventListener(
+        "click",
+        stopCamera
+    );
+
+
+    btnReset.addEventListener(
+        "click",
+        resetCounter
+    );
+
+
+    btnRefreshCameras.addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                /*
+                Pedimos permiso primero si todavía
+                no existe información de dispositivos.
+                */
+
+                if (
+                    !navigator.mediaDevices
+                        .enumerateDevices
+                ) {
+
+                    throw new Error(
+                        "El navegador no permite listar dispositivos."
+                    );
+
+                }
+
+
+                await loadCameras();
+
+
+                cameraStatus.textContent =
+                    "🟢 Lista de cámaras actualizada.";
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+            }
+
+        }
+    );
+
+
+    btnObsSettings.addEventListener(
+        "click",
+        () => {
+
+            const opening =
+                !obsSettings.classList.contains(
+                    "open"
+                );
+
+
+            obsSettings.classList.toggle(
+                "open",
+                opening
+            );
+
+
+            if (opening) {
+
+                btnObsSettings.textContent =
+                    "↩ VOLVER A CONTROLES";
+
+                btnObsSettings.classList.add(
+                    "back-mode"
+                );
+
+
+            } else {
+
+                btnObsSettings.textContent =
+                    "⚙️ CONFIGURAR OBS";
+
+                btnObsSettings.classList.remove(
+                    "back-mode"
+                );
+
+            }
+
+        }
+    );
+
+
+    btnObsConnect.addEventListener(
+        "click",
+        connectOBS
+    );
+
+
+    btnObsDisconnect.addEventListener(
+        "click",
+        disconnectOBS
+    );
+
+
+    /*
+    ========================================================
+    CUANDO CAMBIA LA CÁMARA
+    ========================================================
+    */
+
+    cameraSelect.addEventListener(
+        "change",
+        () => {
+
+            localStorage.setItem(
+                "selectedSquatCamera",
+                cameraSelect.value
+            );
+
+        }
+    );
+
+
+    /*
+    ========================================================
+    INICIALIZAR
+    ========================================================
+    */
+
+    initializePose();
+
+    loadObsConfig();
+
+
+    /*
+    Intentamos cargar cámaras.
+    Los nombres pueden aparecer vacíos hasta
+    que el navegador conceda permiso.
+    */
+
+    loadCameras();
+
+
+    /*
+    ========================================================
+    EVENTO DE CAMBIO DE DISPOSITIVOS
+    ========================================================
+    */
+
+    if (
+        navigator.mediaDevices &&
+        navigator.mediaDevices.addEventListener
+    ) {
+
+        navigator.mediaDevices.addEventListener(
+            "devicechange",
+            loadCameras
+        );
+
+    }
+
+
+    /*
+    ========================================================
+    MODO OBS
+    ========================================================
+
+    URL:
+
+    https://TU-DOMINIO/controles.html?obs=1
+
+    En este modo se oculta el panel.
+    */
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    if (
+        params.get("obs") === "1"
+    ) {
+
+        document.body.classList.add(
+            "obs-mode"
+        );
+
+    }
+
+</script>
+
 
 </body>
 
