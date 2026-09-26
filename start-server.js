@@ -16,13 +16,13 @@ const server = spawn(process.execPath, [serverPath], {
     windowsHide: false
 });
 
-server.on("error", (error) => {
+server.on("error", error => {
     console.error("");
     console.error("❌ No se pudo iniciar el servidor:");
     console.error(error);
 });
 
-server.on("exit", (code) => {
+server.on("exit", code => {
     console.log("");
     console.log(`🛑 Squat Twitch Server terminó. Código: ${code}`);
 });
