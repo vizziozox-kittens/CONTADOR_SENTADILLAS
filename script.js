@@ -1,3 +1,76 @@
+/* ============================================================
+   SESIÓN AISLADA POR PESTAÑA
+   Cada streamer obtiene un sessionId independiente.
+   ============================================================ */
+(function setupSquatSessionIsolation() {
+    const nativeFetch = window.fetch.bind(window);
+    const storedSession = sessionStorage.getItem("squat_session_id");
+
+    function addSession(url) {
+        if (!window.SQUAT_SESSION_ID) return url;
+
+        const absolute = new URL(url, window.location.origin);
+
+        if (absolute.origin !== window.location.origin) {
+            return url;
+        }
+
+        if (
+            absolute.pathname.startsWith("/api/") ||
+            absolute.pathname === "/auth/twitch"
+        ) {
+            absolute.searchParams.set("session", window.SQUAT_SESSION_ID);
+            return absolute.pathname + absolute.search + absolute.hash;
+        }
+
+        return url;
+    }
+
+    window.SQUAT_SESSION_ID = storedSession || "";
+
+    window.SQUAT_SESSION_READY = (async () => {
+        try {
+            const endpoint = window.SQUAT_SESSION_ID
+                ? `/api/session?session=${encodeURIComponent(window.SQUAT_SESSION_ID)}`
+                : "/api/session?new=1";
+
+            const response = await nativeFetch(endpoint, {
+                credentials: "same-origin"
+            });
+
+            if (!response.ok) {
+                throw new Error("No se pudo crear/recuperar la sesión.");
+            }
+
+            const data = await response.json();
+
+            if (!data.ok || !data.sessionId) {
+                throw new Error("El servidor no devolvió una sesión válida.");
+            }
+
+            window.SQUAT_SESSION_ID = data.sessionId;
+            sessionStorage.setItem("squat_session_id", data.sessionId);
+
+            return data;
+        } catch (error) {
+            console.error("❌ Error inicializando sesión:", error);
+            throw error;
+        }
+    })();
+
+    window.fetch = async function(input, init) {
+        await window.SQUAT_SESSION_READY;
+
+        if (typeof input === "string") {
+            input = addSession(input);
+        } else if (input instanceof Request) {
+            input = new Request(addSession(input.url), input);
+        }
+
+        return nativeFetch(input, init);
+    };
+})();
+
 // ============================================================
 // ELEMENTOS HTML
 // ============================================================
@@ -320,7 +393,13 @@ counterInput.addEventListener(
 // WEBSOCKET
 // ============================================================
 
-function connectWebSocket() {
+async function connectWebSocket() {
+
+    try {
+        await window.SQUAT_SESSION_READY;
+    } catch {
+        return;
+    }
 
     if (
         socket &&
@@ -338,7 +417,9 @@ function connectWebSocket() {
             : "ws:";
 
     const url =
-        `${protocol}//${location.host}/ws`;
+        `${protocol}//${location.host}/ws?session=${encodeURIComponent(
+            window.SQUAT_SESSION_ID || ""
+        )}`;
 
     socket = new WebSocket(url);
 
@@ -1655,8 +1736,19 @@ connectTwitchButton.addEventListener(
     "click",
     () => {
 
-        window.location.href =
-            "/auth/twitch";
+        window.SQUAT_SESSION_READY
+            .then(() => {
+                window.location.href =
+                    `/auth/twitch?session=${encodeURIComponent(
+                        window.SQUAT_SESSION_ID
+                    )}`;
+            })
+            .catch(error => {
+                console.error(
+                    "❌ No se pudo iniciar la sesión de Twitch:",
+                    error
+                );
+            });
 
     }
 );

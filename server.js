@@ -47,6 +47,8 @@ function createSession() {
 
     const session = {
         id,
+        createdAt: Date.now(),
+        lastActivity: Date.now(),
 
         // Twitch de ESTA sesión
         twitchAccessToken: null,
@@ -107,18 +109,31 @@ function setSessionCookie(res, sessionId) {
 }
 
 function getSession(req, res, create = true) {
-    // Permite usar ?session=... para OBS.
+    // La sesión explícita de la URL tiene prioridad.
+    // Esto permite que varias pestañas/dispositivos trabajen en Render
+    // sin que una cookie de otro usuario cambie de sesión.
     const querySession = req.query?.session;
 
     if (isValidSessionId(querySession) && sessions.has(querySession)) {
+        const session = sessions.get(querySession);
+        session.lastActivity = Date.now();
         setSessionCookie(res, querySession);
-        return sessions.get(querySession);
+        return session;
+    }
+
+    // ?new=1 fuerza una sesión NUEVA aunque el navegador ya tenga cookie.
+    if (String(req.query?.new || "") === "1") {
+        const session = createSession();
+        setSessionCookie(res, session.id);
+        return session;
     }
 
     const cookieSession = getSessionIdFromCookie(req);
 
     if (cookieSession && sessions.has(cookieSession)) {
-        return sessions.get(cookieSession);
+        const session = sessions.get(cookieSession);
+        session.lastActivity = Date.now();
+        return session;
     }
 
     if (!create) return null;
@@ -560,14 +575,40 @@ app.get("/auth/twitch", (req, res) => {
 });
 
 app.get("/auth/twitch/callback", async (req, res) => {
-    const session = getSession(req, res);
-
     const {
         code,
         state,
         error,
         error_description
     } = req.query;
+
+    // OAuth vuelve a la sesión que inició el login.
+    // No dependemos solamente de la cookie porque otra pestaña/usuario
+    // puede haberla cambiado mientras Twitch estaba abierto.
+    let session = null;
+
+    if (state) {
+        for (const candidate of sessions.values()) {
+            if (candidate.oauthState === String(state)) {
+                session = candidate;
+                break;
+            }
+        }
+    }
+
+    if (!session) {
+        session = getSession(req, res, false);
+    }
+
+    if (!session) {
+        return res.status(400).send(connectionPage(
+            false,
+            "Sesión no encontrada",
+            "La sesión de Twitch ya no existe. Vuelve a abrir la aplicación e inténtalo de nuevo."
+        ));
+    }
+
+    session.lastActivity = Date.now();
 
     if (error) {
         return res.status(400).send(connectionPage(
@@ -1087,13 +1128,26 @@ browserWS.on("connection", (socket, request, session) => {
 });
 
 // ============================================================
-// LIMPIEZA DE SESIONES SIN ACTIVIDAD
-// No elimina sesiones que tengan Twitch conectado o clientes WS.
+// LIMPIEZA DE SESIONES ABANDONADAS
+// Las sesiones activas de Twitch o con WebSocket se conservan.
 // ============================================================
 
+const SESSION_MAX_IDLE_MS = 24 * 60 * 60 * 1000;
+
 setInterval(() => {
-    // En esta versión no eliminamos automáticamente sesiones.
-    // Así no se pierde la sesión de un streamer mientras trabaja.
+    const now = Date.now();
+
+    for (const [id, session] of sessions.entries()) {
+        const hasLiveConnection =
+            Boolean(session.twitchAccessToken) ||
+            Boolean(session.eventSubSocket) ||
+            session.browserClients.size > 0;
+
+        if (!hasLiveConnection && now - session.lastActivity > SESSION_MAX_IDLE_MS) {
+            sessions.delete(id);
+            console.log(`🧹 Sesión inactiva eliminada: ${id.slice(0, 8)}`);
+        }
+    }
 }, 60 * 60 * 1000);
 
 // ============================================================

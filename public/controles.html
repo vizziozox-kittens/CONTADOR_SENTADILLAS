@@ -524,6 +524,54 @@
 
 
 <script>
+/* ============================================================
+   SESIÓN EXPLÍCITA PARA ESTA PÁGINA
+   Evita que la cookie de otra pestaña/usuario cambie de sesión.
+   ============================================================ */
+(function () {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId =
+        params.get("session") ||
+        sessionStorage.getItem("squat_session_id") ||
+        "";
+
+    window.SQUAT_SESSION_ID = sessionId;
+
+    const nativeFetch = window.fetch.bind(window);
+
+    function addSession(url) {
+        if (!window.SQUAT_SESSION_ID) return url;
+
+        const absolute = new URL(url, window.location.origin);
+
+        if (absolute.origin !== window.location.origin) {
+            return url;
+        }
+
+        if (absolute.pathname.startsWith("/api/")) {
+            absolute.searchParams.set(
+                "session",
+                window.SQUAT_SESSION_ID
+            );
+            return absolute.pathname + absolute.search + absolute.hash;
+        }
+
+        return url;
+    }
+
+    window.fetch = function (input, init) {
+        if (typeof input === "string") {
+            input = addSession(input);
+        } else if (input instanceof Request) {
+            input = new Request(addSession(input.url), input);
+        }
+
+        return nativeFetch(input, init);
+    };
+})();
+</script>
+
+<script>
 
     /*
     ========================================================
