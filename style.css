@@ -34,6 +34,39 @@
 }
 
 
+
+/* ICONOS VISUALES */
+.nav-icon img,
+.card-icon img,
+.quick-icon img,
+.heading-icon img,
+.configuration-icon img,
+.bits-big-icon img,
+.info-icon img,
+.welcome-icon img {
+    width: 58%;
+    height: 58%;
+    display: block;
+    object-fit: contain;
+    color: currentColor;
+}
+
+.nav-icon img { width: 17px; height: 17px; }
+.card-icon img { width: 20px; height: 20px; }
+.quick-icon img { width: 19px; height: 19px; }
+.heading-icon img { width: 22px; height: 22px; }
+.configuration-icon img { width: 19px; height: 19px; }
+.bits-big-icon img { width: 25px; height: 25px; }
+.welcome-icon img { width: 52px; height: 52px; }
+
+.icon-image {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
 /* =========================================================
    BODY
 ========================================================= */
@@ -140,8 +173,15 @@ body {
 
     border: 1px solid #3a2b55;
 
-    font-size: 22px;
+    overflow: hidden;
 
+}
+
+.brand-icon img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
 }
 
 .brand-text {

@@ -53,7 +53,7 @@
 
             return data;
         } catch (error) {
-            console.error("❌ Error inicializando sesión:", error);
+            console.error("Error inicializando sesión:", error);
             throw error;
         }
     })();
@@ -429,7 +429,7 @@ async function connectWebSocket() {
         () => {
 
             console.log(
-                "🟢 WebSocket conectado"
+                "WebSocket conectado"
             );
 
         }
@@ -478,7 +478,7 @@ async function connectWebSocket() {
         () => {
 
             console.log(
-                "🔴 WebSocket desconectado"
+                "WebSocket desconectado"
             );
 
             setTimeout(
@@ -548,25 +548,27 @@ let lastPoseTime = 0;
 // ============================================================
 
 // Más frames = calibración más estable.
-const CALIBRATION_FRAMES = 35;
+const CALIBRATION_FRAMES = 18;
 
 // Histeresis: se usan umbrales diferentes para entrar/salir
 // de cada fase y así evitar falsos positivos por pequeños temblores.
-const DOWN_THRESHOLD = 0.045;
-const DOWN_EXIT_THRESHOLD = 0.055;
-const BOTTOM_THRESHOLD = 0.105;
-const BOTTOM_EXIT_THRESHOLD = 0.055;
+const DOWN_THRESHOLD = 0.025;
+const DOWN_EXIT_THRESHOLD = 0.018;
+const BOTTOM_THRESHOLD = 0.055;
+const BOTTOM_EXIT_THRESHOLD = 0.030;
 
-// La rodilla debe flexionarse realmente.
-const MIN_KNEE_ANGLE = 135;
+// La rodilla es una señal importante y más estable cuando cambia
+// la distancia a la cámara.
+const MIN_KNEE_ANGLE = 150;
+const DEEP_KNEE_ANGLE = 138;
 
 // Diferencia máxima entre ambas rodillas cuando las dos son visibles.
 const MAX_KNEE_ANGLE_DIFFERENCE = 38;
 
 // Cantidad mínima de frames consecutivos para validar una fase.
-const DESCENDING_CONFIRM_FRAMES = 3;
-const BOTTOM_CONFIRM_FRAMES = 3;
-const ASCENDING_CONFIRM_FRAMES = 3;
+const DESCENDING_CONFIRM_FRAMES = 2;
+const BOTTOM_CONFIRM_FRAMES = 2;
+const ASCENDING_CONFIRM_FRAMES = 2;
 
 // Evita contar dos veces el mismo movimiento.
 const MIN_TIME_BETWEEN_SQUATS = 700;
@@ -726,158 +728,80 @@ function visible(
 
 function getMotionData(landmarks) {
 
-    if (
-        !visible(
-            landmarks,
-            [
-                11,
-                12,
-                23,
-                24
-            ],
-            MIN_BODY_VISIBILITY
-        )
-    ) {
-
+    if (!visible(landmarks, [11, 12, 23, 24], MIN_BODY_VISIBILITY)) {
         return null;
     }
 
+    const shoulders = midpoint(landmarks[11], landmarks[12]);
+    const hips = midpoint(landmarks[23], landmarks[24]);
 
-    const shoulders =
-        midpoint(
-            landmarks[11],
-            landmarks[12]
-        );
-
-
-    const hips =
-        midpoint(
-            landmarks[23],
-            landmarks[24]
-        );
-
-
-    const torsoVector =
-        subtract(
-            hips,
-            shoulders
-        );
-
-
-    const torsoSize =
-        Math.hypot(
-            torsoVector.x,
-            torsoVector.y
-        );
-
+    const torsoVector = subtract(hips, shoulders);
+    const torsoSize = Math.hypot(torsoVector.x, torsoVector.y);
 
     if (torsoSize < 0.03) {
         return null;
     }
 
+    /*
+     * Eje vertical tolerante a la inclinación de la cámara/cuerpo.
+     * Se calcula perpendicular a la línea de hombros, por lo que una
+     * inclinación de la cabeza no cambia el eje usado para medir la bajada.
+     */
+    const shoulderLine = subtract(landmarks[12], landmarks[11]);
+    const hipLine = subtract(landmarks[24], landmarks[23]);
 
-    const axis =
-        normalize(
-            torsoVector
-        );
+    const shoulderVertical = normalize(point(-shoulderLine.y, shoulderLine.x));
+    const hipVertical = normalize(point(-hipLine.y, hipLine.x));
 
+    let axis = shoulderVertical || hipVertical;
+
+    if (axis && hipVertical && dot(axis, hipVertical) < 0) {
+        axis = point(-axis.x, -axis.y);
+    }
+
+    if (!axis) {
+        axis = normalize(torsoVector);
+    }
 
     if (!axis) {
         return null;
     }
 
+    // Elegir la dirección que apunta aproximadamente hacia abajo en pantalla.
+    if (axis.y < 0) {
+        axis = point(-axis.x, -axis.y);
+    }
 
     let leftKneeAngle = null;
     let rightKneeAngle = null;
 
-
-    if (
-        visible(
-            landmarks,
-            [
-                23,
-                25,
-                27
-            ],
-            0.18
-        )
-    ) {
-
-        leftKneeAngle =
-            angle2D(
-                landmarks[23],
-                landmarks[25],
-                landmarks[27]
-            );
-
+    if (visible(landmarks, [23, 25, 27], 0.22)) {
+        leftKneeAngle = angle2D(landmarks[23], landmarks[25], landmarks[27]);
     }
 
-
-    if (
-        visible(
-            landmarks,
-            [
-                24,
-                26,
-                28
-            ],
-            0.18
-        )
-    ) {
-
-        rightKneeAngle =
-            angle2D(
-                landmarks[24],
-                landmarks[26],
-                landmarks[28]
-            );
-
+    if (visible(landmarks, [24, 26, 28], 0.22)) {
+        rightKneeAngle = angle2D(landmarks[24], landmarks[26], landmarks[28]);
     }
-
 
     let kneeAngle = null;
 
-    if (
-        leftKneeAngle !== null &&
-        rightKneeAngle !== null
-    ) {
-
-        kneeAngle =
-            (
-                leftKneeAngle +
-                rightKneeAngle
-            ) / 2;
-
-    } else if (
-        leftKneeAngle !== null
-    ) {
-
-        kneeAngle =
-            leftKneeAngle;
-
-    } else if (
-        rightKneeAngle !== null
-    ) {
-
-        kneeAngle =
-            rightKneeAngle;
-
+    if (leftKneeAngle !== null && rightKneeAngle !== null) {
+        kneeAngle = (leftKneeAngle + rightKneeAngle) / 2;
+    } else if (leftKneeAngle !== null) {
+        kneeAngle = leftKneeAngle;
+    } else if (rightKneeAngle !== null) {
+        kneeAngle = rightKneeAngle;
     }
 
-
     return {
-
         shoulders,
         hips,
         axis,
         torsoSize,
-
         leftKneeAngle,
         rightKneeAngle,
         kneeAngle
-
     };
-
 }
 
 
@@ -904,6 +828,9 @@ function calibrateBody(data) {
             },
 
             torsoSize:
+                data.torsoSize,
+
+            bodyScale:
                 data.torsoSize,
 
             kneeAngle:
@@ -952,6 +879,12 @@ function calibrateBody(data) {
             baseline.torsoSize
         ) * factor;
 
+    baseline.bodyScale +=
+        (
+            data.torsoSize -
+            baseline.bodyScale
+        ) * factor;
+
     if (data.kneeAngle !== null) {
         baseline.kneeAngle =
             baseline.kneeAngle === null
@@ -987,33 +920,46 @@ function getDownAmount(data) {
         return 0;
     }
 
-    const torsoScale = Math.max(baseline.torsoSize, 0.001);
+    // Normalizamos la bajada con la longitud del cuerpo en lugar de
+    // depender solo del tamaño del torso. Esto hace que el detector
+    // sea mucho menos sensible a acercarse o alejarse de la cámara.
+    const bodyScale = Math.max(
+        baseline.bodyScale || baseline.torsoSize,
+        0.001
+    );
 
     const hipDelta = subtract(data.hips, baseline.hips);
-    const hipDown = dot(hipDelta, baseline.axis) / torsoScale;
+    const hipDown = dot(hipDelta, baseline.axis) / bodyScale;
 
     const baseCenter = midpoint(baseline.shoulders, baseline.hips);
     const currentCenter = midpoint(data.shoulders, data.hips);
     const centerDelta = subtract(currentCenter, baseCenter);
-    const centerDown = dot(centerDelta, baseline.axis) / torsoScale;
+    const centerDown = dot(centerDelta, baseline.axis) / bodyScale;
 
-    // La cadera sigue siendo la señal principal.
-    let score = hipDown * 0.60 + centerDown * 0.15;
+    let score = hipDown * 0.72 + centerDown * 0.13;
 
-    // Complementamos con la flexión de rodillas. Esto ayuda mucho
-    // cuando el cuerpo baja pero la cadera no se mueve limpiamente.
     if (data.kneeAngle !== null && baseline.kneeAngle !== null) {
-        const kneeFlex = clamp(
-            (baseline.kneeAngle - data.kneeAngle) / 55,
-            0,
-            1.35
-        );
-        score += kneeFlex * 0.25;
+        const bothKnees =
+            data.leftKneeAngle !== null &&
+            data.rightKneeAngle !== null;
+
+        const kneesAgree =
+            !bothKnees ||
+            Math.abs(data.leftKneeAngle - data.rightKneeAngle) <= 45;
+
+        if (kneesAgree) {
+            // La flexión de rodilla complementa la posición de la cadera.
+            const kneeFlex = clamp(
+                (baseline.kneeAngle - data.kneeAngle) / 50,
+                0,
+                1.0
+            );
+            score += kneeFlex * 0.15;
+        }
     }
 
     return score;
 }
-
 
 // ============================================================
 // REINICIAR DETECTOR
@@ -1065,9 +1011,9 @@ pose.setOptions({
 
     smoothSegmentation: false,
 
-    minDetectionConfidence: 0.60,
+    minDetectionConfidence: 0.55,
 
-    minTrackingConfidence: 0.60
+    minTrackingConfidence: 0.50
 
 });
 
@@ -1078,7 +1024,7 @@ pose.onResults(
         if (!results.poseLandmarks) {
 
             stateElement.textContent =
-                "🧍 No se detecta el cuerpo";
+                "No se detecta el cuerpo";
 
             return;
         }
@@ -1126,7 +1072,7 @@ function detectSquat(landmarks) {
     if (!data) {
 
         stateElement.textContent =
-            "🧍 Cuerpo no visible";
+            "Cuerpo no visible";
 
         return;
     }
@@ -1194,7 +1140,7 @@ function detectSquat(landmarks) {
 
 
         stateElement.textContent =
-            `🧍 Calibrando de pie... ${
+            `Calibrando de pie... ${
                 Math.min(
                     100,
                     Math.round(
@@ -1218,7 +1164,7 @@ function detectSquat(landmarks) {
             previousDown = 0;
 
             stateElement.textContent =
-                "🟢 Listo";
+                "Listo";
 
         }
 
@@ -1233,11 +1179,10 @@ function detectSquat(landmarks) {
     if (
         squatState ===
         STATE.STANDING &&
-        Math.abs(smoothedDown) < 0.025
+        Math.abs(smoothedDown) < 0.012
     ) {
-
+        // Solo compensamos cambios muy pequeños de posición de cámara.
         calibrateBody(data);
-
     }
 
 
@@ -1259,7 +1204,7 @@ function detectSquat(landmarks) {
 
 
             stateElement.textContent =
-                `⬇️ Bajando... ${
+                `Bajando... ${
                     Math.round(
                         smoothedDown * 100
                     )
@@ -1284,7 +1229,7 @@ function detectSquat(landmarks) {
             downFrames = 0;
 
             stateElement.textContent =
-                "🧍 Listo";
+                "Listo";
 
         }
 
@@ -1324,15 +1269,16 @@ function detectSquat(landmarks) {
 
 
         if (
-            (smoothedDown >= BOTTOM_THRESHOLD || kneeValid) &&
-            (smoothedDown >= 0.085 || kneeValid)
+            smoothedDown >= BOTTOM_THRESHOLD ||
+            kneeValid ||
+            (data.kneeAngle !== null && data.kneeAngle <= DEEP_KNEE_ANGLE)
         ) {
 
             bottomFrames++;
 
 
             stateElement.textContent =
-                `🧎 Sentadilla detectada · ${
+                `Sentadilla detectada · ${
                     Math.round(
                         data.kneeAngle
                     )
@@ -1362,12 +1308,12 @@ function detectSquat(landmarks) {
             downFrames = 0;
 
             stateElement.textContent =
-                "↩️ Movimiento incompleto";
+                "Movimiento incompleto";
 
         } else {
 
             stateElement.textContent =
-                "🧎 Baja un poco más";
+                "Baja un poco más";
 
         }
 
@@ -1384,10 +1330,11 @@ function detectSquat(landmarks) {
         STATE.BOTTOM
     ) {
 
-        if (
-            velocity < -0.008 ||
-            smoothedDown < previousDown - 0.004
-        ) {
+        const recovering =
+            velocity < -0.006 ||
+            smoothedDown < previousDown - 0.002;
+
+        if (recovering) {
 
             upFrames++;
 
@@ -1447,7 +1394,7 @@ function detectSquat(landmarks) {
             upFrames = 0;
 
             stateElement.textContent =
-                "🧎 Fondo";
+                "Fondo";
 
         }
 
@@ -1480,7 +1427,7 @@ function detectSquat(landmarks) {
         } else {
 
             stateElement.textContent =
-                "⬆️ Subiendo...";
+                "Subiendo...";
 
         }
 
@@ -1594,11 +1541,11 @@ startButton.addEventListener(
 
 
             statusElement.textContent =
-                "🟢 Cámara activa";
+                "Cámara activa";
 
 
             stateElement.textContent =
-                "🧍 Ponte de pie para calibrar";
+                "Ponte de pie para calibrar";
 
 
             startButton.disabled =
@@ -1640,7 +1587,7 @@ startButton.addEventListener(
 
 
             statusElement.textContent =
-                "❌ Error de cámara";
+                "Error de cámara";
 
 
             stateElement.textContent =
@@ -1678,7 +1625,7 @@ pauseButton.addEventListener(
 
         stateElement.textContent =
             detectorActive
-                ? "🟢 Detector activo"
+                ? "Detector activo"
                 : "⏸ Detector pausado";
 
     }
@@ -1699,7 +1646,7 @@ resetButton.addEventListener(
 
         if (detectorActive) {
             stateElement.textContent =
-                "🧍 Ponte de pie para calibrar";
+                "Ponte de pie para calibrar";
         } else {
             stateElement.textContent =
                 "Detector reiniciado";
@@ -1745,7 +1692,7 @@ connectTwitchButton.addEventListener(
             })
             .catch(error => {
                 console.error(
-                    "❌ No se pudo iniciar la sesión de Twitch:",
+                    "No se pudo iniciar la sesión de Twitch:",
                     error
                 );
             });
@@ -1778,7 +1725,7 @@ async function checkTwitchStatus() {
         ) {
 
             twitchStatus.textContent =
-                `🟢 Conectado como ${
+                `Conectado como ${
                     data.twitch.user.display_name
                 }`;
 
@@ -1789,7 +1736,7 @@ async function checkTwitchStatus() {
 
 
             connectTwitchButton.textContent =
-                "🟢 Twitch conectado";
+                "Twitch conectado";
 
 
             await loadTwitchRewards();
@@ -1799,7 +1746,7 @@ async function checkTwitchStatus() {
         } else {
 
             twitchStatus.textContent =
-                "🔴 No conectado";
+                "No conectado";
 
 
             twitchStatus.classList.remove(
@@ -1808,7 +1755,7 @@ async function checkTwitchStatus() {
 
 
             connectTwitchButton.textContent =
-                "🟣 Conectar con Twitch";
+                "Conectar con Twitch";
 
         }
 
@@ -2101,7 +2048,7 @@ saveRewardsButton.addEventListener(
         } catch (error) {
 
             alert(
-                "❌ " +
+                "Error: " +
                 error.message
             );
 
@@ -2187,7 +2134,7 @@ saveBitsButton.addEventListener(
         } catch (error) {
 
             alert(
-                "❌ " +
+                "Error: " +
                 error.message
             );
 
