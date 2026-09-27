@@ -16,8 +16,8 @@ const server = http.createServer(app);
 const PORT = Number(process.env.PORT || 3000);
 const HOST = "0.0.0.0";
 
-const CLIENT_ID = String(process.env.TWITCH_CLIENT_ID || "").trim();
-const CLIENT_SECRET = String(process.env.TWITCH_CLIENT_SECRET || "").trim();
+const DEFAULT_CLIENT_ID = String(process.env.TWITCH_CLIENT_ID || "").trim();
+const DEFAULT_CLIENT_SECRET = String(process.env.TWITCH_CLIENT_SECRET || "").trim();
 
 function getRedirectUri() {
     if (process.env.TWITCH_REDIRECT_URI) {
@@ -55,6 +55,11 @@ function createSession() {
         twitchRefreshToken: null,
         twitchUser: null,
         oauthState: null,
+
+        // Credenciales de Twitch proporcionadas por ESTE streamer.
+        // Se mantienen solo en memoria dentro de la sesión y nunca se envían al navegador.
+        twitchClientId: DEFAULT_CLIENT_ID || null,
+        twitchClientSecret: DEFAULT_CLIENT_SECRET || null,
 
         // EventSub de ESTA sesión
         eventSubSocket: null,
@@ -362,11 +367,47 @@ app.get("/api/twitch/config", (req, res) => {
 
     res.json({
         ok: true,
-        clientId: CLIENT_ID,
-        credentialsConfigured: Boolean(CLIENT_ID && CLIENT_SECRET),
-        credentialsSource: "environment",
+        // El Client ID sí puede mostrarse en el formulario.
+        // El Client Secret nunca se devuelve al navegador.
+        clientId: session.twitchClientId || "",
+        credentialsConfigured: Boolean(session.twitchClientId && session.twitchClientSecret),
+        credentialsSource: session.twitchClientId && session.twitchClientSecret ? "session" : "none",
         bitsPerBlock: session.bitsPerBlock,
         squatsPerBlock: session.squatsPerBlock
+    });
+});
+
+app.post("/api/twitch/credentials", (req, res) => {
+    const session = getSession(req, res);
+
+    const clientId = String(req.body?.clientId || "").trim();
+    const clientSecret = String(req.body?.clientSecret || "").trim();
+
+    if (!clientId) {
+        return res.status(400).json({
+            ok: false,
+            error: "Debes introducir el Client ID de Twitch."
+        });
+    }
+
+    if (!clientSecret) {
+        return res.status(400).json({
+            ok: false,
+            error: "Debes introducir el Client Secret de Twitch."
+        });
+    }
+
+    // Se guardan únicamente en la sesión del streamer.
+    session.twitchClientId = clientId;
+    session.twitchClientSecret = clientSecret;
+
+    // Si cambia las credenciales, se obliga a iniciar OAuth de nuevo.
+    session.oauthState = null;
+
+    res.json({
+        ok: true,
+        clientId: session.twitchClientId,
+        credentialsConfigured: true
     });
 });
 
@@ -433,7 +474,7 @@ async function getTwitchRewards(session) {
 
     const response = await fetch(url, {
         headers: {
-            "Client-Id": CLIENT_ID,
+            "Client-Id": session.twitchClientId,
             Authorization: `Bearer ${session.twitchAccessToken}`
         }
     });
@@ -514,15 +555,15 @@ app.post("/api/twitch/reward-mappings", (req, res) => {
 // ============================================================
 
 function createTwitchAuthorizationUrl(session) {
-    if (!CLIENT_ID) {
+    if (!session.twitchClientId) {
         throw new Error(
-            "Falta TWITCH_CLIENT_ID en las variables de entorno de Render."
+            "Falta el Client ID de Twitch. Escríbelo en la configuración antes de conectar."
         );
     }
 
-    if (!CLIENT_SECRET) {
+    if (!session.twitchClientSecret) {
         throw new Error(
-            "Falta TWITCH_CLIENT_SECRET en las variables de entorno de Render."
+            "Falta el Client Secret de Twitch. Escríbelo en la configuración antes de conectar."
         );
     }
 
@@ -537,7 +578,7 @@ function createTwitchAuthorizationUrl(session) {
         "https://id.twitch.tv/oauth2/authorize"
     );
 
-    twitchURL.searchParams.set("client_id", CLIENT_ID);
+    twitchURL.searchParams.set("client_id", session.twitchClientId);
     twitchURL.searchParams.set("redirect_uri", getRedirectUri());
     twitchURL.searchParams.set("response_type", "code");
     twitchURL.searchParams.set("scope", scopes.join(" "));
@@ -645,8 +686,8 @@ app.get("/auth/twitch/callback", async (req, res) => {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
                 body: new URLSearchParams({
-                    client_id: CLIENT_ID,
-                    client_secret: CLIENT_SECRET,
+                    client_id: session.twitchClientId,
+                    client_secret: session.twitchClientSecret,
                     code: String(code),
                     grant_type: "authorization_code",
                     redirect_uri: getRedirectUri()
@@ -670,7 +711,7 @@ app.get("/auth/twitch/callback", async (req, res) => {
             {
                 headers: {
                     Authorization: `Bearer ${session.twitchAccessToken}`,
-                    "Client-Id": CLIENT_ID
+                    "Client-Id": session.twitchClientId
                 }
             }
         );
@@ -944,7 +985,7 @@ async function createEventSubSubscriptions(session, sessionId) {
                 {
                     method: "POST",
                     headers: {
-                        "Client-Id": CLIENT_ID,
+                        "Client-Id": session.twitchClientId,
                         Authorization: `Bearer ${session.twitchAccessToken}`,
                         "Content-Type": "application/json"
                     },
@@ -994,8 +1035,8 @@ async function refreshTwitchToken(session) {
                 body: new URLSearchParams({
                     grant_type: "refresh_token",
                     refresh_token: session.twitchRefreshToken,
-                    client_id: CLIENT_ID,
-                    client_secret: CLIENT_SECRET
+                    client_id: session.twitchClientId,
+                    client_secret: session.twitchClientSecret
                 })
             }
         );
@@ -1060,7 +1101,7 @@ app.post("/auth/twitch/logout", async (req, res) => {
         if (session.twitchAccessToken) {
             await fetch(
                 "https://id.twitch.tv/oauth2/revoke" +
-                `?client_id=${encodeURIComponent(CLIENT_ID)}` +
+                `?client_id=${encodeURIComponent(session.twitchClientId)}` +
                 `&token=${encodeURIComponent(session.twitchAccessToken)}`,
                 { method: "POST" }
             );
@@ -1183,8 +1224,8 @@ server.listen(PORT, HOST, () => {
     console.log(`🔐 Twitch:     ${getRedirectUri()}`);
     console.log("----------------------------------------------");
 
-    if (!CLIENT_ID || !CLIENT_SECRET) {
-        console.warn("⚠️ Faltan TWITCH_CLIENT_ID y/o TWITCH_CLIENT_SECRET en Render.");
+    if (!DEFAULT_CLIENT_ID || !DEFAULT_CLIENT_SECRET) {
+        console.log("ℹ️ Twitch se configurará por streamer desde la página web.");
     } else {
         console.log("🟢 Credenciales Twitch encontradas en variables de entorno.");
     }
