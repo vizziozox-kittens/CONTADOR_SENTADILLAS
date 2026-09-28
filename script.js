@@ -1672,9 +1672,9 @@ stopCameraButton.addEventListener(
 // ============================================================
 // CONFIGURACIÓN TWITCH
 // ============================================================
-// Cada streamer introduce aquí sus propias credenciales de Twitch.
-// El Client Secret se envía únicamente por HTTPS al servidor y se
-// guarda solo en la sesión del streamer. Nunca se devuelve al navegador.
+// En la versión web las credenciales se configuran en el servidor
+// mediante variables de entorno. El Client Secret nunca se expone
+// al navegador.
 
 // ============================================================
 // CONECTAR TWITCH
@@ -1688,22 +1688,21 @@ connectTwitchButton.addEventListener(
         const clientSecret = String(clientSecretInput?.value || "").trim();
 
         if (!clientId) {
-            alert("Debes introducir tu Client ID de Twitch.");
+            alert("Introduce el Client ID de Twitch.");
             clientIdInput?.focus();
             return;
         }
 
         if (!clientSecret) {
-            alert("Debes introducir tu Client Secret de Twitch.");
+            alert("Introduce el Client Secret de Twitch.");
             clientSecretInput?.focus();
             return;
         }
 
-        const originalText = connectTwitchButton.textContent;
-        connectTwitchButton.disabled = true;
-        connectTwitchButton.textContent = "Guardando credenciales...";
-
         try {
+            connectTwitchButton.disabled = true;
+            connectTwitchButton.textContent = "Conectando...";
+
             await window.SQUAT_SESSION_READY;
 
             const response = await fetch("/api/twitch/credentials", {
@@ -1719,26 +1718,20 @@ connectTwitchButton.addEventListener(
 
             const data = await response.json();
 
-            if (!response.ok || !data.ok) {
-                throw new Error(
-                    data.error || "No se pudieron guardar las credenciales de Twitch."
-                );
+            if (!response.ok) {
+                throw new Error(data.error || "No se pudieron guardar las credenciales.");
             }
-
-            // El secreto no se conserva en el DOM después de enviarlo.
-            clientSecretInput.value = "";
-
-            connectTwitchButton.textContent = "Abriendo Twitch...";
 
             window.location.href =
                 `/auth/twitch?session=${encodeURIComponent(
                     window.SQUAT_SESSION_ID
                 )}`;
+
         } catch (error) {
             console.error("No se pudo iniciar la sesión de Twitch:", error);
-            alert(error.message || "No se pudo conectar con Twitch.");
+            alert("❌ " + error.message);
             connectTwitchButton.disabled = false;
-            connectTwitchButton.textContent = originalText;
+            connectTwitchButton.textContent = "🟣 Conectar con Twitch";
         }
     }
 );
@@ -1834,13 +1827,11 @@ async function loadTwitchConfig() {
 
 
         if (data.clientId) {
-            clientIdInput.value = data.clientId;
-        }
 
-        // Por seguridad, el servidor nunca devuelve el Client Secret.
-        // El streamer debe volver a introducirlo solo cuando vaya a conectar.
-        if (clientSecretInput) {
-            clientSecretInput.value = "";
+            clientIdInput.value =
+                data.clientId;
+            clientIdInput.readOnly = false;
+
         }
 
 

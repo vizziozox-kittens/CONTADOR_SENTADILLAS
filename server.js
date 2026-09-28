@@ -16,23 +16,10 @@ const server = http.createServer(app);
 const PORT = Number(process.env.PORT || 3000);
 const HOST = "0.0.0.0";
 
-const DEFAULT_CLIENT_ID = String(process.env.TWITCH_CLIENT_ID || "").trim();
-const DEFAULT_CLIENT_SECRET = String(process.env.TWITCH_CLIENT_SECRET || "").trim();
+const TWITCH_REDIRECT_URI = "https://contador-sentadillas.onrender.com/auth/twitch/callback";
 
 function getRedirectUri() {
-    if (process.env.TWITCH_REDIRECT_URI) {
-        return process.env.TWITCH_REDIRECT_URI.trim();
-    }
-
-    const publicUrl = String(process.env.PUBLIC_URL || "")
-        .trim()
-        .replace(/\/$/, "");
-
-    if (publicUrl) {
-        return `${publicUrl}/auth/twitch/callback`;
-    }
-
-    return `http://localhost:${PORT}/auth/twitch/callback`;
+    return TWITCH_REDIRECT_URI;
 }
 
 // ============================================================
@@ -51,15 +38,12 @@ function createSession() {
         lastActivity: Date.now(),
 
         // Twitch de ESTA sesión
+        twitchClientId: null,
+        twitchClientSecret: null,
         twitchAccessToken: null,
         twitchRefreshToken: null,
         twitchUser: null,
         oauthState: null,
-
-        // Credenciales de Twitch proporcionadas por ESTE streamer.
-        // Se mantienen solo en memoria dentro de la sesión y nunca se envían al navegador.
-        twitchClientId: DEFAULT_CLIENT_ID || null,
-        twitchClientSecret: DEFAULT_CLIENT_SECRET || null,
 
         // EventSub de ESTA sesión
         eventSubSocket: null,
@@ -367,11 +351,9 @@ app.get("/api/twitch/config", (req, res) => {
 
     res.json({
         ok: true,
-        // El Client ID sí puede mostrarse en el formulario.
-        // El Client Secret nunca se devuelve al navegador.
         clientId: session.twitchClientId || "",
         credentialsConfigured: Boolean(session.twitchClientId && session.twitchClientSecret),
-        credentialsSource: session.twitchClientId && session.twitchClientSecret ? "session" : "none",
+        credentialsSource: "session",
         bitsPerBlock: session.bitsPerBlock,
         squatsPerBlock: session.squatsPerBlock
     });
@@ -386,23 +368,19 @@ app.post("/api/twitch/credentials", (req, res) => {
     if (!clientId) {
         return res.status(400).json({
             ok: false,
-            error: "Debes introducir el Client ID de Twitch."
+            error: "Introduce el Client ID de Twitch."
         });
     }
 
     if (!clientSecret) {
         return res.status(400).json({
             ok: false,
-            error: "Debes introducir el Client Secret de Twitch."
+            error: "Introduce el Client Secret de Twitch."
         });
     }
 
-    // Se guardan únicamente en la sesión del streamer.
     session.twitchClientId = clientId;
     session.twitchClientSecret = clientSecret;
-
-    // Si cambia las credenciales, se obliga a iniciar OAuth de nuevo.
-    session.oauthState = null;
 
     res.json({
         ok: true,
@@ -556,15 +534,11 @@ app.post("/api/twitch/reward-mappings", (req, res) => {
 
 function createTwitchAuthorizationUrl(session) {
     if (!session.twitchClientId) {
-        throw new Error(
-            "Falta el Client ID de Twitch. Escríbelo en la configuración antes de conectar."
-        );
+        throw new Error("Falta el Client ID de Twitch. Introdúcelo en la configuración.");
     }
 
     if (!session.twitchClientSecret) {
-        throw new Error(
-            "Falta el Client Secret de Twitch. Escríbelo en la configuración antes de conectar."
-        );
+        throw new Error("Falta el Client Secret de Twitch. Introdúcelo en la configuración.");
     }
 
     session.oauthState = crypto.randomBytes(32).toString("hex");
@@ -1224,11 +1198,8 @@ server.listen(PORT, HOST, () => {
     console.log(`🔐 Twitch:     ${getRedirectUri()}`);
     console.log("----------------------------------------------");
 
-    if (!DEFAULT_CLIENT_ID || !DEFAULT_CLIENT_SECRET) {
-        console.log("ℹ️ Twitch se configurará por streamer desde la página web.");
-    } else {
-        console.log("🟢 Credenciales Twitch encontradas en variables de entorno.");
-    }
+    console.log("🔐 Credenciales Twitch: se introducen desde la configuración de cada sesión.");
+    console.log(`🔁 Redirect URI fija: ${TWITCH_REDIRECT_URI}`);
 
     console.log("🟢 Servidor listo.");
     console.log("==============================================");
