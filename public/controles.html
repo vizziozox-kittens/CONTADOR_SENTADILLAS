@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+```
 <title>Controles Squat Twitch</title>
 
 <style>
@@ -31,16 +32,8 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /*
-    ========================================================
-    PANEL DE CONTROLES
-    ========================================================
-    */
-
     #controlPanel {
         position: relative;
-        left: auto;
-        bottom: auto;
         width: 340px;
         max-width: calc(100% - 40px);
         min-height: min-content;
@@ -70,10 +63,15 @@
         cursor: pointer;
         font-size: 15px;
         font-weight: bold;
+        user-select: none;
     }
 
     button:hover:not(:disabled) {
         filter: brightness(1.08);
+    }
+
+    button:active:not(:disabled) {
+        transform: scale(0.99);
     }
 
     #btnCamera {
@@ -116,12 +114,6 @@
         line-height: 1.4;
     }
 
-    /*
-    ========================================================
-    SELECTOR DE CÁMARA
-    ========================================================
-    */
-
     #cameraSelectorContainer {
         margin-top: 12px;
         padding: 12px;
@@ -152,12 +144,6 @@
         line-height: 1.4;
     }
 
-    /*
-    ========================================================
-    CÁMARA
-    ========================================================
-    */
-
     #cameraContainer {
         position: fixed;
         left: 0;
@@ -175,13 +161,6 @@
         height: 100%;
         object-fit: cover;
         transform: scaleX(-1);
-
-        /*
-        IMPORTANTE:
-        Antes estaba en 0.001 y la cámara prácticamente
-        era invisible.
-        */
-
         opacity: 1;
     }
 
@@ -193,12 +172,6 @@
         height: 100%;
         opacity: 0;
     }
-
-    /*
-    ========================================================
-    OBS
-    ========================================================
-    */
 
     #btnObsSettings {
         background: #4b5563;
@@ -216,6 +189,7 @@
         background: #18181b;
         font-size: 13px;
         line-height: 1.35;
+        word-break: break-word;
     }
 
     #obsSettings {
@@ -288,12 +262,6 @@
         line-height: 1.4;
     }
 
-    /*
-    ========================================================
-    MODO OBS
-    ========================================================
-    */
-
     body.obs-mode {
         overflow: hidden;
         width: 100%;
@@ -312,7 +280,6 @@
         opacity: 1;
     }
 
-    /* OBS Browser Source / Interact: permitir rueda y desplazamiento */
     #controlPanel,
     #controlPanel * {
         touch-action: auto;
@@ -323,11 +290,13 @@
         touch-action: manipulation;
     }
 </style>
+```
 
 </head>
 
 <body>
 
+```
 <!-- =====================================================
      CÁMARA
 ====================================================== -->
@@ -383,7 +352,9 @@
             Cámara utilizada por el detector
         </label>
 
-        <div class="camera-help" style="font-size:13px;color:#e4e4e7;">
+        <div
+            class="camera-help"
+            style="font-size:13px;color:#e4e4e7;">
             El detector utilizará directamente la señal de la
             <strong>fuente de cámara de OBS</strong>.
             No necesita permiso de cámara del navegador.
@@ -520,7 +491,9 @@
      OBS WEBSOCKET
 ====================================================== -->
 
-<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.8/dist/obs-ws.global.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.8/dist/obs-ws.global.js">
+</script>
 
 
 <!-- =====================================================
@@ -528,61 +501,136 @@
 ====================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 
 
+<!-- =====================================================
+     SESIÓN
+====================================================== -->
+
 <script>
-/* ============================================================
-   SESIÓN EXPLÍCITA PARA ESTA PÁGINA
-   Evita que la cookie de otra pestaña/usuario cambie de sesión.
-   ============================================================ */
-(function () {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId =
-        params.get("session") ||
-        sessionStorage.getItem("squat_session_id") ||
-        "";
+    (function () {
 
-    window.SQUAT_SESSION_ID = sessionId;
-
-    const nativeFetch = window.fetch.bind(window);
-
-    function addSession(url) {
-        if (!window.SQUAT_SESSION_ID) return url;
-
-        const absolute = new URL(url, window.location.origin);
-
-        if (absolute.origin !== window.location.origin) {
-            return url;
-        }
-
-        if (absolute.pathname.startsWith("/api/")) {
-            absolute.searchParams.set(
-                "session",
-                window.SQUAT_SESSION_ID
+        const params =
+            new URLSearchParams(
+                window.location.search
             );
-            return absolute.pathname + absolute.search + absolute.hash;
+
+        const sessionId =
+            params.get("session") ||
+            sessionStorage.getItem(
+                "squat_session_id"
+            ) ||
+            "";
+
+        window.SQUAT_SESSION_ID =
+            sessionId;
+
+
+        const nativeFetch =
+            window.fetch.bind(window);
+
+
+        function addSession(url) {
+
+            if (!window.SQUAT_SESSION_ID) {
+                return url;
+            }
+
+            try {
+
+                const absolute =
+                    new URL(
+                        url,
+                        window.location.origin
+                    );
+
+
+                if (
+                    absolute.origin !==
+                    window.location.origin
+                ) {
+                    return url;
+                }
+
+
+                if (
+                    absolute.pathname.startsWith(
+                        "/api/"
+                    )
+                ) {
+
+                    absolute.searchParams.set(
+                        "session",
+                        window.SQUAT_SESSION_ID
+                    );
+
+
+                    return (
+                        absolute.pathname +
+                        absolute.search +
+                        absolute.hash
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "No se pudo añadir la sesión:",
+                    error
+                );
+
+            }
+
+
+            return url;
+
         }
 
-        return url;
-    }
 
-    window.fetch = function (input, init) {
-        if (typeof input === "string") {
-            input = addSession(input);
-        } else if (input instanceof Request) {
-            input = new Request(addSession(input.url), input);
-        }
+        window.fetch =
+            function (input, init) {
 
-        return nativeFetch(input, init);
-    };
-})();
+                if (
+                    typeof input ===
+                    "string"
+                ) {
+
+                    input =
+                        addSession(input);
+
+                } else if (
+                    input instanceof Request
+                ) {
+
+                    input =
+                        new Request(
+                            addSession(
+                                input.url
+                            ),
+                            input
+                        );
+
+                }
+
+
+                return nativeFetch(
+                    input,
+                    init
+                );
+
+            };
+
+    })();
 </script>
+
+
+<!-- =====================================================
+     APLICACIÓN
+====================================================== -->
 
 <script>
 
@@ -602,58 +650,94 @@
         canvas.getContext("2d");
 
     const cameraContainer =
-        document.getElementById("cameraContainer");
+        document.getElementById(
+            "cameraContainer"
+        );
 
     const btnCamera =
-        document.getElementById("btnCamera");
+        document.getElementById(
+            "btnCamera"
+        );
 
     const btnPause =
-        document.getElementById("btnPause");
+        document.getElementById(
+            "btnPause"
+        );
 
     const btnStop =
-        document.getElementById("btnStop");
+        document.getElementById(
+            "btnStop"
+        );
 
     const btnReset =
-        document.getElementById("btnReset");
+        document.getElementById(
+            "btnReset"
+        );
 
     const cameraStatus =
-        document.getElementById("cameraStatus");
+        document.getElementById(
+            "cameraStatus"
+        );
 
     const detectorStatus =
-        document.getElementById("detectorStatus");
+        document.getElementById(
+            "detectorStatus"
+        );
 
     const btnRefreshCameras =
-        document.getElementById("btnRefreshCameras");
+        document.getElementById(
+            "btnRefreshCameras"
+        );
 
     const obsStatus =
-        document.getElementById("obsStatus");
+        document.getElementById(
+            "obsStatus"
+        );
 
     const btnObsSettings =
-        document.getElementById("btnObsSettings");
+        document.getElementById(
+            "btnObsSettings"
+        );
 
     const obsSettings =
-        document.getElementById("obsSettings");
+        document.getElementById(
+            "obsSettings"
+        );
 
     const obsHost =
-        document.getElementById("obsHost");
+        document.getElementById(
+            "obsHost"
+        );
 
     const obsPort =
-        document.getElementById("obsPort");
+        document.getElementById(
+            "obsPort"
+        );
 
     const obsPassword =
-        document.getElementById("obsPassword");
+        document.getElementById(
+            "obsPassword"
+        );
 
     const obsScene =
-        document.getElementById("obsScene");
+        document.getElementById(
+            "obsScene"
+        );
 
     const obsSource =
-        document.getElementById("obsSource");
+        document.getElementById(
+            "obsSource"
+        );
 
     const btnObsConnect =
-        document.getElementById("btnObsConnect");
+        document.getElementById(
+            "btnObsConnect"
+        );
 
     const btnObsDisconnect =
-        document.getElementById("btnObsDisconnect");
+        document.getElementById(
+            "btnObsDisconnect"
+        );
 
 
     /*
@@ -663,8 +747,11 @@
     */
 
     let stream = null;
+
     let obsFrameTimer = null;
+
     let obsFrameBusy = false;
+
     let obsFrameImage = null;
 
     let detectorPaused = false;
@@ -704,7 +791,7 @@
 
     /*
     ========================================================
-    OBS WEBSOCKET
+    OBS
     ========================================================
     */
 
@@ -717,7 +804,8 @@
 
     function setObsStatus(message) {
 
-        obsStatus.textContent = message;
+        obsStatus.textContent =
+            message;
 
     }
 
@@ -729,8 +817,9 @@
             "127.0.0.1";
 
         const port =
-            Number(obsPort.value) ||
-            4455;
+            Number(
+                obsPort.value
+            ) || 4455;
 
         const password =
             obsPassword.value;
@@ -742,10 +831,19 @@
             obsSource.value.trim();
 
 
-        if (!sceneName || !sourceName) {
+        if (!sceneName) {
 
             throw new Error(
-                "Indica la escena y el nombre exacto de la fuente de cámara."
+                "Indica la escena donde está la cámara."
+            );
+
+        }
+
+
+        if (!sourceName) {
+
+            throw new Error(
+                "Indica el nombre exacto de la fuente de cámara."
             );
 
         }
@@ -777,29 +875,41 @@
 
     function saveObsConfig() {
 
-        localStorage.setItem(
-            "squatObsConfig",
-            JSON.stringify({
+        try {
 
-                host:
-                    obsHost.value.trim() ||
-                    "127.0.0.1",
+            localStorage.setItem(
+                "squatObsConfig",
+                JSON.stringify({
 
-                port:
-                    Number(obsPort.value) ||
-                    4455,
+                    host:
+                        obsHost.value.trim() ||
+                        "127.0.0.1",
 
-                password:
-                    obsPassword.value,
+                    port:
+                        Number(
+                            obsPort.value
+                        ) || 4455,
 
-                sceneName:
-                    obsScene.value.trim(),
+                    password:
+                        obsPassword.value,
 
-                sourceName:
-                    obsSource.value.trim()
+                    sceneName:
+                        obsScene.value.trim(),
 
-            })
-        );
+                    sourceName:
+                        obsSource.value.trim()
+
+                })
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "No se pudo guardar la configuración:",
+                error
+            );
+
+        }
 
     }
 
@@ -816,8 +926,9 @@
                 );
 
 
-            if (!saved)
+            if (!saved) {
                 return;
+            }
 
 
             obsHost.value =
@@ -851,6 +962,36 @@
 
     }
 
+
+    /*
+    ========================================================
+    COMPROBAR LIBRERÍA OBS
+    ========================================================
+    */
+
+    function checkOBSWebSocketLibrary() {
+
+        if (
+            typeof OBSWebSocket ===
+            "undefined"
+        ) {
+
+            throw new Error(
+                "La librería OBS WebSocket no se cargó correctamente. Revisa la conexión a Internet de OBS."
+            );
+
+        }
+
+        return true;
+
+    }
+
+
+    /*
+    ========================================================
+    ESTADO DE FUENTE
+    ========================================================
+    */
 
     async function refreshOBSSceneState() {
 
@@ -902,17 +1043,41 @@
 
 
         setObsStatus(
-
             `🟢 OBS conectado · Escena: ${config.sceneName} · Fuente: ${config.sourceName} · Estado: ${enabled ? "visible" : "oculta"}`
-
         );
 
     }
 
 
+    /*
+    ========================================================
+    CONECTAR OBS
+    ========================================================
+    */
+
     async function connectOBS(showAlert = true) {
 
+        /*
+         * MUY IMPORTANTE:
+         * Cambiamos inmediatamente el texto del botón.
+         * Así sabemos que el clic llegó correctamente.
+         */
+
+        btnObsConnect.disabled =
+            true;
+
+        btnObsConnect.textContent =
+            "🟡 CONECTANDO...";
+
+        setObsStatus(
+            "🟡 Conectando con OBS..."
+        );
+
+
         try {
+
+            checkOBSWebSocketLibrary();
+
 
             const config =
                 getObsConfig();
@@ -920,6 +1085,12 @@
 
             saveObsConfig();
 
+
+            /*
+            ------------------------------------------------
+            CERRAR CONEXIÓN ANTERIOR
+            ------------------------------------------------
+            */
 
             if (obs) {
 
@@ -932,40 +1103,58 @@
             }
 
 
-            if (
-                typeof OBSWebSocket ===
-                "undefined"
-            ) {
+            obsConnected =
+                false;
 
-                throw new Error(
-                    "No se pudo cargar la librería de OBS WebSocket."
-                );
+            obsSceneItemId =
+                null;
 
-            }
 
+            /*
+            ------------------------------------------------
+            CREAR WEBSOCKET
+            ------------------------------------------------
+            */
 
             obs =
                 new OBSWebSocket();
 
 
-            setObsStatus(
-                "🟡 Conectando con OBS..."
+            /*
+            ------------------------------------------------
+            CONEXIÓN
+            ------------------------------------------------
+            */
+
+            const websocketUrl =
+                `ws://${config.host}:${config.port}`;
+
+
+            console.log(
+                "Intentando conectar a OBS:",
+                websocketUrl
             );
 
 
             await obs.connect(
-
-                `ws://${config.host}:${config.port}`,
-
-                config.password ||
-                undefined
-
+                websocketUrl,
+                config.password || undefined
             );
 
 
-            obsConnected = true;
+            obsConnected =
+                true;
 
-            obsSceneItemId = null;
+
+            /*
+            ------------------------------------------------
+            BUSCAR FUENTE
+            ------------------------------------------------
+            */
+
+            setObsStatus(
+                "🟡 OBS conectado. Buscando la fuente..."
+            );
 
 
             const sceneItems =
@@ -978,25 +1167,23 @@
                 );
 
 
-            const item =
-                (
-                    sceneItems.sceneItems ||
-                    []
-                ).find(
+            const items =
+                sceneItems.sceneItems ||
+                [];
 
+
+            const item =
+                items.find(
                     sceneItem =>
                         sceneItem.sourceName ===
                         config.sourceName
-
                 );
 
 
             if (!item) {
 
                 throw new Error(
-
                     `No encontré la fuente "${config.sourceName}" dentro de la escena "${config.sceneName}".`
-
                 );
 
             }
@@ -1006,8 +1193,20 @@
                 item.sceneItemId;
 
 
+            /*
+            ------------------------------------------------
+            COMPROBAR FUENTE
+            ------------------------------------------------
+            */
+
             await updateOBSStatusWithSourceState();
 
+
+            /*
+            ------------------------------------------------
+            BOTÓN
+            ------------------------------------------------
+            */
 
             btnObsConnect.textContent =
                 "🟢 OBS CONECTADO";
@@ -1016,9 +1215,20 @@
                 true;
 
 
+            /*
+            ------------------------------------------------
+            DESCONEXIÓN
+            ------------------------------------------------
+            */
+
             obs.once(
                 "ConnectionClosed",
                 () => {
+
+                    console.warn(
+                        "OBS cerró la conexión."
+                    );
+
 
                     obsConnected =
                         false;
@@ -1026,9 +1236,11 @@
                     obsSceneItemId =
                         null;
 
+
                     setObsStatus(
                         "🔴 OBS: conexión cerrada"
                     );
+
 
                     btnObsConnect.textContent =
                         "🔌 CONECTAR OBS";
@@ -1043,6 +1255,12 @@
             console.log(
                 "OBS conectado correctamente",
                 {
+                    host:
+                        config.host,
+
+                    port:
+                        config.port,
+
                     sceneName:
                         config.sceneName,
 
@@ -1060,15 +1278,29 @@
 
         } catch (error) {
 
+            console.error(
+                "❌ Error conectando con OBS:",
+                error
+            );
+
+
             obsConnected =
                 false;
 
             obsSceneItemId =
                 null;
 
+
+            const errorMessage =
+                error?.message ||
+                String(error);
+
+
             setObsStatus(
-                "🔴 OBS: no conectado"
+                "🔴 OBS: " +
+                errorMessage
             );
+
 
             btnObsConnect.textContent =
                 "🔌 CONECTAR OBS";
@@ -1077,25 +1309,19 @@
                 false;
 
 
-            console.error(
-                "Error conectando con OBS:",
-                error
-            );
-
-
             if (showAlert) {
 
                 alert(
-
                     "No se pudo conectar con OBS.\n\n" +
-
-                    (
-                        error?.message ||
-                        error
-                    ) +
-
-                    "\n\nRevisa que WebSocket esté habilitado en OBS, que el puerto sea correcto y que la contraseña coincida."
-
+                    errorMessage +
+                    "\n\n" +
+                    "Comprueba:\n" +
+                    "• OBS está abierto.\n" +
+                    "• WebSocket está habilitado.\n" +
+                    "• Puerto: 4455.\n" +
+                    "• Contraseña correcta.\n" +
+                    "• Nombre exacto de la escena.\n" +
+                    "• Nombre exacto de la fuente."
                 );
 
             }
@@ -1108,7 +1334,17 @@
     }
 
 
+    /*
+    ========================================================
+    DESCONECTAR OBS
+    ========================================================
+    */
+
     async function disconnectOBS() {
+
+        btnObsDisconnect.disabled =
+            true;
+
 
         try {
 
@@ -1133,9 +1369,11 @@
             obsSceneItemId =
                 null;
 
+
             setObsStatus(
                 "🟡 OBS: desconectado"
             );
+
 
             btnObsConnect.textContent =
                 "🔌 CONECTAR OBS";
@@ -1143,10 +1381,20 @@
             btnObsConnect.disabled =
                 false;
 
+
+            btnObsDisconnect.disabled =
+                false;
+
         }
 
     }
 
+
+    /*
+    ========================================================
+    ACTIVAR/DESACTIVAR FUENTE
+    ========================================================
+    */
 
     async function setOBSSceneCamera(enabled) {
 
@@ -1187,9 +1435,7 @@
 
 
         setObsStatus(
-
             `🟢 OBS conectado · Escena: ${config.sceneName} · Fuente: ${config.sourceName} · Estado: ${verifiedState ? "visible" : "oculta"}`
-
         );
 
 
@@ -1255,7 +1501,7 @@
 
     /*
     ========================================================
-    REINICIAR
+    RESET
     ========================================================
     */
 
@@ -1279,6 +1525,7 @@
                 }
             );
 
+
         } catch (error) {
 
             console.error(
@@ -1298,6 +1545,23 @@
     */
 
     function initializePose() {
+
+        if (
+            typeof Pose ===
+            "undefined"
+        ) {
+
+            console.error(
+                "MediaPipe Pose no está disponible."
+            );
+
+            detectorStatus.textContent =
+                "Detector: error cargando MediaPipe";
+
+            return;
+
+        }
+
 
         pose =
             new Pose({
@@ -1351,9 +1615,7 @@
     function processPoseResults(results) {
 
         if (detectorPaused) {
-
             return;
-
         }
 
 
@@ -1396,24 +1658,10 @@
         }
 
 
-        const shoulderX =
-            (
-                leftShoulder.x +
-                rightShoulder.x
-            ) / 2;
-
-
         const shoulderY =
             (
                 leftShoulder.y +
                 rightShoulder.y
-            ) / 2;
-
-
-        const hipX =
-            (
-                leftHip.x +
-                rightHip.x
             ) / 2;
 
 
@@ -1432,9 +1680,7 @@
 
 
         if (torsoSize < 0.05) {
-
             return;
-
         }
 
 
@@ -1453,7 +1699,8 @@
 
 
             if (
-                baselineHip === null
+                baselineHip ===
+                null
             ) {
 
                 baselineHip =
@@ -1478,7 +1725,7 @@
 
         /*
         ====================================================
-        DELTA NORMALIZADO
+        DELTA
         ====================================================
         */
 
@@ -1491,7 +1738,8 @@
 
 
         if (
-            smoothedHip === null
+            smoothedHip ===
+            null
         ) {
 
             smoothedHip =
@@ -1514,7 +1762,8 @@
 
 
         if (
-            previousHip !== null
+            previousHip !==
+            null
         ) {
 
             velocity =
@@ -1530,7 +1779,7 @@
 
         /*
         ====================================================
-        MÁQUINA DE ESTADOS
+        ESTADOS
         ====================================================
         */
 
@@ -1658,200 +1907,446 @@
 
     /*
     ========================================================
-    PROCESAR CÁMARA
+    CAPTURAR FRAME DE OBS
+    ========================================================
+    */
+
+    async function captureOBSFrame() {
+
+        if (
+            obsFrameBusy ||
+            !obsConnected ||
+            !obs
+        ) {
+
+            return;
+
+        }
+
+
+        obsFrameBusy =
+            true;
+
+
+        try {
+
+            const config =
+                getObsConfig();
+
+
+            const result =
+                await obs.call(
+                    "GetSourceScreenshot",
+                    {
+
+                        sourceName:
+                            config.sourceName,
+
+                        imageFormat:
+                            "jpg",
+
+                        imageWidth:
+                            640,
+
+                        imageHeight:
+                            360
+
+                    }
+                );
+
+
+            if (
+                !result ||
+                !result.imageData
+            ) {
+
+                throw new Error(
+                    "OBS no devolvió una imagen de la fuente."
+                );
+
+            }
+
+
+            if (!obsFrameImage) {
+
+                obsFrameImage =
+                    new Image();
+
+            }
+
+
+            const image =
+                obsFrameImage;
+
+
+            await new Promise(
+                (resolve, reject) => {
+
+                    const done =
+                        () => {
+
+                            image.removeEventListener(
+                                "load",
+                                done
+                            );
+
+                            image.removeEventListener(
+                                "error",
+                                fail
+                            );
+
+                            resolve();
+
+                        };
+
+
+                    const fail =
+                        () => {
+
+                            image.removeEventListener(
+                                "load",
+                                done
+                            );
+
+                            image.removeEventListener(
+                                "error",
+                                fail
+                            );
+
+                            reject(
+                                new Error(
+                                    "No se pudo cargar la imagen enviada por OBS."
+                                )
+                            );
+
+                        };
+
+
+                    image.addEventListener(
+                        "load",
+                        done,
+                        {
+                            once:
+                                true
+                        }
+                    );
+
+
+                    image.addEventListener(
+                        "error",
+                        fail,
+                        {
+                            once:
+                                true
+                        }
+                    );
+
+
+                    image.src =
+                        result.imageData;
+
+                }
+            );
+
+
+            const width =
+                image.naturalWidth ||
+                640;
+
+            const height =
+                image.naturalHeight ||
+                360;
+
+
+            if (
+                canvas.width !==
+                width
+            ) {
+
+                canvas.width =
+                    width;
+
+            }
+
+
+            if (
+                canvas.height !==
+                height
+            ) {
+
+                canvas.height =
+                    height;
+
+            }
+
+
+            ctx.drawImage(
+                image,
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            if (
+                !detectorPaused &&
+                pose
+            ) {
+
+                await pose.send({
+                    image:
+                        canvas
+                });
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Error leyendo la cámara desde OBS:",
+                error
+            );
+
+
+            setObsStatus(
+                "🔴 OBS conectado, pero no se pudo leer la fuente: " +
+                (
+                    error?.message ||
+                    error
+                )
+            );
+
+
+        } finally {
+
+            obsFrameBusy =
+                false;
+
+        }
+
+    }
+
+
+    /*
+    ========================================================
+    BUCLE DE CÁMARA
     ========================================================
     */
 
     async function processCamera() {
 
-        if (cameraLoopRunning) {
+        if (
+            cameraLoopRunning
+        ) {
+
             return;
+
         }
 
-        cameraLoopRunning = true;
 
-        const loop = async () => {
+        cameraLoopRunning =
+            true;
 
-            if (!obsConnected || !obs || !obsSceneItemId) {
-                cameraLoopRunning = false;
-                return;
-            }
 
-            if (!detectorPaused) {
-                await captureOBSFrame();
-            }
+        const loop =
+            async () => {
 
-            if (cameraLoopRunning) {
-                obsFrameTimer = setTimeout(loop, 160);
-            }
-        };
+                if (
+                    !obsConnected ||
+                    !obs ||
+                    obsSceneItemId === null
+                ) {
+
+                    cameraLoopRunning =
+                        false;
+
+                    return;
+
+                }
+
+
+                if (
+                    !detectorPaused
+                ) {
+
+                    await captureOBSFrame();
+
+                }
+
+
+                if (
+                    cameraLoopRunning
+                ) {
+
+                    obsFrameTimer =
+                        setTimeout(
+                            loop,
+                            160
+                        );
+
+                }
+
+            };
+
 
         loop();
+
     }
 
 
     /*
     ========================================================
-    CAPTURAR LA FUENTE DE OBS
-    ========================================================
-
-    IMPORTANTE:
-    Ya no usamos navigator.mediaDevices.getUserMedia().
-    OBS entrega una captura de su propia fuente mediante
-    GetSourceScreenshot. Esto evita el problema de permisos
-    de cámara dentro de OBS Browser Source.
-    */
-
-    async function captureOBSFrame() {
-
-        if (obsFrameBusy || !obsConnected || !obs) {
-            return;
-        }
-
-        obsFrameBusy = true;
-
-        try {
-            const config = getObsConfig();
-
-            const result = await obs.call(
-                "GetSourceScreenshot",
-                {
-                    sourceName: config.sourceName,
-                    imageFormat: "jpg",
-                    imageWidth: 640,
-                    imageHeight: 360
-                }
-            );
-
-            if (!result || !result.imageData) {
-                throw new Error("OBS no devolvió una imagen de la fuente.");
-            }
-
-            if (!obsFrameImage) {
-                obsFrameImage = new Image();
-            }
-
-            const image = obsFrameImage;
-
-            await new Promise((resolve, reject) => {
-                const done = () => {
-                    image.removeEventListener("load", done);
-                    image.removeEventListener("error", fail);
-                    resolve();
-                };
-                const fail = () => {
-                    image.removeEventListener("load", done);
-                    image.removeEventListener("error", fail);
-                    reject(new Error("No se pudo cargar la imagen enviada por OBS."));
-                };
-                image.addEventListener("load", done, { once: true });
-                image.addEventListener("error", fail, { once: true });
-                image.src = result.imageData;
-            });
-
-            const width = image.naturalWidth || 640;
-            const height = image.naturalHeight || 360;
-
-            if (canvas.width !== width) canvas.width = width;
-            if (canvas.height !== height) canvas.height = height;
-
-            ctx.drawImage(image, 0, 0, width, height);
-
-            if (!detectorPaused && pose) {
-                await pose.send({ image: canvas });
-            }
-
-        } catch (error) {
-            console.error("Error leyendo la cámara desde OBS:", error);
-            setObsStatus(
-                "🔴 OBS conectado, pero no se pudo leer la fuente de cámara: " +
-                (error?.message || error)
-            );
-        } finally {
-            obsFrameBusy = false;
-        }
-    }
-
-
-    /*
-    ========================================================
-    CONECTAR CÁMARA
+    ACTIVAR CÁMARA
     ========================================================
     */
 
     async function connectCamera() {
 
-        let obsWasEnabledByThisClick = false;
+        let obsWasEnabledByThisClick =
+            false;
+
 
         try {
-            btnCamera.disabled = true;
+
+            btnCamera.disabled =
+                true;
+
 
             cameraStatus.textContent =
                 "🟡 Conectando directamente con la cámara de OBS...";
 
-            // OBS es ahora la única fuente de vídeo del detector.
+
             if (!obsConnected) {
-                const connected = await connectOBS(false);
+
+                const connected =
+                    await connectOBS(false);
+
+
                 if (!connected) {
+
                     throw new Error(
-                        "No se pudo conectar con OBS. Revisa host, puerto, contraseña, escena y fuente."
+                        "No se pudo conectar con OBS. Revisa la configuración."
                     );
+
                 }
+
             }
 
-            obsWasEnabledByThisClick = await setOBSSceneCamera(true);
 
-            // Verificamos inmediatamente que OBS pueda entregar una imagen.
+            obsWasEnabledByThisClick =
+                await setOBSSceneCamera(
+                    true
+                );
+
+
             await captureOBSFrame();
 
-            cameraContainer.style.display = "block";
+
+            cameraContainer.style.display =
+                "block";
+
 
             cameraStatus.textContent =
                 "🟢 Cámara de OBS conectada · detector usando la señal de OBS";
 
+
             detectorStatus.textContent =
                 "Detector: calibrando...";
 
-            btnPause.disabled = false;
-            btnStop.disabled = false;
 
-            state = "CALIBRATING";
-            calibrationFrames = 0;
-            baselineHip = null;
-            smoothedHip = null;
-            previousHip = null;
-            lastSquatTime = 0;
-            detectorPaused = false;
+            btnPause.disabled =
+                false;
 
-            btnPause.textContent = "⏸ PAUSAR DETECTOR";
+            btnStop.disabled =
+                false;
+
+
+            state =
+                "CALIBRATING";
+
+            calibrationFrames =
+                0;
+
+            baselineHip =
+                null;
+
+            smoothedHip =
+                null;
+
+            previousHip =
+                null;
+
+            lastSquatTime =
+                0;
+
+            detectorPaused =
+                false;
+
+
+            btnPause.textContent =
+                "⏸ PAUSAR DETECTOR";
+
 
             processCamera();
 
+
         } catch (error) {
-            console.error("❌ Error conectando cámara de OBS:", error);
+
+            console.error(
+                "❌ Error conectando cámara:",
+                error
+            );
+
 
             cameraStatus.textContent =
                 "🔴 Cámara de OBS: " +
-                (error?.message || "No se pudo obtener la señal de OBS.");
+                (
+                    error?.message ||
+                    "No se pudo obtener la señal de OBS."
+                );
 
-            detectorStatus.textContent = "Detector: detenido";
 
-            btnCamera.disabled = false;
-            btnPause.disabled = true;
-            btnStop.disabled = true;
+            detectorStatus.textContent =
+                "Detector: detenido";
 
-            if (obsWasEnabledByThisClick) {
+
+            btnCamera.disabled =
+                false;
+
+            btnPause.disabled =
+                true;
+
+            btnStop.disabled =
+                true;
+
+
+            if (
+                obsWasEnabledByThisClick
+            ) {
+
                 try {
-                    await setOBSSceneCamera(false);
+
+                    await setOBSSceneCamera(
+                        false
+                    );
+
                 } catch (_) {}
+
             }
+
 
             alert(
                 "No se pudo conectar la cámara de OBS.\n\n" +
-                (error?.message || error) +
-                "\n\nIMPORTANTE: esta versión ya no pide permiso de cámara al navegador. El detector lee directamente la fuente de OBS."
+                (
+                    error?.message ||
+                    error
+                )
             );
+
         }
+
     }
 
 
@@ -1893,50 +2388,101 @@
 
     /*
     ========================================================
-    DESACTIVAR
+    DETENER
     ========================================================
     */
 
     async function stopCamera() {
 
         try {
-            await setOBSSceneCamera(false);
+
+            await setOBSSceneCamera(
+                false
+            );
+
         } catch (error) {
+
             console.error(
-                "No se pudo desactivar la fuente de OBS:",
+                "No se pudo desactivar la fuente:",
                 error
             );
+
         }
+
 
         if (obsFrameTimer) {
-            clearTimeout(obsFrameTimer);
-            obsFrameTimer = null;
+
+            clearTimeout(
+                obsFrameTimer
+            );
+
+            obsFrameTimer =
+                null;
+
         }
 
-        cameraLoopRunning = false;
-        obsFrameBusy = false;
-        obsFrameImage = null;
 
-        stream = null;
-        video.srcObject = null;
-        cameraContainer.style.display = "none";
+        cameraLoopRunning =
+            false;
 
-        detectorPaused = false;
-        state = "CALIBRATING";
-        calibrationFrames = 0;
-        baselineHip = null;
-        smoothedHip = null;
-        previousHip = null;
+        obsFrameBusy =
+            false;
 
-        btnCamera.disabled = false;
-        btnPause.disabled = true;
-        btnStop.disabled = true;
-        btnPause.textContent = "⏸ PAUSAR DETECTOR";
+        obsFrameImage =
+            null;
+
+
+        stream =
+            null;
+
+        video.srcObject =
+            null;
+
+
+        cameraContainer.style.display =
+            "none";
+
+
+        detectorPaused =
+            false;
+
+        state =
+            "CALIBRATING";
+
+        calibrationFrames =
+            0;
+
+        baselineHip =
+            null;
+
+        smoothedHip =
+            null;
+
+        previousHip =
+            null;
+
+
+        btnCamera.disabled =
+            false;
+
+        btnPause.disabled =
+            true;
+
+        btnStop.disabled =
+            true;
+
+
+        btnPause.textContent =
+            "⏸ PAUSAR DETECTOR";
+
 
         cameraStatus.textContent =
             "🔴 Cámara de OBS desconectada";
+
+
         detectorStatus.textContent =
             "Detector: detenido";
+
     }
 
 
@@ -1948,60 +2494,122 @@
 
     btnCamera.addEventListener(
         "click",
-        connectCamera
+        function () {
+
+            connectCamera();
+
+        }
     );
 
 
     btnPause.addEventListener(
         "click",
-        pauseDetector
+        function () {
+
+            pauseDetector();
+
+        }
     );
 
 
     btnStop.addEventListener(
         "click",
-        stopCamera
+        function () {
+
+            stopCamera();
+
+        }
     );
 
 
     btnReset.addEventListener(
         "click",
-        resetCounter
+        function () {
+
+            resetCounter();
+
+        }
     );
 
 
     btnRefreshCameras.addEventListener(
         "click",
-        async () => {
+        async function () {
+
+            btnRefreshCameras.disabled =
+                true;
+
+
             try {
+
                 cameraStatus.textContent =
                     "🟡 Probando la fuente de cámara de OBS...";
 
+
                 if (!obsConnected) {
-                    const connected = await connectOBS(false);
+
+                    const connected =
+                        await connectOBS(false);
+
+
                     if (!connected) {
-                        throw new Error("No se pudo conectar con OBS.");
+
+                        throw new Error(
+                            "No se pudo conectar con OBS."
+                        );
+
                     }
+
                 }
 
-                await setOBSSceneCamera(true);
+
+                await setOBSSceneCamera(
+                    true
+                );
+
+
                 await captureOBSFrame();
+
 
                 cameraStatus.textContent =
                     "🟢 Señal de cámara de OBS disponible.";
+
+
             } catch (error) {
-                console.error(error);
+
+                console.error(
+                    error
+                );
+
+
                 cameraStatus.textContent =
                     "🔴 No se pudo leer la cámara de OBS: " +
-                    (error?.message || error);
+                    (
+                        error?.message ||
+                        error
+                    );
+
+
+            } finally {
+
+                btnRefreshCameras.disabled =
+                    false;
+
             }
+
         }
     );
 
 
+    /*
+    ========================================================
+    CONFIGURACIÓN OBS
+    ========================================================
+    */
+
     btnObsSettings.addEventListener(
         "click",
-        () => {
+        function () {
 
             const opening =
                 !obsSettings.classList.contains(
@@ -2040,68 +2648,160 @@
     );
 
 
+    /*
+    ========================================================
+    BOTÓN CONECTAR OBS
+    ========================================================
+    */
+
     btnObsConnect.addEventListener(
         "click",
-        connectOBS
+        function (event) {
+
+            event.preventDefault();
+
+            console.log(
+                "🟣 CLIC EN CONECTAR OBS"
+            );
+
+
+            connectOBS(true);
+
+        }
     );
 
+
+    /*
+    ========================================================
+    BOTÓN DESCONECTAR OBS
+    ========================================================
+    */
 
     btnObsDisconnect.addEventListener(
         "click",
-        disconnectOBS
+        function (event) {
+
+            event.preventDefault();
+
+            disconnectOBS();
+
+        }
     );
 
 
-
-
-
     /*
     ========================================================
-    INICIALIZAR
+    INICIALIZACIÓN
     ========================================================
     */
 
-    initializePose();
+    function initializeApplication() {
 
-    loadObsConfig();
-
-
-    // No solicitamos ni enumeramos cámaras del navegador.
-    // La cámara llega exclusivamente desde OBS WebSocket.
-
-
-
-    /*
-    ========================================================
-    MODO OBS
-    ========================================================
-
-    URL:
-
-    https://TU-DOMINIO/controles.html?obs=1
-
-    En este modo se oculta el panel.
-    */
-
-    const params =
-        new URLSearchParams(
-            window.location.search
+        console.log(
+            "Inicializando controles..."
         );
 
 
-    if (
-        params.get("obs") === "1"
-    ) {
+        loadObsConfig();
 
-        document.body.classList.add(
-            "obs-mode"
+
+        /*
+        ----------------------------------------------------
+        COMPROBAR OBS WEBSOCKET
+        ----------------------------------------------------
+        */
+
+        if (
+            typeof OBSWebSocket ===
+            "undefined"
+        ) {
+
+            console.error(
+                "OBSWebSocket no está disponible."
+            );
+
+
+            setObsStatus(
+                "🔴 Error: no se cargó OBS WebSocket"
+            );
+
+        } else {
+
+            console.log(
+                "✅ OBS WebSocket disponible."
+            );
+
+            setObsStatus(
+                "🟡 OBS: no conectado"
+            );
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        MEDIAPIPE
+        ----------------------------------------------------
+        */
+
+        initializePose();
+
+
+        /*
+        ----------------------------------------------------
+        MODO OBS
+        ----------------------------------------------------
+        */
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        if (
+            params.get("obs") ===
+            "1"
+        ) {
+
+            document.body.classList.add(
+                "obs-mode"
+            );
+
+        }
+
+
+        console.log(
+            "✅ Controles inicializados."
         );
 
     }
 
-</script>
 
+    /*
+    ========================================================
+    EJECUTAR CUANDO EL DOM ESTÉ LISTO
+    ========================================================
+    */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeApplication
+        );
+
+    } else {
+
+        initializeApplication();
+
+    }
+
+</script>
+```
 
 </body>
-
 </html>
