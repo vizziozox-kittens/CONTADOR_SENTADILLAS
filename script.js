@@ -116,6 +116,12 @@ const saveBitsButton = document.getElementById("saveBitsButton");
 
 let counter = 0;
 
+// Twitch/recompensas: las recompensas solo se cargan cuando cambia
+// el estado de conexión. No se vuelven a reconstruir cada 5 segundos,
+// porque eso reemplazaba los números que el usuario estaba editando.
+let twitchWasConnected = false;
+let twitchRewardsLoaded = false;
+
 let detectorActive = false;
 let camera = null;
 let socket = null;
@@ -1745,63 +1751,43 @@ async function checkTwitchStatus() {
 
     try {
 
-        const response =
-            await fetch(
-                "/api/status"
-            );
+        const response = await fetch("/api/status");
+        const data = await response.json();
 
+        const connected = Boolean(
+            data.twitch && data.twitch.connected
+        );
 
-        const data =
-            await response.json();
-
-
-        if (
-            data.twitch &&
-            data.twitch.connected
-        ) {
+        if (connected) {
 
             twitchStatus.textContent =
-                `Conectado como ${
-                    data.twitch.user.display_name
-                }`;
+                `Conectado como ${data.twitch.user?.display_name || "canal"}`;
 
+            twitchStatus.classList.add("connected");
+            connectTwitchButton.textContent = "Twitch conectado";
 
-            twitchStatus.classList.add(
-                "connected"
-            );
-
-
-            connectTwitchButton.textContent =
-                "Twitch conectado";
-
-
-            await loadTwitchRewards();
-
-            await loadTwitchConfig();
+            // Cargar una sola vez por conexión.
+            // IMPORTANTE: NO llamar loadTwitchRewards() en cada polling.
+            if (!twitchWasConnected || !twitchRewardsLoaded) {
+                twitchWasConnected = true;
+                twitchRewardsLoaded = true;
+                await loadTwitchRewards();
+                await loadTwitchConfig();
+            }
 
         } else {
 
-            twitchStatus.textContent =
-                "No conectado";
+            twitchStatus.textContent = "No conectado";
+            twitchStatus.classList.remove("connected");
+            connectTwitchButton.textContent = "Conectar con Twitch";
 
-
-            twitchStatus.classList.remove(
-                "connected"
-            );
-
-
-            connectTwitchButton.textContent =
-                "Conectar con Twitch";
-
+            twitchWasConnected = false;
+            twitchRewardsLoaded = false;
         }
-
 
     } catch (error) {
 
-        console.error(
-            "Error comprobando Twitch:",
-            error
-        );
+        console.error("Error comprobando Twitch:", error);
 
     }
 
@@ -1916,7 +1902,7 @@ async function loadTwitchRewards() {
             reward => {
 
                 const savedValue =
-                    data.mappings?.[reward.id] ||
+                    data.mappings?.[reward.id] ??
                     0;
 
 
@@ -2075,6 +2061,11 @@ saveRewardsButton.addEventListener(
 
             }
 
+
+            // El servidor ya guardó los valores en la sesión.
+            // No recargamos las recompensas aquí porque eso reconstruiría
+            // los inputs y podría reemplazar lo que acaba de escribir el usuario.
+            twitchRewardsLoaded = true;
 
             alert(
                 "✅ Valores de recompensas guardados."
