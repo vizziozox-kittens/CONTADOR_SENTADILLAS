@@ -26,7 +26,8 @@
         markEventAsProcessed,
         saveOAuthState,
         findSessionByOAuthState,
-        clearOAuthState
+        clearOAuthState,
+        findSessionByTwitchUserId
     } = require("./database");
 
     // ============================================================
@@ -45,23 +46,14 @@
 
     const HOST = "0.0.0.0";
 
-    // La Redirect URI SIEMPRE sale de la variable de entorno.
-    // Local:  http://localhost:3000/auth/twitch/callback
-    // Render: https://contador-sentadillas.onrender.com/auth/twitch/callback
-    //
-    // Twitch permite registrar ambas URLs en la misma aplicación.
     const TWITCH_REDIRECT_URI = String(
         process.env.TWITCH_REDIRECT_URI || ""
     ).trim();
 
     function getRedirectUri() {
-
         if (!TWITCH_REDIRECT_URI) {
-            throw new Error(
-                "Falta TWITCH_REDIRECT_URI en las variables de entorno del servidor."
-            );
+            throw new Error("Falta TWITCH_REDIRECT_URI en las variables de entorno.");
         }
-
         return TWITCH_REDIRECT_URI;
     }
 
@@ -89,7 +81,7 @@
 
             dbReady: null,
 
-            // Twitch de ESTA sesión
+            // Twitch de ESTA sesión. La identidad permanente es twitchUser.id.
 
             twitchClientId: null,
 
@@ -1234,20 +1226,11 @@
             ));
         }
 
-        // IMPORTANTE:
-        // El callback puede ser atendido por otro proceso/instancia de Render
-        // distinto al que inició el login. Por eso PostgreSQL es la fuente de
-        // verdad para el OAuth state.
-        //
-        // findSessionByOAuthState() ya encontró este registro usando EXACTAMENTE
-        // el state que Twitch devolvió y además comprueba que no tenga más de
-        // 15 minutos. No volvemos a comparar contra una copia que podría estar
-        // desactualizada en la memoria del proceso.
-        if (oauthState !== String(oauthRecord.oauth_state || "")) {
+        if (oauthState !== String(session.oauthState || "")) {
             return res.status(400).send(connectionPage(
                 false,
                 "Error de seguridad",
-                "El estado de autorización no coincide con el registro de OAuth.",
+                "El estado de autorización no coincide con esta sesión.",
                 returnUrl
             ));
         }
@@ -1311,23 +1294,66 @@
                 throw new Error("No se pudo obtener el usuario de Twitch.");
             }
 
-            session.twitchUser = userData.data[0];
+            const authenticatedTwitchUser = userData.data[0];
 
-            await saveTwitchTokens(session);
+            // ========================================================
+            // IDENTIDAD PERMANENTE DE TWITCH
+            // ========================================================
+            // El session_id puede cambiar; el twitch_user_id no.
+            // Si este streamer ya existe en PostgreSQL, reutilizamos
+            // su sesión canónica y, por tanto, toda su configuración.
+            let canonicalSession = session;
+
+            try {
+                const existingAccount = await findSessionByTwitchUserId(
+                    authenticatedTwitchUser.id
+                );
+
+                if (existingAccount && existingAccount.session_id !== session.id) {
+                    console.log(
+                        `♻️ Twitch ${authenticatedTwitchUser.display_name} ya existe. Reutilizando sesión permanente ${existingAccount.session_id.slice(0, 8)}.`
+                    );
+
+                    canonicalSession = sessions.get(existingAccount.session_id);
+
+                    if (!canonicalSession) {
+                        canonicalSession = createSession(existingAccount.session_id);
+                    }
+
+                    await canonicalSession.dbReady;
+                }
+            } catch (identityError) {
+                console.error("⚠️ No se pudo localizar la identidad permanente de Twitch:", identityError);
+                canonicalSession = session;
+            }
+
+            canonicalSession.twitchClientId = session.twitchClientId || canonicalSession.twitchClientId;
+            canonicalSession.twitchClientSecret = session.twitchClientSecret || canonicalSession.twitchClientSecret;
+            canonicalSession.twitchAccessToken = session.twitchAccessToken;
+            canonicalSession.twitchRefreshToken = session.twitchRefreshToken;
+            canonicalSession.twitchUser = authenticatedTwitchUser;
+            canonicalSession.lastActivity = Date.now();
+
+            await saveTwitchTokens(canonicalSession);
+
+            // La cookie pasa a apuntar a la identidad permanente.
+            setSessionCookie(res, canonicalSession.id);
 
             console.log("==============================================");
             console.log("✅ TWITCH CONECTADO");
-            console.log("Sesión:", session.id.slice(0, 8));
-            console.log("Usuario:", session.twitchUser.display_name);
+            console.log("Usuario:", canonicalSession.twitchUser.display_name);
+            console.log("Twitch User ID:", canonicalSession.twitchUser.id);
+            console.log("Sesión permanente:", canonicalSession.id.slice(0, 8));
             console.log("==============================================");
 
-            await startEventSub(session);
+            await startEventSub(canonicalSession);
 
             return res.send(connectionPage(
                 true,
                 "¡Twitch conectado!",
-                session.twitchUser.display_name,
-                returnUrl
+                canonicalSession.twitchUser.display_name,
+                returnUrl,
+                canonicalSession.id
             ));
 
         } catch (error) {
@@ -1348,7 +1374,7 @@
         }
     });
 
-    function connectionPage(success, title, message, returnUrl = "http://localhost:3000") {
+    function connectionPage(success, title, message, returnUrl = "http://localhost:3000", sessionId = "") {
         const color = success ? "#9147ff" : "#a91f1f";
         const icon = success ? "✅" : "❌";
 
@@ -1368,6 +1394,7 @@
         } catch {}
 
         const returnUrlJs = JSON.stringify(safeReturnUrl);
+        const sessionIdJs = JSON.stringify(String(sessionId || ""));
 
         return `<!DOCTYPE html>
     <html lang="es">
@@ -1391,6 +1418,13 @@
     <script>
     function closeAndReturn() {
         const returnUrl = ${returnUrlJs};
+        const sessionId = ${sessionIdJs};
+
+        if (sessionId) {
+            try {
+                localStorage.setItem("squat_session_id", sessionId);
+            } catch {}
+        }
 
         try {
             if (window.opener && !window.opener.closed) {
@@ -1935,57 +1969,59 @@
     app.post("/auth/twitch/logout", async (req, res) => {
 
         const session = getSession(req, res);
+        await session.dbReady;
 
+        // "Cerrar sesión" ya no elimina la identidad permanente.
+        // Conservamos tokens y twitch_user_id para que el streamer pueda
+        // volver a entrar y ser reconocido inmediatamente.
+        if (session.eventSubSocket) {
+            try { session.eventSubSocket.close(); } catch {}
+        }
+
+        session.eventSubSocket = null;
+        session.eventSubConnecting = false;
+
+        res.json({
+            ok: true,
+            persistent: true,
+            user: session.twitchUser || null
+        });
+    });
+
+    // Desvinculación real: revoca el token y elimina la asociación de Twitch.
+    app.post("/auth/twitch/disconnect", async (req, res) => {
+        const session = getSession(req, res);
         await session.dbReady;
 
         try {
-
-            if (session.twitchAccessToken) {
-
+            if (session.twitchAccessToken && session.twitchClientId) {
                 await fetch(
-
                     "https://id.twitch.tv/oauth2/revoke" +
-
                     `?client_id=${encodeURIComponent(session.twitchClientId)}` +
-
                     `&token=${encodeURIComponent(session.twitchAccessToken)}`,
-
                     { method: "POST" }
-
                 );
-
             }
-
-        } catch {}
+        } catch (error) {
+            console.warn("⚠️ Twitch no pudo revocar el token:", error.message);
+        }
 
         if (session.eventSubSocket) {
-
-            try {
-
-                session.eventSubSocket.close();
-
-            } catch {}
-
+            try { session.eventSubSocket.close(); } catch {}
         }
 
         session.twitchAccessToken = null;
-
         session.twitchRefreshToken = null;
-
         session.twitchUser = null;
-
         session.oauthState = null;
         session.oauthReturnUrl = null;
+        session.eventSubSocket = null;
+        session.eventSubConnecting = false;
 
         await clearOAuthState(session.id);
         await clearTwitchTokens(session.id);
 
-        session.eventSubSocket = null;
-
-        session.eventSubConnecting = false;
-
-        res.json({ ok: true });
-
+        res.json({ ok: true, persistent: false });
     });
 
     // ============================================================
@@ -2168,7 +2204,7 @@
 
                 );
 
-                console.log(`🔁 Redirect URI: ${getRedirectUri()}`);
+                console.log(`🔁 Redirect URI fija: ${TWITCH_REDIRECT_URI}`);
 
                 console.log("🟢 Servidor listo.");
 

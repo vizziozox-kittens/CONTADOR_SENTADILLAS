@@ -32,6 +32,15 @@
             ON streamer_sessions(oauth_state)
             WHERE oauth_state IS NOT NULL
         `);
+
+        // Índice para poder localizar al streamer por su identidad permanente de Twitch.
+        // No es UNIQUE para permitir migraciones seguras si una base antigua contiene
+        // registros duplicados; el servidor reutiliza el primero encontrado.
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_twitch_accounts_twitch_user_id
+            ON twitch_accounts(twitch_user_id)
+            WHERE twitch_user_id IS NOT NULL
+        `);
     }
 
     async function testDatabaseConnection() {
@@ -306,6 +315,20 @@
         await touchSession(session.id);
     }
 
+    async function findSessionByTwitchUserId(twitchUserId) {
+        const result = await pool.query(
+            `SELECT session_id, client_id, client_secret, access_token, refresh_token,
+                    twitch_user_id, twitch_login, twitch_display_name
+             FROM twitch_accounts
+             WHERE twitch_user_id = $1
+             ORDER BY updated_at DESC NULLS LAST
+             LIMIT 1`,
+            [String(twitchUserId || "").trim()]
+        );
+
+        return result.rows[0] || null;
+    }
+
     async function clearTwitchTokens(sessionId) {
         await pool.query(
             `UPDATE twitch_accounts
@@ -399,5 +422,6 @@
         markEventAsProcessed,
         saveOAuthState,
         findSessionByOAuthState,
-        clearOAuthState
+        clearOAuthState,
+        findSessionByTwitchUserId
     };

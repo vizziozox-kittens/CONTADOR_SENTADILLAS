@@ -1,10 +1,12 @@
 /* ============================================================
-   SESIÓN AISLADA POR PESTAÑA
-   Cada streamer obtiene un sessionId independiente.
+   IDENTIDAD PERSISTENTE DEL STREAMER
+   El sessionId se conserva en localStorage para que el mismo
+   navegador vuelva a reconocer al streamer aunque cierre la pestaña.
+   La identidad permanente de Twitch se guarda además en PostgreSQL.
    ============================================================ */
 (function setupSquatSessionIsolation() {
     const nativeFetch = window.fetch.bind(window);
-    const storedSession = sessionStorage.getItem("squat_session_id");
+    const storedSession = localStorage.getItem("squat_session_id");
 
     function addSession(url) {
         if (!window.SQUAT_SESSION_ID) return url;
@@ -49,7 +51,7 @@
             }
 
             window.SQUAT_SESSION_ID = data.sessionId;
-            sessionStorage.setItem("squat_session_id", data.sessionId);
+            localStorage.setItem("squat_session_id", data.sessionId);
 
             return data;
         } catch (error) {
@@ -97,6 +99,7 @@ const modeText = document.getElementById("modeText");
 
 const twitchStatus = document.getElementById("twitchStatus");
 const connectTwitchButton = document.getElementById("connectTwitchButton");
+const disconnectTwitchButton = document.getElementById("disconnectTwitchButton");
 
 const clientIdInput = document.getElementById("clientIdInput");
 const clientSecretInput = document.getElementById("clientSecretInput");
@@ -1744,6 +1747,42 @@ connectTwitchButton.addEventListener(
 
 
 // ============================================================
+// DESVINCULAR TWITCH
+// ============================================================
+
+if (disconnectTwitchButton) {
+    disconnectTwitchButton.addEventListener("click", async () => {
+        if (!confirm("¿Quieres desvincular Twitch? Esto revocará la conexión y tendrás que autorizar Twitch nuevamente.")) {
+            return;
+        }
+
+        try {
+            disconnectTwitchButton.disabled = true;
+            const response = await fetch("/auth/twitch/disconnect", {
+                method: "POST"
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                throw new Error(data.error || "No se pudo desvincular Twitch.");
+            }
+
+            twitchWasConnected = false;
+            twitchRewardsLoaded = false;
+            await checkTwitchStatus();
+            alert("Twitch fue desvinculado. Tu configuración de sentadillas permanece guardada.");
+        } catch (error) {
+            console.error("Error desvinculando Twitch:", error);
+            alert("❌ " + error.message);
+        } finally {
+            disconnectTwitchButton.disabled = false;
+        }
+    });
+}
+
+
+// ============================================================
 // ESTADO TWITCH
 // ============================================================
 
@@ -1765,6 +1804,8 @@ async function checkTwitchStatus() {
 
             twitchStatus.classList.add("connected");
             connectTwitchButton.textContent = "Twitch conectado";
+            connectTwitchButton.disabled = true;
+            if (disconnectTwitchButton) disconnectTwitchButton.style.display = "inline-flex";
 
             // Cargar una sola vez por conexión.
             // IMPORTANTE: NO llamar loadTwitchRewards() en cada polling.
@@ -1780,6 +1821,8 @@ async function checkTwitchStatus() {
             twitchStatus.textContent = "No conectado";
             twitchStatus.classList.remove("connected");
             connectTwitchButton.textContent = "Conectar con Twitch";
+            connectTwitchButton.disabled = false;
+            if (disconnectTwitchButton) disconnectTwitchButton.style.display = "none";
 
             twitchWasConnected = false;
             twitchRewardsLoaded = false;
