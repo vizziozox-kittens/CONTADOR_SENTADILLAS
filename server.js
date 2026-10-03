@@ -45,12 +45,24 @@
 
     const HOST = "0.0.0.0";
 
-    const TWITCH_REDIRECT_URI = "https://contador-sentadillas.onrender.com/auth/twitch/callback";
+    // La Redirect URI SIEMPRE sale de la variable de entorno.
+    // Local:  http://localhost:3000/auth/twitch/callback
+    // Render: https://contador-sentadillas.onrender.com/auth/twitch/callback
+    //
+    // Twitch permite registrar ambas URLs en la misma aplicación.
+    const TWITCH_REDIRECT_URI = String(
+        process.env.TWITCH_REDIRECT_URI || ""
+    ).trim();
 
     function getRedirectUri() {
 
-        return TWITCH_REDIRECT_URI;
+        if (!TWITCH_REDIRECT_URI) {
+            throw new Error(
+                "Falta TWITCH_REDIRECT_URI en las variables de entorno del servidor."
+            );
+        }
 
+        return TWITCH_REDIRECT_URI;
     }
 
     // ============================================================
@@ -1222,11 +1234,20 @@
             ));
         }
 
-        if (oauthState !== String(session.oauthState || "")) {
+        // IMPORTANTE:
+        // El callback puede ser atendido por otro proceso/instancia de Render
+        // distinto al que inició el login. Por eso PostgreSQL es la fuente de
+        // verdad para el OAuth state.
+        //
+        // findSessionByOAuthState() ya encontró este registro usando EXACTAMENTE
+        // el state que Twitch devolvió y además comprueba que no tenga más de
+        // 15 minutos. No volvemos a comparar contra una copia que podría estar
+        // desactualizada en la memoria del proceso.
+        if (oauthState !== String(oauthRecord.oauth_state || "")) {
             return res.status(400).send(connectionPage(
                 false,
                 "Error de seguridad",
-                "El estado de autorización no coincide con esta sesión.",
+                "El estado de autorización no coincide con el registro de OAuth.",
                 returnUrl
             ));
         }
@@ -2147,7 +2168,7 @@
 
                 );
 
-                console.log(`🔁 Redirect URI fija: ${TWITCH_REDIRECT_URI}`);
+                console.log(`🔁 Redirect URI: ${getRedirectUri()}`);
 
                 console.log("🟢 Servidor listo.");
 
