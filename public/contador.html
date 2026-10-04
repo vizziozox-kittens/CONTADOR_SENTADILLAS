@@ -186,48 +186,31 @@
 
 
 <script>
-/* ============================================================
-   SESIÓN EXPLÍCITA PARA ESTA PÁGINA
-   Evita que la cookie de otra pestaña/usuario cambie de sesión.
-   ============================================================ */
+/* SESIÓN ESTABLE PARA PÁGINAS DE OBS */
 (function () {
     const params = new URLSearchParams(window.location.search);
-    const sessionId =
-        params.get("session") ||
-        sessionStorage.getItem("squat_session_id") ||
-        "";
-
+    let sessionId = params.get("session") || localStorage.getItem("squat_session_id") || "";
     window.SQUAT_SESSION_ID = sessionId;
-
     const nativeFetch = window.fetch.bind(window);
-
     function addSession(url) {
-        if (!window.SQUAT_SESSION_ID) return url;
-
         const absolute = new URL(url, window.location.origin);
-
-        if (absolute.origin !== window.location.origin) {
-            return url;
-        }
-
-        if (absolute.pathname.startsWith("/api/")) {
-            absolute.searchParams.set(
-                "session",
-                window.SQUAT_SESSION_ID
-            );
-            return absolute.pathname + absolute.search + absolute.hash;
-        }
-
-        return url;
+        if (absolute.origin !== window.location.origin) return url;
+        if (absolute.pathname.startsWith("/api/") && window.SQUAT_SESSION_ID) absolute.searchParams.set("session", window.SQUAT_SESSION_ID);
+        return absolute.pathname + absolute.search + absolute.hash;
     }
-
-    window.fetch = function (input, init) {
-        if (typeof input === "string") {
-            input = addSession(input);
-        } else if (input instanceof Request) {
-            input = new Request(addSession(input.url), input);
-        }
-
+    window.SQUAT_SESSION_READY = (async () => {
+        const endpoint = sessionId ? `/api/session?session=${encodeURIComponent(sessionId)}` : "/api/session";
+        const response = await nativeFetch(endpoint, { credentials: "same-origin" });
+        const data = await response.json();
+        if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesión.");
+        window.SQUAT_SESSION_ID = data.sessionId;
+        localStorage.setItem("squat_session_id", data.sessionId);
+        return data;
+    })();
+    window.fetch = async function (input, init) {
+        await window.SQUAT_SESSION_READY;
+        if (typeof input === "string") input = addSession(input);
+        else if (input instanceof Request) input = new Request(addSession(input.url), input);
         return nativeFetch(input, init);
     };
 })();

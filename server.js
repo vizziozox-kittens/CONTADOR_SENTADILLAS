@@ -133,6 +133,11 @@
             .then(async () => {
 
                 if (session.twitchAccessToken && session.twitchUser) {
+                    const tokenReady = await ensureTwitchToken(session);
+                    if (!tokenReady) {
+                        console.warn(`⚠️ [${session.twitchUser.display_name || session.id.slice(0, 8)}] El token de Twitch no pudo renovarse automáticamente.`);
+                        return session;
+                    }
 
                     setTimeout(() => {
 
@@ -346,6 +351,41 @@
 
     });
 
+    // ============================================================
+    // URLS PERMANENTES PARA OBS
+    // ============================================================
+    app.get("/obs/:twitchUserId", async (req, res) => {
+        try {
+            const twitchUserId = String(req.params.twitchUserId || "").trim();
+            if (!/^\d+$/.test(twitchUserId)) return res.status(400).send("Usuario de Twitch inválido.");
+            const account = await findSessionByTwitchUserId(twitchUserId);
+            if (!account) return res.status(404).send("No se encontró el streamer de Twitch.");
+            const session = sessions.get(account.session_id) || createSession(account.session_id);
+            await session.dbReady;
+            setSessionCookie(res, session.id);
+            return res.sendFile(path.join(__dirname, "obs.html"));
+        } catch (error) {
+            console.error("❌ Error abriendo OBS permanente:", error);
+            return res.status(500).send("No se pudo cargar OBS.");
+        }
+    });
+
+    app.get("/controles/:twitchUserId", async (req, res) => {
+        try {
+            const twitchUserId = String(req.params.twitchUserId || "").trim();
+            if (!/^\d+$/.test(twitchUserId)) return res.status(400).send("Usuario de Twitch inválido.");
+            const account = await findSessionByTwitchUserId(twitchUserId);
+            if (!account) return res.status(404).send("No se encontró el streamer de Twitch.");
+            const session = sessions.get(account.session_id) || createSession(account.session_id);
+            await session.dbReady;
+            setSessionCookie(res, session.id);
+            return res.sendFile(path.join(__dirname, "public", "controles.html"));
+        } catch (error) {
+            console.error("❌ Error abriendo controles permanentes:", error);
+            return res.status(500).send("No se pudieron cargar los controles.");
+        }
+    });
+
     app.use(express.static(__dirname));
 
     app.use(express.static(path.join(__dirname, "public")));
@@ -372,9 +412,13 @@
 
             sessionId: session.id,
 
-            obsUrl: `${publicUrl}/obs.html?session=${session.id}`,
+            obsUrl: session.twitchUser?.id
+                ? `${publicUrl}/obs/${encodeURIComponent(session.twitchUser.id)}`
+                : `${publicUrl}/obs.html?session=${session.id}`,
 
-            controlsUrl: `${publicUrl}/controles.html?session=${session.id}`
+            controlsUrl: session.twitchUser?.id
+                ? `${publicUrl}/controles/${encodeURIComponent(session.twitchUser.id)}`
+                : `${publicUrl}/controles.html?session=${session.id}`
 
         });
 
@@ -858,12 +902,32 @@
 
     // ============================================================
 
+    async function ensureTwitchToken(session) {
+        if (!session.twitchAccessToken || !session.twitchRefreshToken) return false;
+        try {
+            const response = await fetch("https://id.twitch.tv/oauth2/validate", {
+                headers: { Authorization: `OAuth ${session.twitchAccessToken}` }
+            });
+            if (response.ok) return true;
+            if (response.status !== 401) return false;
+        } catch (error) {
+            console.warn("⚠️ No se pudo validar el token de Twitch:", error.message);
+            return false;
+        }
+        return refreshTwitchToken(session);
+    }
+
     async function getTwitchRewards(session) {
 
         if (!session.twitchAccessToken || !session.twitchUser) {
 
             throw new Error("Twitch no está conectado.");
 
+        }
+
+        const tokenReady = await ensureTwitchToken(session);
+        if (!tokenReady) {
+            throw new Error("La conexión de Twitch necesita renovarse. Vuelve a conectar Twitch si la renovación automática no fue posible.");
         }
 
         const url = new URL(
@@ -1460,6 +1524,12 @@
 
         if (session.eventSubConnecting) return;
 
+        const tokenReady = await ensureTwitchToken(session);
+        if (!tokenReady) {
+            console.warn(`⚠️ [${session.twitchUser.display_name || session.id.slice(0, 8)}] EventSub no iniciado: token de Twitch no válido.`);
+            return;
+        }
+
         session.eventSubConnecting = true;
 
         try {
@@ -1958,7 +2028,7 @@
 
         }
 
-    }, 50 * 60 * 1000);
+    }, 45 * 60 * 1000);
 
     // ============================================================
 
