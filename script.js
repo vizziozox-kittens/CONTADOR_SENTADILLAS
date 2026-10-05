@@ -1,12 +1,10 @@
 /* ============================================================
-   IDENTIDAD PERSISTENTE DEL STREAMER
-   El sessionId se conserva en localStorage para que el mismo
-   navegador vuelva a reconocer al streamer aunque cierre la pestaña.
-   La identidad permanente de Twitch se guarda además en PostgreSQL.
+   SESIÓN AISLADA POR PESTAÑA
+   Cada streamer obtiene un sessionId independiente.
    ============================================================ */
 (function setupSquatSessionIsolation() {
     const nativeFetch = window.fetch.bind(window);
-    const storedSession = localStorage.getItem("squat_session_id");
+    const storedSession = sessionStorage.getItem("squat_session_id");
 
     function addSession(url) {
         if (!window.SQUAT_SESSION_ID) return url;
@@ -51,7 +49,7 @@
             }
 
             window.SQUAT_SESSION_ID = data.sessionId;
-            localStorage.setItem("squat_session_id", data.sessionId);
+            sessionStorage.setItem("squat_session_id", data.sessionId);
 
             return data;
         } catch (error) {
@@ -99,7 +97,6 @@ const modeText = document.getElementById("modeText");
 
 const twitchStatus = document.getElementById("twitchStatus");
 const connectTwitchButton = document.getElementById("connectTwitchButton");
-const disconnectTwitchButton = document.getElementById("disconnectTwitchButton");
 
 const clientIdInput = document.getElementById("clientIdInput");
 const clientSecretInput = document.getElementById("clientSecretInput");
@@ -119,12 +116,6 @@ const saveBitsButton = document.getElementById("saveBitsButton");
 
 let counter = 0;
 
-// Twitch/recompensas: las recompensas solo se cargan cuando cambia
-// el estado de conexión. No se vuelven a reconstruir cada 5 segundos,
-// porque eso reemplazaba los números que el usuario estaba editando.
-let twitchWasConnected = false;
-let twitchRewardsLoaded = false;
-
 let detectorActive = false;
 let camera = null;
 let socket = null;
@@ -133,6 +124,49 @@ let socket = null;
 // "add" = cada sentadilla suma 1
 // "subtract" = cada sentadilla resta 1
 let detectorMode = "add";
+
+// ============================================================
+// MODO DEL DETECTOR PERSISTENTE
+// ============================================================
+// Se guarda únicamente la selección Sumar/Restar del panel.
+// No modifica Twitch, recompensas ni el contador.
+const DETECTOR_MODE_STORAGE_KEY = "squat_detector_mode";
+
+function loadDetectorMode() {
+    try {
+        const savedMode = localStorage.getItem(DETECTOR_MODE_STORAGE_KEY);
+
+        if (savedMode === "add" || savedMode === "subtract") {
+            detectorMode = savedMode;
+        }
+    } catch (error) {
+        console.warn("No se pudo leer el modo guardado:", error);
+    }
+}
+
+function saveDetectorMode() {
+    try {
+        localStorage.setItem(
+            DETECTOR_MODE_STORAGE_KEY,
+            detectorMode
+        );
+    } catch (error) {
+        console.warn("No se pudo guardar el modo:", error);
+    }
+}
+
+function updateDetectorModeUI() {
+    if (detectorMode === "subtract") {
+        subtractModeButton.classList.add("active");
+        addModeButton.classList.remove("active");
+        modeText.textContent = "➖ Cada sentadilla resta 1";
+    } else {
+        detectorMode = "add";
+        addModeButton.classList.add("active");
+        subtractModeButton.classList.remove("active");
+        modeText.textContent = "➕ Cada sentadilla suma 1";
+    }
+}
 
 
 // ============================================================
@@ -328,6 +362,7 @@ addModeButton.addEventListener(
     () => {
 
         detectorMode = "add";
+        saveDetectorMode();
 
         addModeButton.classList.add("active");
 
@@ -351,6 +386,7 @@ subtractModeButton.addEventListener(
     () => {
 
         detectorMode = "subtract";
+        saveDetectorMode();
 
         subtractModeButton.classList.add(
             "active"
@@ -1681,9 +1717,9 @@ stopCameraButton.addEventListener(
 // ============================================================
 // CONFIGURACIÓN TWITCH
 // ============================================================
-// En la versión web las credenciales se configuran en el servidor
-// mediante variables de entorno. El Client Secret nunca se expone
-// al navegador.
+// Cada streamer introduce aquí sus propias credenciales de Twitch.
+// El Client Secret se envía únicamente por HTTPS al servidor y se
+// guarda solo en la sesión del streamer. Nunca se devuelve al navegador.
 
 // ============================================================
 // CONECTAR TWITCH
@@ -1697,21 +1733,22 @@ connectTwitchButton.addEventListener(
         const clientSecret = String(clientSecretInput?.value || "").trim();
 
         if (!clientId) {
-            alert("Introduce el Client ID de Twitch.");
+            alert("Debes introducir tu Client ID de Twitch.");
             clientIdInput?.focus();
             return;
         }
 
         if (!clientSecret) {
-            alert("Introduce el Client Secret de Twitch.");
+            alert("Debes introducir tu Client Secret de Twitch.");
             clientSecretInput?.focus();
             return;
         }
 
-        try {
-            connectTwitchButton.disabled = true;
-            connectTwitchButton.textContent = "Conectando...";
+        const originalText = connectTwitchButton.textContent;
+        connectTwitchButton.disabled = true;
+        connectTwitchButton.textContent = "Guardando credenciales...";
 
+        try {
             await window.SQUAT_SESSION_READY;
 
             const response = await fetch("/api/twitch/credentials", {
@@ -1727,59 +1764,29 @@ connectTwitchButton.addEventListener(
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || "No se pudieron guardar las credenciales.");
+            if (!response.ok || !data.ok) {
+                throw new Error(
+                    data.error || "No se pudieron guardar las credenciales de Twitch."
+                );
             }
+
+            // El secreto no se conserva en el DOM después de enviarlo.
+            clientSecretInput.value = "";
+
+            connectTwitchButton.textContent = "Abriendo Twitch...";
 
             window.location.href =
                 `/auth/twitch?session=${encodeURIComponent(
                     window.SQUAT_SESSION_ID
                 )}`;
-
         } catch (error) {
             console.error("No se pudo iniciar la sesión de Twitch:", error);
-            alert("❌ " + error.message);
+            alert(error.message || "No se pudo conectar con Twitch.");
             connectTwitchButton.disabled = false;
-            connectTwitchButton.textContent = "🟣 Conectar con Twitch";
+            connectTwitchButton.textContent = originalText;
         }
     }
 );
-
-
-// ============================================================
-// DESVINCULAR TWITCH
-// ============================================================
-
-if (disconnectTwitchButton) {
-    disconnectTwitchButton.addEventListener("click", async () => {
-        if (!confirm("¿Quieres desvincular Twitch? Esto revocará la conexión y tendrás que autorizar Twitch nuevamente.")) {
-            return;
-        }
-
-        try {
-            disconnectTwitchButton.disabled = true;
-            const response = await fetch("/auth/twitch/disconnect", {
-                method: "POST"
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || !data.ok) {
-                throw new Error(data.error || "No se pudo desvincular Twitch.");
-            }
-
-            twitchWasConnected = false;
-            twitchRewardsLoaded = false;
-            await checkTwitchStatus();
-            alert("Twitch fue desvinculado. Tu configuración de sentadillas permanece guardada.");
-        } catch (error) {
-            console.error("Error desvinculando Twitch:", error);
-            alert("❌ " + error.message);
-        } finally {
-            disconnectTwitchButton.disabled = false;
-        }
-    });
-}
 
 
 // ============================================================
@@ -1790,47 +1797,63 @@ async function checkTwitchStatus() {
 
     try {
 
-        const response = await fetch("/api/status");
-        const data = await response.json();
+        const response =
+            await fetch(
+                "/api/status"
+            );
 
-        const connected = Boolean(
-            data.twitch && data.twitch.connected
-        );
 
-        if (connected) {
+        const data =
+            await response.json();
+
+
+        if (
+            data.twitch &&
+            data.twitch.connected
+        ) {
 
             twitchStatus.textContent =
-                `Conectado como ${data.twitch.user?.display_name || "canal"}`;
+                `Conectado como ${
+                    data.twitch.user.display_name
+                }`;
 
-            twitchStatus.classList.add("connected");
-            connectTwitchButton.textContent = "Twitch conectado";
-            connectTwitchButton.disabled = true;
-            if (disconnectTwitchButton) disconnectTwitchButton.style.display = "inline-flex";
 
-            // Cargar una sola vez por conexión.
-            // IMPORTANTE: NO llamar loadTwitchRewards() en cada polling.
-            if (!twitchWasConnected || !twitchRewardsLoaded) {
-                twitchWasConnected = true;
-                twitchRewardsLoaded = true;
-                await loadTwitchRewards();
-                await loadTwitchConfig();
-            }
+            twitchStatus.classList.add(
+                "connected"
+            );
+
+
+            connectTwitchButton.textContent =
+                "Twitch conectado";
+
+
+            await loadTwitchRewards();
+
+            await loadTwitchConfig();
 
         } else {
 
-            twitchStatus.textContent = "No conectado";
-            twitchStatus.classList.remove("connected");
-            connectTwitchButton.textContent = "Conectar con Twitch";
-            connectTwitchButton.disabled = false;
-            if (disconnectTwitchButton) disconnectTwitchButton.style.display = "none";
+            twitchStatus.textContent =
+                "No conectado";
 
-            twitchWasConnected = false;
-            twitchRewardsLoaded = false;
+
+            twitchStatus.classList.remove(
+                "connected"
+            );
+
+
+            connectTwitchButton.textContent =
+                "Conectar con Twitch";
+
         }
+
 
     } catch (error) {
 
-        console.error("Error comprobando Twitch:", error);
+        console.error(
+            "Error comprobando Twitch:",
+            error
+        );
 
     }
 
@@ -1856,11 +1879,13 @@ async function loadTwitchConfig() {
 
 
         if (data.clientId) {
+            clientIdInput.value = data.clientId;
+        }
 
-            clientIdInput.value =
-                data.clientId;
-            clientIdInput.readOnly = false;
-
+        // Por seguridad, el servidor nunca devuelve el Client Secret.
+        // El streamer debe volver a introducirlo solo cuando vaya a conectar.
+        if (clientSecretInput) {
+            clientSecretInput.value = "";
         }
 
 
@@ -1945,7 +1970,7 @@ async function loadTwitchRewards() {
             reward => {
 
                 const savedValue =
-                    data.mappings?.[reward.id] ??
+                    data.mappings?.[reward.id] ||
                     0;
 
 
@@ -2105,11 +2130,6 @@ saveRewardsButton.addEventListener(
             }
 
 
-            // El servidor ya guardó los valores en la sesión.
-            // No recargamos las recompensas aquí porque eso reconstruiría
-            // los inputs y podría reemplazar lo que acaba de escribir el usuario.
-            twitchRewardsLoaded = true;
-
             alert(
                 "✅ Valores de recompensas guardados."
             );
@@ -2253,6 +2273,9 @@ function escapeHtml(value) {
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
+
+loadDetectorMode();
+updateDetectorModeUI();
 
 connectWebSocket();
 
