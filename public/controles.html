@@ -6,62 +6,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
 <title>Controles Squat Twitch</title>
 
 <style>
-    html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        min-height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
-        background: transparent;
-    }
-
+    html,
     body {
         margin: 0;
         padding: 0;
         width: 100%;
-        min-height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
         background: transparent;
+    }
+
+    body {
         font-family: Arial, sans-serif;
         -webkit-overflow-scrolling: touch;
     }
 
+    /*
+       El panel ocupa SIEMPRE todo el lienzo de la fuente de navegador.
+       Así, el tamaño que pongas en OBS es también el tamaño real de
+       esta página y puedes redimensionarla libremente desde OBS.
+    */
     #controlPanel {
         position: relative;
-        width: 340px;
-        max-width: calc(100% - 40px);
-        min-height: min-content;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        min-width: 0;
+        min-height: 100%;
         max-height: none;
-        overflow: visible;
-        margin: 20px;
-        padding: 18px;
+        overflow: auto;
+        margin: 0;
+        padding: clamp(16px, 3vw, 32px);
         background: rgba(15, 15, 20, 0.95);
-        border-radius: 16px;
+        border-radius: 0;
         color: white;
         z-index: 1000;
         box-sizing: border-box;
     }
 
+    /* Los controles se adaptan al ancho disponible de OBS. */
+    #controlPanel > button {
+        width: 100%;
+    }
+
     #controlPanel h2 {
         margin-top: 0;
-        margin-bottom: 15px;
-        font-size: 20px;
+        margin-bottom: clamp(12px, 2vh, 18px);
+        font-size: clamp(18px, 2.2vw, 24px);
     }
 
     button {
         width: 100%;
-        padding: 12px;
-        margin-top: 8px;
+        padding: clamp(10px, 1.8vh, 14px) clamp(12px, 2vw, 18px);
+        margin-top: clamp(6px, 1vh, 10px);
         border: none;
         border-radius: 10px;
         cursor: pointer;
-        font-size: 15px;
+        font-size: clamp(13px, 1.6vw, 16px);
         font-weight: bold;
         user-select: none;
     }
@@ -262,6 +268,35 @@
         line-height: 1.4;
     }
 
+    /* En fuentes pequeñas o bajas, todo sigue dentro del lienzo. */
+    @media (max-height: 500px) {
+        #controlPanel {
+            padding: 12px;
+        }
+
+        #controlPanel h2 {
+            margin-bottom: 8px;
+        }
+
+        button {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            margin-top: 5px;
+        }
+
+        #cameraStatus,
+        #detectorStatus,
+        #obsStatus {
+            margin-top: 6px;
+        }
+
+        #cameraSelectorContainer,
+        #obsSettings {
+            margin-top: 8px;
+            padding: 9px;
+        }
+    }
+
     body.obs-mode {
         overflow: hidden;
         width: 100%;
@@ -290,13 +325,12 @@
         touch-action: manipulation;
     }
 </style>
-```
 
 </head>
 
 <body>
 
-```
+
 <!-- =====================================================
      CÁMARA
 ====================================================== -->
@@ -2714,7 +2748,6 @@
     }
 
 </script>
-```
 
 </body>
 </html>
