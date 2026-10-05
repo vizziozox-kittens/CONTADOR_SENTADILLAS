@@ -51,44 +51,74 @@
            CONTADOR
         ====================================================== */
 
+        /*
+           EL LIENZO COMPLETO DE LA BROWSER SOURCE
+           Ahora #counterBox ocupa exactamente todo el tamaño
+           que tenga la fuente de navegador en OBS.
+           El diseño visible se adapta dentro de ese lienzo.
+        */
         #counterBox {
 
             position: absolute;
 
-            top: 30px;
-            right: 30px;
+            inset: 0;
 
-            min-width: 240px;
+            width: 100%;
+            height: 100%;
 
-            padding:
-                18px
-                30px
-                20px;
+            min-width: 0;
+            min-height: 0;
 
-            border-radius: 20px;
+            padding: clamp(12px, 4vmin, 40px);
 
-            background:
-                rgba(10, 10, 18, 0.90);
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-            border:
-                2px solid
-                rgba(145, 71, 255, 0.90);
-
-            box-shadow:
-                0 0 30px
-                rgba(145, 71, 255, 0.30);
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            border-radius: 0;
 
             text-align: center;
-
             color: white;
 
             z-index: 20;
         }
 
 
+        /* Tarjeta visual. Su tamaño depende del tamaño de la fuente OBS. */
+        #counterContent {
+
+            width: min(82vw, 82vh, 620px);
+
+            min-width: 180px;
+
+            padding: clamp(14px, 3vmin, 30px)
+                     clamp(18px, 4vmin, 48px)
+                     clamp(16px, 3vmin, 32px);
+
+            border-radius: clamp(14px, 2.5vmin, 24px);
+
+            background: rgba(10, 10, 18, 0.90);
+
+            border: clamp(1px, 0.25vmin, 2px) solid
+                    rgba(145, 71, 255, 0.90);
+
+            box-shadow:
+                0 0 clamp(18px, 4vmin, 40px)
+                rgba(145, 71, 255, 0.30);
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+
         #counterLabel {
 
-            font-size: 15px;
+            font-size: clamp(11px, 2.2vmin, 18px);
 
             font-weight: 700;
 
@@ -102,7 +132,7 @@
 
         #counter {
 
-            font-size: 82px;
+            font-size: clamp(54px, 14vmin, 150px);
 
             line-height: 0.95;
 
@@ -120,7 +150,7 @@
 
             margin-top: 8px;
 
-            font-size: 11px;
+            font-size: clamp(9px, 1.6vmin, 14px);
 
             letter-spacing: 1.5px;
 
@@ -165,18 +195,20 @@
 
     <div id="counterBox">
 
-        <div id="counterLabel">
-            SENTADILLAS
-        </div>
+        <div id="counterContent">
 
+            <div id="counterLabel">
+                SENTADILLAS
+            </div>
 
-        <div id="counter">
-            0
-        </div>
+            <div id="counter">
+                0
+            </div>
 
+            <div id="counterSub">
+                PENDIENTES
+            </div>
 
-        <div id="counterSub">
-            PENDIENTES
         </div>
 
     </div>
