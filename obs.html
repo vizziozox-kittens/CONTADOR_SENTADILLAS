@@ -104,7 +104,7 @@
         }
 
 
-        /* Tarjeta visual que se adapta al tamaño definido en OBS. */
+        /* Tarjeta visual que se adapta al tama&#241;o definido en OBS. */
         #counterContent {
 
             width: min(82vw, 82vh, 620px);
@@ -203,7 +203,7 @@
 
 
         /* =====================================================
-           CÁMARA
+           C&#193;MARA
         ====================================================== */
 
         #cameraContainer {
@@ -454,7 +454,7 @@
 
 
         /* =====================================================
-           MENSAJE SIN CÁMARA
+           MENSAJE SIN C&#193;MARA
         ====================================================== */
 
         #cameraMessage {
@@ -526,7 +526,7 @@
 
 
     <!-- =====================================================
-         CÁMARA
+         C&#193;MARA
     ====================================================== -->
 
     <div id="cameraContainer">
@@ -546,12 +546,12 @@
 
 
     <!-- =====================================================
-         MENSAJE CUANDO LA CÁMARA ESTÁ APAGADA
+         MENSAJE CUANDO LA C&#193;MARA EST&#193; APAGADA
     ====================================================== -->
 
     <div id="cameraMessage">
 
-        Cámara apagada
+        C&#225;mara apagada
 
     </div>
 
@@ -565,7 +565,7 @@
         <span id="statusDot"></span>
 
         <span id="statusText">
-            Cámara apagada
+            C&#225;mara apagada
         </span>
 
     </div>
@@ -578,7 +578,7 @@
     <div id="controlPanel">
 
         <div id="controlTitle">
-            🏋️ Control de sentadillas
+            &#127947;&#65039; Control de sentadillas
         </div>
 
 
@@ -586,7 +586,7 @@
             id="startCameraButton"
             class="button"
         >
-            🎥 Activar cámara
+            &#127909; Activar c&#225;mara
         </button>
 
 
@@ -595,7 +595,7 @@
             class="button"
             disabled
         >
-            ⏸ Pausar detector
+            &#9208; Pausar detector
         </button>
 
 
@@ -604,7 +604,7 @@
             class="button"
             disabled
         >
-            ⏹ Desactivar cámara
+            &#9209; Desactivar c&#225;mara
         </button>
 
 
@@ -612,7 +612,7 @@
             id="resetCounterButton"
             class="button"
         >
-            🔄 Reiniciar contador
+            &#128260; Reiniciar contador
         </button>
 
 
@@ -629,7 +629,7 @@
 
 
 <script>
-/* SESIÓN ESTABLE PARA PÁGINAS DE OBS */
+/* SESI\u{D3}N ESTABLE PARA P\u{C1}GINAS DE OBS */
 (function () {
     const params = new URLSearchParams(window.location.search);
     const stableUrl = /^\/obs\/\d+$/.test(window.location.pathname);
@@ -646,7 +646,7 @@
         const endpoint = sessionId ? `/api/session?session=${encodeURIComponent(sessionId)}` : "/api/session";
         const response = await nativeFetch(endpoint, { credentials: "same-origin" });
         const data = await response.json();
-        if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesión.");
+        if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesi\u{F3}n.");
         window.SQUAT_SESSION_ID = data.sessionId;
         localStorage.setItem("squat_session_id", data.sessionId);
         return data;
@@ -899,7 +899,7 @@ function connectWebSocket() {
         () => {
 
             console.log(
-                "🟢 OBS conectado al servidor"
+                "\u{1F7E2} OBS conectado al servidor"
             );
 
         }
@@ -948,7 +948,7 @@ function connectWebSocket() {
         () => {
 
             console.log(
-                "🔴 WebSocket desconectado"
+                "\u{1F534} WebSocket desconectado"
             );
 
 
@@ -1071,7 +1071,7 @@ function setStatus(
 
 
 /* ============================================================
-   ACTIVAR CÁMARA
+   ACTIVAR C\u{C1}MARA
 ============================================================ */
 
 async function startCamera() {
@@ -1084,7 +1084,7 @@ async function startCamera() {
     try {
 
         setStatus(
-            "Solicitando cámara...",
+            "Solicitando c\u{E1}mara...",
             "#f59e0b"
         );
 
@@ -1156,17 +1156,17 @@ async function startCamera() {
 
 
         detectorState.textContent =
-            "🟡 Calibrando...";
+            "\u{1F7E1} Calibrando...";
 
 
         setStatus(
-            "Cámara activa",
+            "C\u{E1}mara activa",
             "#22c55e"
         );
 
 
         console.log(
-            "🟢 Cámara activada"
+            "\u{1F7E2} C\u{E1}mara activada"
         );
 
 
@@ -1176,7 +1176,7 @@ async function startCamera() {
     } catch (error) {
 
         console.error(
-            "❌ Error cámara:",
+            "\u{274C} Error c\u{E1}mara:",
             error
         );
 
@@ -1185,14 +1185,14 @@ async function startCamera() {
 
 
         setStatus(
-            "No se pudo activar la cámara",
+            "No se pudo activar la c\u{E1}mara",
             "#ef4444"
         );
 
 
         alert(
-            "No se pudo activar la cámara.\n\n" +
-            "Comprueba que OBS tenga permiso para usar la cámara."
+            "No se pudo activar la c\u{E1}mara.\n\n" +
+            "Comprueba que OBS tenga permiso para usar la c\u{E1}mara."
         );
 
     }
@@ -1201,7 +1201,7 @@ async function startCamera() {
 
 
 /* ============================================================
-   DETENER CÁMARA
+   DETENER C\u{C1}MARA
 ============================================================ */
 
 function stopCamera() {
@@ -1250,7 +1250,7 @@ function stopCamera() {
 
 
     pauseDetectorButton.textContent =
-        "⏸ Pausar detector";
+        "\u{23F8} Pausar detector";
 
 
     detectorState.textContent =
@@ -1258,7 +1258,7 @@ function stopCamera() {
 
 
     setStatus(
-        "Cámara apagada",
+        "C\u{E1}mara apagada",
         "#777"
     );
 
@@ -1275,7 +1275,7 @@ function stopCamera() {
 
 
     console.log(
-        "🔴 Cámara apagada"
+        "\u{1F534} C\u{E1}mara apagada"
     );
 
 }
@@ -1299,11 +1299,11 @@ function toggleDetector() {
     if (detectorActive) {
 
         pauseDetectorButton.textContent =
-            "⏸ Pausar detector";
+            "\u{23F8} Pausar detector";
 
 
         detectorState.textContent =
-            "🟢 Detector activo";
+            "\u{1F7E2} Detector activo";
 
 
         setStatus(
@@ -1317,15 +1317,15 @@ function toggleDetector() {
     } else {
 
         pauseDetectorButton.textContent =
-            "▶ Continuar detector";
+            "\u{25B6} Continuar detector";
 
 
         detectorState.textContent =
-            "⏸ Detector pausado";
+            "\u{23F8} Detector pausado";
 
 
         setStatus(
-            "Cámara activa · detector pausado",
+            "C\u{E1}mara activa \u{B7} detector pausado",
             "#f59e0b"
         );
 
@@ -1651,7 +1651,7 @@ pose.onResults(
 
             detectorState.textContent =
                 detectorActive
-                    ? "🧍 No se detecta el cuerpo"
+                    ? "\u{1F9CD} No se detecta el cuerpo"
                     : "Detector pausado";
 
             return;
@@ -1685,7 +1685,7 @@ async function detectSquat(landmarks) {
     const data = getBodyData(landmarks);
 
     if (!data) {
-        detectorState.textContent = "🧍 Cuerpo no visible";
+        detectorState.textContent = "\u{1F9CD} Cuerpo no visible";
         return;
     }
 
@@ -1708,18 +1708,18 @@ async function detectSquat(landmarks) {
         standingFrames++;
 
         detectorState.textContent =
-            `🟡 Calibrando ${Math.min(100, Math.round(standingFrames / CALIBRATION_FRAMES * 100))}%`;
+            `\u{1F7E1} Calibrando ${Math.min(100, Math.round(standingFrames / CALIBRATION_FRAMES * 100))}%`;
 
         if (standingFrames >= CALIBRATION_FRAMES) {
             squatState = STATE.STANDING;
             smoothedDown = 0;
             previousDown = 0;
-            detectorState.textContent = "🟢 Listo";
+            detectorState.textContent = "\u{1F7E2} Listo";
         }
         return;
     }
 
-    // La línea base se adapta muy lentamente solo cuando realmente está de pie.
+    // La l\u{ED}nea base se adapta muy lentamente solo cuando realmente est\u{E1} de pie.
     if (squatState === STATE.STANDING && Math.abs(smoothedDown) < DOWN_EXIT_THRESHOLD) {
         calibrateBody(data);
     }
@@ -1733,9 +1733,9 @@ async function detectSquat(landmarks) {
         if ((smoothedDown > DOWN_THRESHOLD || kneeStarted) && velocity > 0.01) {
             squatState = STATE.DESCENDING;
             downFrames = 1;
-            detectorState.textContent = "⬇️ Bajando";
+            detectorState.textContent = "\u{2B07}\u{FE0F} Bajando";
         } else {
-            detectorState.textContent = "🟢 Listo";
+            detectorState.textContent = "\u{1F7E2} Listo";
         }
         return;
     }
@@ -1755,24 +1755,24 @@ async function detectSquat(landmarks) {
         if (deepEnough && downFrames >= 2) {
             squatState = STATE.BOTTOM;
             bottomFrames = 0;
-            detectorState.textContent = "🔽 Fondo";
+            detectorState.textContent = "\u{1F53D} Fondo";
             return;
         }
 
         if (smoothedDown < DOWN_EXIT_THRESHOLD && velocity < 0) {
             squatState = STATE.STANDING;
-            detectorState.textContent = "🟢 Listo";
+            detectorState.textContent = "\u{1F7E2} Listo";
             return;
         }
 
-        detectorState.textContent = "⬇️ Bajando";
+        detectorState.textContent = "\u{2B07}\u{FE0F} Bajando";
         return;
     }
 
     if (squatState === STATE.BOTTOM) {
         bottomFrames++;
 
-        // Esperamos una subida real. No hace falta salir instantáneamente del fondo.
+        // Esperamos una subida real. No hace falta salir instant\u{E1}neamente del fondo.
         if (velocity < -0.012 || smoothedDown < BOTTOM_THRESHOLD - 0.015) {
             upFrames++;
         } else {
@@ -1782,20 +1782,20 @@ async function detectSquat(landmarks) {
         if (upFrames >= 2) {
             squatState = STATE.ASCENDING;
             upFrames = 0;
-            detectorState.textContent = "⬆️ Subiendo";
+            detectorState.textContent = "\u{2B06}\u{FE0F} Subiendo";
         } else {
-            detectorState.textContent = "🔽 Fondo";
+            detectorState.textContent = "\u{1F53D} Fondo";
         }
         return;
     }
 
     if (squatState === STATE.ASCENDING) {
-        // Solo contamos al volver a una posición cercana a la inicial.
+        // Solo contamos al volver a una posici\u{F3}n cercana a la inicial.
         if (smoothedDown <= DOWN_EXIT_THRESHOLD) {
             if (now - lastSquatTime >= MIN_TIME_BETWEEN_SQUATS) {
                 lastSquatTime = now;
                 const success = await registerSquat();
-                if (success) detectorState.textContent = "✅ ¡Sentadilla!";
+                if (success) detectorState.textContent = "\u{2705} \u{A1}Sentadilla!";
             }
 
             squatState = STATE.STANDING;
@@ -1803,13 +1803,13 @@ async function detectSquat(landmarks) {
             downFrames = 0;
             bottomFrames = 0;
         } else {
-            detectorState.textContent = "⬆️ Subiendo";
+            detectorState.textContent = "\u{2B06}\u{FE0F} Subiendo";
         }
     }
 }
 
 /* ============================================================
-   PROCESAR CÁMARA
+   PROCESAR C\u{C1}MARA
 ============================================================ */
 
 async function processCamera() {
@@ -1873,7 +1873,7 @@ statusBox.style.display =
 
 
 setStatus(
-    "Cámara apagada",
+    "C\u{E1}mara apagada",
     "#777"
 );
 

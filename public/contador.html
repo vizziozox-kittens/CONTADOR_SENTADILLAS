@@ -53,9 +53,9 @@
 
         /*
            EL LIENZO COMPLETO DE LA BROWSER SOURCE
-           Ahora #counterBox ocupa exactamente todo el tamaño
+           Ahora #counterBox ocupa exactamente todo el tama&#241;o
            que tenga la fuente de navegador en OBS.
-           El diseño visible se adapta dentro de ese lienzo.
+           El dise&#241;o visible se adapta dentro de ese lienzo.
         */
         #counterBox {
 
@@ -87,7 +87,7 @@
         }
 
 
-        /* Tarjeta visual. Su tamaño depende del tamaño de la fuente OBS. */
+        /* Tarjeta visual. Su tama&#241;o depende del tama&#241;o de la fuente OBS. */
         #counterContent {
 
             width: min(82vw, 82vh, 620px);
@@ -218,7 +218,7 @@
 
 
 <script>
-/* SESIÓN ESTABLE PARA PÁGINAS DE OBS */
+/* SESI\u{D3}N ESTABLE PARA P\u{C1}GINAS DE OBS */
 (function () {
     const params = new URLSearchParams(window.location.search);
     let sessionId = params.get("session") || localStorage.getItem("squat_session_id") || "";
@@ -234,7 +234,7 @@
         const endpoint = sessionId ? `/api/session?session=${encodeURIComponent(sessionId)}` : "/api/session";
         const response = await nativeFetch(endpoint, { credentials: "same-origin" });
         const data = await response.json();
-        if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesión.");
+        if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesi\u{F3}n.");
         window.SQUAT_SESSION_ID = data.sessionId;
         localStorage.setItem("squat_session_id", data.sessionId);
         return data;
@@ -400,7 +400,7 @@ function connectWebSocket() {
         () => {
 
             console.log(
-                "🟢 Contador conectado"
+                "\u{1F7E2} Contador conectado"
             );
 
         }
@@ -449,7 +449,7 @@ function connectWebSocket() {
         () => {
 
             console.log(
-                "🔴 WebSocket desconectado"
+                "\u{1F534} WebSocket desconectado"
             );
 
 

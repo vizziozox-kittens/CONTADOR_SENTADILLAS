@@ -1,8 +1,8 @@
 /* ============================================================
    IDENTIDAD PERSISTENTE DEL STREAMER
    El sessionId se conserva en localStorage para que el mismo
-   navegador vuelva a reconocer al streamer aunque cierre la pestaña.
-   La identidad permanente de Twitch se guarda además en PostgreSQL.
+   navegador vuelva a reconocer al streamer aunque cierre la pesta\u{F1}a.
+   La identidad permanente de Twitch se guarda adem\u{E1}s en PostgreSQL.
    ============================================================ */
 (function setupSquatSessionIsolation() {
     const nativeFetch = window.fetch.bind(window);
@@ -41,13 +41,13 @@
             });
 
             if (!response.ok) {
-                throw new Error("No se pudo crear/recuperar la sesión.");
+                throw new Error("No se pudo crear/recuperar la sesi\u{F3}n.");
             }
 
             const data = await response.json();
 
             if (!data.ok || !data.sessionId) {
-                throw new Error("El servidor no devolvió una sesión válida.");
+                throw new Error("El servidor no devolvi\u{F3} una sesi\u{F3}n v\u{E1}lida.");
             }
 
             window.SQUAT_SESSION_ID = data.sessionId;
@@ -55,7 +55,7 @@
 
             return data;
         } catch (error) {
-            console.error("Error inicializando sesión:", error);
+            console.error("Error inicializando sesi\u{F3}n:", error);
             throw error;
         }
     })();
@@ -122,8 +122,8 @@ const saveBitsButton = document.getElementById("saveBitsButton");
 let counter = 0;
 
 // Twitch/recompensas: las recompensas solo se cargan cuando cambia
-// el estado de conexión. No se vuelven a reconstruir cada 5 segundos,
-// porque eso reemplazaba los números que el usuario estaba editando.
+// el estado de conexi\u{F3}n. No se vuelven a reconstruir cada 5 segundos,
+// porque eso reemplazaba los n\u{FA}meros que el usuario estaba editando.
 let twitchWasConnected = false;
 let twitchRewardsLoaded = false;
 
@@ -176,8 +176,8 @@ function applyDetectorMode(mode) {
 
     modeText.textContent =
         selectedDetectorMode === "add"
-            ? "➕ Cada sentadilla suma 1"
-            : "➖ Cada sentadilla resta 1";
+            ? "\u{2795} Cada sentadilla suma 1"
+            : "\u{2796} Cada sentadilla resta 1";
 
     if (detectorModeSaveStatus) {
         detectorModeSaveStatus.textContent = "";
@@ -204,8 +204,8 @@ function selectDetectorMode(mode) {
 
     modeText.textContent =
         selectedDetectorMode === "add"
-            ? "➕ Cada sentadilla suma 1"
-            : "➖ Cada sentadilla resta 1";
+            ? "\u{2795} Cada sentadilla suma 1"
+            : "\u{2796} Cada sentadilla resta 1";
 
     if (detectorModeSaveStatus) {
         detectorModeSaveStatus.textContent =
@@ -615,7 +615,7 @@ async function connectWebSocket() {
 
 
 // ============================================================
-// DETECCIÓN
+// DETECCI\u{D3}N
 // ============================================================
 
 const STATE = {
@@ -669,25 +669,25 @@ let lastPoseTime = 0;
 // AJUSTES DEL DETECTOR
 // ============================================================
 
-// Más frames = calibración más estable.
+// M\u{E1}s frames = calibraci\u{F3}n m\u{E1}s estable.
 const CALIBRATION_FRAMES = 18;
 
 // Histeresis: se usan umbrales diferentes para entrar/salir
-// de cada fase y así evitar falsos positivos por pequeños temblores.
+// de cada fase y as\u{ED} evitar falsos positivos por peque\u{F1}os temblores.
 const DOWN_THRESHOLD = 0.025;
 const DOWN_EXIT_THRESHOLD = 0.018;
 const BOTTOM_THRESHOLD = 0.055;
 const BOTTOM_EXIT_THRESHOLD = 0.030;
 
-// La rodilla es una señal importante y más estable cuando cambia
-// la distancia a la cámara.
+// La rodilla es una se\u{F1}al importante y m\u{E1}s estable cuando cambia
+// la distancia a la c\u{E1}mara.
 const MIN_KNEE_ANGLE = 150;
 const DEEP_KNEE_ANGLE = 138;
 
-// Diferencia máxima entre ambas rodillas cuando las dos son visibles.
+// Diferencia m\u{E1}xima entre ambas rodillas cuando las dos son visibles.
 const MAX_KNEE_ANGLE_DIFFERENCE = 38;
 
-// Cantidad mínima de frames consecutivos para validar una fase.
+// Cantidad m\u{ED}nima de frames consecutivos para validar una fase.
 const DESCENDING_CONFIRM_FRAMES = 2;
 const BOTTOM_CONFIRM_FRAMES = 2;
 const ASCENDING_CONFIRM_FRAMES = 2;
@@ -695,12 +695,12 @@ const ASCENDING_CONFIRM_FRAMES = 2;
 // Evita contar dos veces el mismo movimiento.
 const MIN_TIME_BETWEEN_SQUATS = 700;
 
-// El cuerpo debe permanecer suficientemente estable durante la calibración.
+// El cuerpo debe permanecer suficientemente estable durante la calibraci\u{F3}n.
 const MIN_BODY_VISIBILITY = 0.18;
 
 
 // ============================================================
-// MATEMÁTICAS
+// MATEM\u{C1}TICAS
 // ============================================================
 
 function point(x, y) {
@@ -865,9 +865,9 @@ function getMotionData(landmarks) {
     }
 
     /*
-     * Eje vertical tolerante a la inclinación de la cámara/cuerpo.
-     * Se calcula perpendicular a la línea de hombros, por lo que una
-     * inclinación de la cabeza no cambia el eje usado para medir la bajada.
+     * Eje vertical tolerante a la inclinaci\u{F3}n de la c\u{E1}mara/cuerpo.
+     * Se calcula perpendicular a la l\u{ED}nea de hombros, por lo que una
+     * inclinaci\u{F3}n de la cabeza no cambia el eje usado para medir la bajada.
      */
     const shoulderLine = subtract(landmarks[12], landmarks[11]);
     const hipLine = subtract(landmarks[24], landmarks[23]);
@@ -889,7 +889,7 @@ function getMotionData(landmarks) {
         return null;
     }
 
-    // Elegir la dirección que apunta aproximadamente hacia abajo en pantalla.
+    // Elegir la direcci\u{F3}n que apunta aproximadamente hacia abajo en pantalla.
     if (axis.y < 0) {
         axis = point(-axis.x, -axis.y);
     }
@@ -928,7 +928,7 @@ function getMotionData(landmarks) {
 
 
 // ============================================================
-// CALIBRACIÓN
+// CALIBRACI\u{D3}N
 // ============================================================
 
 function calibrateBody(data) {
@@ -1043,8 +1043,8 @@ function getDownAmount(data) {
     }
 
     // Normalizamos la bajada con la longitud del cuerpo en lugar de
-    // depender solo del tamaño del torso. Esto hace que el detector
-    // sea mucho menos sensible a acercarse o alejarse de la cámara.
+    // depender solo del tama\u{F1}o del torso. Esto hace que el detector
+    // sea mucho menos sensible a acercarse o alejarse de la c\u{E1}mara.
     const bodyScale = Math.max(
         baseline.bodyScale || baseline.torsoSize,
         0.001
@@ -1070,7 +1070,7 @@ function getDownAmount(data) {
             Math.abs(data.leftKneeAngle - data.rightKneeAngle) <= 45;
 
         if (kneesAgree) {
-            // La flexión de rodilla complementa la posición de la cadera.
+            // La flexi\u{F3}n de rodilla complementa la posici\u{F3}n de la cadera.
             const kneeFlex = clamp(
                 (baseline.kneeAngle - data.kneeAngle) / 50,
                 0,
@@ -1248,7 +1248,7 @@ function detectSquat(landmarks) {
 
 
     // ========================================================
-    // CALIBRACIÓN
+    // CALIBRACI\u{D3}N
     // ========================================================
 
     if (
@@ -1295,7 +1295,7 @@ function detectSquat(landmarks) {
 
 
     // ========================================================
-    // ACTUALIZAR BASE CUANDO ESTÁ DE PIE
+    // ACTUALIZAR BASE CUANDO EST\u{C1} DE PIE
     // ========================================================
 
     if (
@@ -1303,13 +1303,13 @@ function detectSquat(landmarks) {
         STATE.STANDING &&
         Math.abs(smoothedDown) < 0.012
     ) {
-        // Solo compensamos cambios muy pequeños de posición de cámara.
+        // Solo compensamos cambios muy peque\u{F1}os de posici\u{F3}n de c\u{E1}mara.
         calibrateBody(data);
     }
 
 
     // ========================================================
-    // DE PIE → BAJANDO
+    // DE PIE \u{2192} BAJANDO
     // ========================================================
 
     if (
@@ -1360,7 +1360,7 @@ function detectSquat(landmarks) {
 
 
     // ========================================================
-    // BAJANDO → FONDO
+    // BAJANDO \u{2192} FONDO
     // ========================================================
 
     if (
@@ -1400,11 +1400,11 @@ function detectSquat(landmarks) {
 
 
             stateElement.textContent =
-                `Sentadilla detectada · ${
+                `Sentadilla detectada \u{B7} ${
                     Math.round(
                         data.kneeAngle
                     )
-                }°`;
+                }\u{B0}`;
 
 
             if (
@@ -1435,7 +1435,7 @@ function detectSquat(landmarks) {
         } else {
 
             stateElement.textContent =
-                "Baja un poco más";
+                "Baja un poco m\u{E1}s";
 
         }
 
@@ -1444,7 +1444,7 @@ function detectSquat(landmarks) {
 
 
     // ========================================================
-    // FONDO → SUBIENDO
+    // FONDO \u{2192} SUBIENDO
     // ========================================================
 
     if (
@@ -1472,7 +1472,7 @@ function detectSquat(landmarks) {
 
 
                 // ============================================
-                // AQUÍ SE REGISTRA LA SENTADILLA
+                // AQU\u{CD} SE REGISTRA LA SENTADILLA
                 // ============================================
 
                 const currentTime =
@@ -1498,12 +1498,12 @@ function detectSquat(landmarks) {
                     ) {
 
                         stateElement.textContent =
-                            "✅ ¡+1 SENTADILLA!";
+                            "\u{2705} \u{A1}+1 SENTADILLA!";
 
                     } else {
 
                         stateElement.textContent =
-                            "✅ ¡-1 SENTADILLA!";
+                            "\u{2705} \u{A1}-1 SENTADILLA!";
 
                     }
 
@@ -1525,7 +1525,7 @@ function detectSquat(landmarks) {
 
 
     // ========================================================
-    // SUBIENDO → DE PIE
+    // SUBIENDO \u{2192} DE PIE
     // ========================================================
 
     if (
@@ -1559,7 +1559,7 @@ function detectSquat(landmarks) {
 
 
 // ============================================================
-// DETENER / QUITAR CÁMARA
+// DETENER / QUITAR C\u{C1}MARA
 // ============================================================
 
 function stopCamera() {
@@ -1579,7 +1579,7 @@ function stopCamera() {
         camera = null;
     }
 
-    // Liberar realmente la cámara del navegador.
+    // Liberar realmente la c\u{E1}mara del navegador.
     if (video.srcObject) {
         const tracks = video.srcObject.getTracks();
 
@@ -1606,22 +1606,22 @@ function stopCamera() {
 
     startButton.disabled = false;
     pauseButton.disabled = true;
-    pauseButton.textContent = "⏸ Pausar detector";
+    pauseButton.textContent = "\u{23F8} Pausar detector";
 
     if (stopCameraButton) {
         stopCameraButton.disabled = true;
     }
 
     statusElement.textContent =
-        "Cámara detenida";
+        "C\u{E1}mara detenida";
 
     stateElement.textContent =
-        "Cámara desconectada";
+        "C\u{E1}mara desconectada";
 }
 
 
 // ============================================================
-// INICIAR CÁMARA
+// INICIAR C\u{C1}MARA
 // ============================================================
 
 startButton.addEventListener(
@@ -1631,7 +1631,7 @@ startButton.addEventListener(
         try {
 
             statusElement.textContent =
-                "Solicitando cámara...";
+                "Solicitando c\u{E1}mara...";
 
 
             const stream =
@@ -1663,7 +1663,7 @@ startButton.addEventListener(
 
 
             statusElement.textContent =
-                "Cámara activa";
+                "C\u{E1}mara activa";
 
 
             stateElement.textContent =
@@ -1709,15 +1709,15 @@ startButton.addEventListener(
 
 
             statusElement.textContent =
-                "Error de cámara";
+                "Error de c\u{E1}mara";
 
 
             stateElement.textContent =
-                "No se pudo acceder a la cámara";
+                "No se pudo acceder a la c\u{E1}mara";
 
 
             alert(
-                "No se pudo acceder a la cámara.\n\n" +
+                "No se pudo acceder a la c\u{E1}mara.\n\n" +
                 error.message
             );
 
@@ -1741,14 +1741,14 @@ pauseButton.addEventListener(
 
         pauseButton.textContent =
             detectorActive
-                ? "⏸ Pausar detector"
-                : "▶️ Reanudar detector";
+                ? "\u{23F8} Pausar detector"
+                : "\u{25B6}\u{FE0F} Reanudar detector";
 
 
         stateElement.textContent =
             detectorActive
                 ? "Detector activo"
-                : "⏸ Detector pausado";
+                : "\u{23F8} Detector pausado";
 
     }
 );
@@ -1779,7 +1779,7 @@ resetButton.addEventListener(
 
 
 // ============================================================
-// QUITAR CÁMARA
+// QUITAR C\u{C1}MARA
 // ============================================================
 
 stopCameraButton.addEventListener(
@@ -1791,9 +1791,9 @@ stopCameraButton.addEventListener(
 
 
 // ============================================================
-// CONFIGURACIÓN TWITCH
+// CONFIGURACI\u{D3}N TWITCH
 // ============================================================
-// En la versión web las credenciales se configuran en el servidor
+// En la versi\u{F3}n web las credenciales se configuran en el servidor
 // mediante variables de entorno. El Client Secret nunca se expone
 // al navegador.
 
@@ -1849,10 +1849,10 @@ connectTwitchButton.addEventListener(
                 )}`;
 
         } catch (error) {
-            console.error("No se pudo iniciar la sesión de Twitch:", error);
-            alert("❌ " + error.message);
+            console.error("No se pudo iniciar la sesi\u{F3}n de Twitch:", error);
+            alert("\u{274C} " + error.message);
             connectTwitchButton.disabled = false;
-            connectTwitchButton.textContent = "🟣 Conectar con Twitch";
+            connectTwitchButton.textContent = "\u{1F7E3} Conectar con Twitch";
         }
     }
 );
@@ -1864,7 +1864,7 @@ connectTwitchButton.addEventListener(
 
 if (disconnectTwitchButton) {
     disconnectTwitchButton.addEventListener("click", async () => {
-        if (!confirm("¿Quieres desvincular Twitch? Esto revocará la conexión y tendrás que autorizar Twitch nuevamente.")) {
+        if (!confirm("\u{BF}Quieres desvincular Twitch? Esto revocar\u{E1} la conexi\u{F3}n y tendr\u{E1}s que autorizar Twitch nuevamente.")) {
             return;
         }
 
@@ -1883,10 +1883,10 @@ if (disconnectTwitchButton) {
             twitchWasConnected = false;
             twitchRewardsLoaded = false;
             await checkTwitchStatus();
-            alert("Twitch fue desvinculado. Tu configuración de sentadillas permanece guardada.");
+            alert("Twitch fue desvinculado. Tu configuraci\u{F3}n de sentadillas permanece guardada.");
         } catch (error) {
             console.error("Error desvinculando Twitch:", error);
-            alert("❌ " + error.message);
+            alert("\u{274C} " + error.message);
         } finally {
             disconnectTwitchButton.disabled = false;
         }
@@ -1919,7 +1919,7 @@ async function checkTwitchStatus() {
             connectTwitchButton.disabled = true;
             if (disconnectTwitchButton) disconnectTwitchButton.style.display = "inline-flex";
 
-            // Cargar una sola vez por conexión.
+            // Cargar una sola vez por conexi\u{F3}n.
             // IMPORTANTE: NO llamar loadTwitchRewards() en cada polling.
             if (!twitchWasConnected || !twitchRewardsLoaded) {
                 twitchWasConnected = true;
@@ -1950,7 +1950,7 @@ async function checkTwitchStatus() {
 
 
 // ============================================================
-// CARGAR CONFIGURACIÓN TWITCH
+// CARGAR CONFIGURACI\u{D3}N TWITCH
 // ============================================================
 
 async function loadTwitchConfig() {
@@ -1994,7 +1994,7 @@ async function loadTwitchConfig() {
     } catch (error) {
 
         console.error(
-            "Error cargando configuración:",
+            "Error cargando configuraci\u{F3}n:",
             error
         );
 
@@ -2125,7 +2125,7 @@ async function loadTwitchRewards() {
         rewardsList.innerHTML =
             `
             <div class="rewards-description">
-                ⚠️ ${escapeHtml(
+                \u{26A0}\u{FE0F} ${escapeHtml(
                     error.message
                 )}
             </div>
@@ -2217,13 +2217,13 @@ saveRewardsButton.addEventListener(
             }
 
 
-            // El servidor ya guardó los valores en la sesión.
-            // No recargamos las recompensas aquí porque eso reconstruiría
-            // los inputs y podría reemplazar lo que acaba de escribir el usuario.
+            // El servidor ya guard\u{F3} los valores en la sesi\u{F3}n.
+            // No recargamos las recompensas aqu\u{ED} porque eso reconstruir\u{ED}a
+            // los inputs y podr\u{ED}a reemplazar lo que acaba de escribir el usuario.
             twitchRewardsLoaded = true;
 
             alert(
-                "✅ Valores de recompensas guardados."
+                "\u{2705} Valores de recompensas guardados."
             );
 
 
@@ -2309,7 +2309,7 @@ saveBitsButton.addEventListener(
 
 
             alert(
-                "✅ Configuración de Bits guardada."
+                "\u{2705} Configuraci\u{F3}n de Bits guardada."
             );
 
 
@@ -2363,7 +2363,7 @@ function escapeHtml(value) {
 
 
 // ========================================================
-// INICIALIZACIÓN
+// INICIALIZACI\u{D3}N
 // ========================================================
 
 connectWebSocket();

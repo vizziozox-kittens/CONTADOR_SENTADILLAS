@@ -368,7 +368,7 @@
             const session = sessions.get(account.session_id) || createSession(account.session_id);
             await session.dbReady;
             setSessionCookie(res, session.id);
-            return res.sendFile(path.join(__dirname, "obs.html"));
+            return res.sendFile(path.join(__dirname, "obs.html"), { headers: { "Content-Type": "text/html; charset=utf-8" } });
         } catch (error) {
             console.error("❌ Error abriendo OBS permanente:", error);
             return res.status(500).send("No se pudo cargar OBS.");
@@ -384,7 +384,7 @@
             const session = sessions.get(account.session_id) || createSession(account.session_id);
             await session.dbReady;
             setSessionCookie(res, session.id);
-            return res.sendFile(path.join(__dirname, "public", "controles.html"));
+            return res.sendFile(path.join(__dirname, "public", "controles.html"), { headers: { "Content-Type": "text/html; charset=utf-8" } });
         } catch (error) {
             console.error("❌ Error abriendo controles permanentes:", error);
             return res.status(500).send("No se pudieron cargar los controles.");
@@ -393,27 +393,24 @@
 
     // ============================================================
     // CODIFICACIÓN UTF-8
-    // Fuerza UTF-8 para HTML/CSS/JS servidos como archivos estáticos.
-    // Evita que caracteres como á, é, í, ó, ú, ñ y emojis aparezcan
-    // como "CÃ¡mara", "ConfiguraciÃ³n", "ðŸŽ¥", etc.
+    // Se configura directamente en express.static y sendFile para
+    // evitar que Express reemplace el charset al entregar archivos.
+    // Esto corrige textos como "CÃ¡mara", "ConfiguraciÃ³n", etc.
     // ============================================================
-    app.use((req, res, next) => {
-        const requestPath = String(req.path || "").toLowerCase();
+    const staticUtf8Headers = (res, filePath) => {
+        const extension = path.extname(filePath).toLowerCase();
 
-        if (requestPath === "/" || requestPath.endsWith(".html")) {
+        if (extension === ".html" || extension === ".htm") {
             res.setHeader("Content-Type", "text/html; charset=utf-8");
-        } else if (requestPath.endsWith(".js")) {
+        } else if (extension === ".js") {
             res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        } else if (requestPath.endsWith(".css")) {
+        } else if (extension === ".css") {
             res.setHeader("Content-Type", "text/css; charset=utf-8");
         }
+    };
 
-        next();
-    });
-
-    app.use(express.static(__dirname));
-
-    app.use(express.static(path.join(__dirname, "public")));
+    app.use(express.static(__dirname, { setHeaders: staticUtf8Headers }));
+    app.use(express.static(path.join(__dirname, "public"), { setHeaders: staticUtf8Headers }));
 
     // ============================================================
 
@@ -459,7 +456,7 @@
 
         getSession(req, res);
 
-        res.sendFile(path.join(__dirname, "index.html"));
+        res.sendFile(path.join(__dirname, "index.html"), { headers: { "Content-Type": "text/html; charset=utf-8" } });
 
     });
 
