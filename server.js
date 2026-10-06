@@ -16,6 +16,8 @@
         testDatabaseConnection,
         initializeSession,
         touchSession,
+        setDetectorMode: dbSetDetectorMode,
+        getDetectorMode: dbGetDetectorMode,
         setSquatCounter: dbSetSquatCounter,
         changeSquatCounter: dbChangeSquatCounter,
         saveTwitchCredentials,
@@ -115,6 +117,9 @@
             // Contador de ESTA sesión
 
             squatCounter: 0,
+
+            // Modo persistente del detector: "add" o "subtract"
+            detectorMode: "add",
 
             // Navegadores/OBS pertenecientes a ESTA sesión
 
@@ -596,6 +601,63 @@
 
         }
 
+    });
+
+    app.get("/api/squats/mode", async (req, res) => {
+
+        const session = getSession(req, res);
+
+        try {
+            await session.dbReady;
+
+            session.detectorMode = await dbGetDetectorMode(session.id);
+
+            res.json({
+                ok: true,
+                detectorMode: session.detectorMode
+            });
+        } catch (error) {
+            console.error("❌ Error leyendo modo del detector:", error);
+            res.status(500).json({
+                ok: false,
+                error: "No se pudo leer el modo del detector."
+            });
+        }
+    });
+
+    app.post("/api/squats/mode", async (req, res) => {
+
+        const session = getSession(req, res);
+        const requestedMode = String(req.body?.mode || "");
+
+        if (requestedMode !== "add" && requestedMode !== "subtract") {
+            return res.status(400).json({
+                ok: false,
+                error: "Modo inválido."
+            });
+        }
+
+        try {
+            await session.dbReady;
+
+            session.detectorMode = await dbSetDetectorMode(
+                session.id,
+                requestedMode
+            );
+
+            broadcastCounter(session);
+
+            res.json({
+                ok: true,
+                detectorMode: session.detectorMode
+            });
+        } catch (error) {
+            console.error("❌ Error guardando modo del detector:", error);
+            res.status(500).json({
+                ok: false,
+                error: "No se pudo guardar el modo del detector."
+            });
+        }
     });
 
     app.post("/api/squats/change", async (req, res) => {

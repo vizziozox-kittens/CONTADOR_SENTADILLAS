@@ -27,6 +27,19 @@
             ADD COLUMN IF NOT EXISTS oauth_return_url TEXT
         `);
 
+        // Modo persistente del detector: "add" o "subtract".
+        await pool.query(`
+            ALTER TABLE streamer_sessions
+            ADD COLUMN IF NOT EXISTS detector_mode TEXT NOT NULL DEFAULT 'add'
+        `);
+
+        await pool.query(`
+            UPDATE streamer_sessions
+            SET detector_mode = 'add'
+            WHERE detector_mode IS NULL
+               OR detector_mode NOT IN ('add', 'subtract')
+        `);
+
         await pool.query(`
             CREATE UNIQUE INDEX IF NOT EXISTS idx_streamer_sessions_oauth_state
             ON streamer_sessions(oauth_state)
@@ -89,7 +102,8 @@
             );
 
             const sessionResult = await client.query(
-                `SELECT oauth_state, oauth_state_created_at, oauth_return_url
+                `SELECT oauth_state, oauth_state_created_at, oauth_return_url,
+                        detector_mode
                  FROM streamer_sessions
                  WHERE session_id = $1`,
                 [session.id]
@@ -100,6 +114,10 @@
                 session.oauthState = row.oauth_state || null;
                 session.oauthStateCreatedAt = row.oauth_state_created_at || null;
                 session.oauthReturnUrl = row.oauth_return_url || null;
+                session.detectorMode =
+                    row.detector_mode === "subtract"
+                        ? "subtract"
+                        : "add";
             }
 
             const counterResult = await client.query(
@@ -221,6 +239,36 @@
              WHERE session_id = $1`,
             [sessionId]
         );
+    }
+
+    async function setDetectorMode(sessionId, mode) {
+        const safeMode = String(mode) === "subtract"
+            ? "subtract"
+            : "add";
+
+        const result = await pool.query(
+            `UPDATE streamer_sessions
+             SET detector_mode = $2,
+                 last_activity = NOW()
+             WHERE session_id = $1
+             RETURNING detector_mode`,
+            [sessionId, safeMode]
+        );
+
+        return result.rows[0]?.detector_mode || safeMode;
+    }
+
+    async function getDetectorMode(sessionId) {
+        const result = await pool.query(
+            `SELECT detector_mode
+             FROM streamer_sessions
+             WHERE session_id = $1`,
+            [sessionId]
+        );
+
+        return result.rows[0]?.detector_mode === "subtract"
+            ? "subtract"
+            : "add";
     }
 
     async function setSquatCounter(sessionId, value) {
@@ -412,6 +460,8 @@
         ensureOAuthColumns,
         initializeSession,
         touchSession,
+        setDetectorMode,
+        getDetectorMode,
         setSquatCounter,
         changeSquatCounter,
         saveTwitchCredentials,

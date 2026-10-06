@@ -152,6 +152,62 @@ function updateCounter() {
 }
 
 
+function applyDetectorMode(mode) {
+
+    detectorMode =
+        mode === "subtract"
+            ? "subtract"
+            : "add";
+
+    addModeButton.classList.toggle(
+        "active",
+        detectorMode === "add"
+    );
+
+    subtractModeButton.classList.toggle(
+        "active",
+        detectorMode === "subtract"
+    );
+
+    modeText.textContent =
+        detectorMode === "add"
+            ? "➕ Cada sentadilla suma 1"
+            : "➖ Cada sentadilla resta 1";
+}
+
+
+async function saveDetectorMode(mode) {
+
+    try {
+        const response = await fetch(
+            "/api/squats/mode",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ mode })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "No se pudo guardar el modo del detector"
+            );
+        }
+
+        const data = await response.json();
+        applyDetectorMode(data.detectorMode);
+
+    } catch (error) {
+        console.error(
+            "Error guardando modo del detector:",
+            error
+        );
+    }
+}
+
+
 // ============================================================
 // CARGAR CONTADOR
 // ============================================================
@@ -171,6 +227,8 @@ async function loadCounter() {
         counter = Number(data.pendingSquats || 0);
 
         updateCounter();
+
+        applyDetectorMode(data.detectorMode);
 
     } catch (error) {
 
@@ -338,6 +396,8 @@ addModeButton.addEventListener(
         modeText.textContent =
             "➕ Cada sentadilla suma 1";
 
+        saveDetectorMode("add");
+
     }
 );
 
@@ -362,6 +422,8 @@ subtractModeButton.addEventListener(
 
         modeText.textContent =
             "➖ Cada sentadilla resta 1";
+
+        saveDetectorMode("subtract");
 
     }
 );
@@ -467,6 +529,12 @@ async function connectWebSocket() {
                         );
 
                     updateCounter();
+
+                    if (message.data?.detectorMode) {
+                        applyDetectorMode(
+                            message.data.detectorMode
+                        );
+                    }
 
                 }
 
