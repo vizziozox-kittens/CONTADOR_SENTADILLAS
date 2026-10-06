@@ -1422,6 +1422,32 @@ button {
 
 }
 
+.mode-save-group {
+
+    margin-top: 10px;
+
+}
+
+.mode-save-status {
+
+    min-height: 16px;
+
+    margin-top: 6px;
+
+    color: var(--text-muted);
+
+    font-size: 11px;
+
+}
+
+#saveDetectorModeButton:disabled {
+
+    opacity: 0.65;
+
+    cursor: wait;
+
+}
+
 .form-group {
 
     display: flex;

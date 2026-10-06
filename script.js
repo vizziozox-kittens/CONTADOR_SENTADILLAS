@@ -96,6 +96,8 @@ const setCounterButton = document.getElementById("setCounterButton");
 const addModeButton = document.getElementById("addModeButton");
 const subtractModeButton = document.getElementById("subtractModeButton");
 const modeText = document.getElementById("modeText");
+const saveDetectorModeButton = document.getElementById("saveDetectorModeButton");
+const detectorModeSaveStatus = document.getElementById("detectorModeSaveStatus");
 
 const twitchStatus = document.getElementById("twitchStatus");
 const connectTwitchButton = document.getElementById("connectTwitchButton");
@@ -133,6 +135,7 @@ let socket = null;
 // "add" = cada sentadilla suma 1
 // "subtract" = cada sentadilla resta 1
 let detectorMode = "add";
+let selectedDetectorMode = "add";
 
 
 // ============================================================
@@ -159,24 +162,66 @@ function applyDetectorMode(mode) {
             ? "subtract"
             : "add";
 
+    selectedDetectorMode = detectorMode;
+
     addModeButton.classList.toggle(
         "active",
-        detectorMode === "add"
+        selectedDetectorMode === "add"
     );
 
     subtractModeButton.classList.toggle(
         "active",
-        detectorMode === "subtract"
+        selectedDetectorMode === "subtract"
     );
 
     modeText.textContent =
-        detectorMode === "add"
+        selectedDetectorMode === "add"
             ? "➕ Cada sentadilla suma 1"
             : "➖ Cada sentadilla resta 1";
+
+    if (detectorModeSaveStatus) {
+        detectorModeSaveStatus.textContent = "";
+    }
 }
 
 
-async function saveDetectorMode(mode) {
+function selectDetectorMode(mode) {
+
+    selectedDetectorMode =
+        mode === "subtract"
+            ? "subtract"
+            : "add";
+
+    addModeButton.classList.toggle(
+        "active",
+        selectedDetectorMode === "add"
+    );
+
+    subtractModeButton.classList.toggle(
+        "active",
+        selectedDetectorMode === "subtract"
+    );
+
+    modeText.textContent =
+        selectedDetectorMode === "add"
+            ? "➕ Cada sentadilla suma 1"
+            : "➖ Cada sentadilla resta 1";
+
+    if (detectorModeSaveStatus) {
+        detectorModeSaveStatus.textContent =
+            "Cambios sin guardar";
+    }
+}
+
+
+async function saveDetectorMode() {
+
+    const modeToSave = selectedDetectorMode;
+
+    if (saveDetectorModeButton) {
+        saveDetectorModeButton.disabled = true;
+        saveDetectorModeButton.textContent = "Guardando...";
+    }
 
     try {
         const response = await fetch(
@@ -186,7 +231,7 @@ async function saveDetectorMode(mode) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ mode })
+                body: JSON.stringify({ mode: modeToSave })
             }
         );
 
@@ -197,13 +242,32 @@ async function saveDetectorMode(mode) {
         }
 
         const data = await response.json();
+
         applyDetectorMode(data.detectorMode);
 
+        if (detectorModeSaveStatus) {
+            detectorModeSaveStatus.textContent =
+                "Modo guardado correctamente";
+        }
+
     } catch (error) {
+
         console.error(
             "Error guardando modo del detector:",
             error
         );
+
+        if (detectorModeSaveStatus) {
+            detectorModeSaveStatus.textContent =
+                "No se pudo guardar el modo";
+        }
+
+    } finally {
+
+        if (saveDetectorModeButton) {
+            saveDetectorModeButton.disabled = false;
+            saveDetectorModeButton.textContent = "Guardar modo";
+        }
     }
 }
 
@@ -384,20 +448,7 @@ async function resetCounter() {
 addModeButton.addEventListener(
     "click",
     () => {
-
-        detectorMode = "add";
-
-        addModeButton.classList.add("active");
-
-        subtractModeButton.classList.remove(
-            "active"
-        );
-
-        modeText.textContent =
-            "➕ Cada sentadilla suma 1";
-
-        saveDetectorMode("add");
-
+        selectDetectorMode("add");
     }
 );
 
@@ -409,24 +460,17 @@ addModeButton.addEventListener(
 subtractModeButton.addEventListener(
     "click",
     () => {
-
-        detectorMode = "subtract";
-
-        subtractModeButton.classList.add(
-            "active"
-        );
-
-        addModeButton.classList.remove(
-            "active"
-        );
-
-        modeText.textContent =
-            "➖ Cada sentadilla resta 1";
-
-        saveDetectorMode("subtract");
-
+        selectDetectorMode("subtract");
     }
 );
+
+
+if (saveDetectorModeButton) {
+    saveDetectorModeButton.addEventListener(
+        "click",
+        saveDetectorMode
+    );
+}
 
 
 // ============================================================

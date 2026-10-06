@@ -461,7 +461,12 @@
 
         return {
 
-            pendingSquats: session.squatCounter
+            pendingSquats: session.squatCounter,
+
+            detectorMode:
+                session.detectorMode === "subtract"
+                    ? "subtract"
+                    : "add"
 
         };
 

@@ -57,7 +57,7 @@
                 data-view="camara"
             >
                 <span class="nav-icon"><img src="assets/icons/camera.svg" alt=""></span>
-                <span>Cámara</span>
+                <span>CÃ¡mara</span>
             </button>
 
 
@@ -83,7 +83,7 @@
                 data-view="twitch"
             >
                 <span class="nav-icon"><img src="assets/icons/twitch.svg" alt=""></span>
-                <span>Conexión</span>
+                <span>ConexiÃ³n</span>
             </button>
 
 
@@ -127,7 +127,7 @@
                 data-view="configuracion"
             >
                 <span class="nav-icon"><img src="assets/icons/settings.svg" alt=""></span>
-                <span>Configuración</span>
+                <span>ConfiguraciÃ³n</span>
             </button>
 
         </nav>
@@ -227,7 +227,7 @@
                     <p>
                         Administra el detector, las recompensas,
                         los Bits y el contador de sentadillas desde
-                        un único panel.
+                        un Ãºnico panel.
                     </p>
 
                 </div>
@@ -310,7 +310,7 @@
                                 </h3>
 
                                 <p>
-                                    Estado de conexión
+                                    Estado de conexiÃ³n
                                 </p>
                             </div>
 
@@ -337,7 +337,7 @@
                 </div>
 
 
-                <!-- CÁMARA -->
+                <!-- CÃMARA -->
 
                 <div class="dashboard-card">
 
@@ -349,7 +349,7 @@
 
                             <div>
                                 <h3>
-                                    Cámara
+                                    CÃ¡mara
                                 </h3>
 
                                 <p>
@@ -368,7 +368,7 @@
                             class="status-dot"
                         ></span>
 
-                        Cámara detenida
+                        CÃ¡mara detenida
                     </div>
 
 
@@ -376,7 +376,7 @@
                         class="dashboard-action"
                         data-view-target="camara"
                     >
-                        Abrir cámara
+                        Abrir cÃ¡mara
                     </button>
 
                 </div>
@@ -425,13 +425,13 @@
             </div>
 
 
-            <!-- ACCESOS RÁPIDOS -->
+            <!-- ACCESOS RÃPIDOS -->
 
             <div class="section-title">
 
                 <div>
                     <span>
-                        ACCESOS RÁPIDOS
+                        ACCESOS RÃPIDOS
                     </span>
 
                     <h2>
@@ -456,12 +456,12 @@
                         </strong>
 
                         <small>
-                            Controlar detección
+                            Controlar detecciÃ³n
                         </small>
                     </div>
 
                     <span class="quick-arrow">
-                        →
+                        â†’
                     </span>
                 </button>
 
@@ -483,7 +483,7 @@
                     </div>
 
                     <span class="quick-arrow">
-                        →
+                        â†’
                     </span>
                 </button>
 
@@ -505,7 +505,7 @@
                     </div>
 
                     <span class="quick-arrow">
-                        →
+                        â†’
                     </span>
                 </button>
 
@@ -515,7 +515,7 @@
 
 
         <!-- =================================================
-             VISTA: CÁMARA
+             VISTA: CÃMARA
         ================================================== -->
 
         <section
@@ -533,11 +533,11 @@
 
                         <div>
                             <h2>
-                                Cámara
+                                CÃ¡mara
                             </h2>
 
                             <p>
-                                Vista de la cámara y detección corporal.
+                                Vista de la cÃ¡mara y detecciÃ³n corporal.
                             </p>
                         </div>
 
@@ -547,7 +547,7 @@
                         id="cameraPageStatus"
                         class="heading-status"
                     >
-                        Cámara detenida
+                        CÃ¡mara detenida
                     </div>
 
                 </div>
@@ -574,7 +574,7 @@
                         id="startButton"
                         class="button primary"
                     >
-                        🎥 Iniciar cámara
+                        ðŸŽ¥ Iniciar cÃ¡mara
                     </button>
 
 
@@ -583,7 +583,7 @@
                         class="button secondary"
                         disabled
                     >
-                        ⏸ Pausar detector
+                        â¸ Pausar detector
                     </button>
 
 
@@ -592,7 +592,7 @@
                         class="button danger"
                         disabled
                     >
-                        ⏹ Quitar cámara
+                        â¹ Quitar cÃ¡mara
                     </button>
 
                 </div>
@@ -627,7 +627,7 @@
                                 </h2>
 
                                 <p>
-                                    Controla cómo se modifica el contador.
+                                    Controla cÃ³mo se modifica el contador.
                                 </p>
                             </div>
 
@@ -642,7 +642,7 @@
                             id="addModeButton"
                             class="mode-button active"
                         >
-                            ➕ Sumar
+                            âž• Sumar
                         </button>
 
 
@@ -650,7 +650,7 @@
                             id="subtractModeButton"
                             class="mode-button subtract"
                         >
-                            ➖ Restar
+                            âž– Restar
                         </button>
 
                     </div>
@@ -659,12 +659,29 @@
                     <div class="mode-info">
 
                         <span>
-                            MODO ACTUAL
+                            MODO SELECCIONADO
                         </span>
 
                         <strong id="modeText">
-                            ➕ Cada sentadilla suma 1
+                            âž• Cada sentadilla suma 1
                         </strong>
+
+                    </div>
+
+                    <div class="form-group mode-save-group">
+
+                        <button
+                            id="saveDetectorModeButton"
+                            class="button primary"
+                            type="button"
+                        >
+                            Guardar modo
+                        </button>
+
+                        <small
+                            id="detectorModeSaveStatus"
+                            class="mode-save-status"
+                        ></small>
 
                     </div>
 
@@ -675,7 +692,7 @@
                             id="resetButton"
                             class="button danger detector-reset-button"
                         >
-                            🔄 Reiniciar contador
+                            ðŸ”„ Reiniciar contador
                         </button>
 
                     </div>
@@ -784,7 +801,7 @@
 
                         <div>
                             <h2>
-                                Conexión con Twitch
+                                ConexiÃ³n con Twitch
                             </h2>
 
                             <p>
@@ -861,12 +878,12 @@
             <div class="info-card">
 
                 <div class="info-icon">
-                    💡
+                    ðŸ’¡
                 </div>
 
                 <div>
                     <strong>
-                        ¿Qué hace esta conexión?
+                        Â¿QuÃ© hace esta conexiÃ³n?
                     </strong>
 
                     <p>
@@ -904,7 +921,7 @@
                             </h2>
 
                             <p>
-                                Configura cuántas sentadillas vale cada recompensa.
+                                Configura cuÃ¡ntas sentadillas vale cada recompensa.
                             </p>
                         </div>
 
@@ -924,7 +941,7 @@
 
                     <p class="rewards-description">
                         Estas son las recompensas que tienes creadas
-                        en Twitch. Define cuántas sentadillas vale cada una.
+                        en Twitch. Define cuÃ¡ntas sentadillas vale cada una.
                     </p>
 
 
@@ -936,7 +953,7 @@
                         id="saveRewardsButton"
                         class="button primary"
                     >
-                        💾 Guardar valores de recompensas
+                        ðŸ’¾ Guardar valores de recompensas
                     </button>
 
                 </div>
@@ -954,7 +971,7 @@
 
                     <p>
                         Una vez conectado tu canal,
-                        las recompensas aparecerán aquí.
+                        las recompensas aparecerÃ¡n aquÃ­.
                     </p>
 
                 </div>
@@ -987,7 +1004,7 @@
                             </h2>
 
                             <p>
-                                Define cuántas sentadillas genera una cantidad de Bits.
+                                Define cuÃ¡ntas sentadillas genera una cantidad de Bits.
                             </p>
                         </div>
 
@@ -1007,12 +1024,12 @@
                         <div>
 
                             <strong>
-                                Conversión de Bits
+                                ConversiÃ³n de Bits
                             </strong>
 
                             <p>
                                 Por ejemplo, si configuras 100 Bits = 10 sentadillas,
-                                cada 100 Bits recibidos agregarán 10 sentadillas.
+                                cada 100 Bits recibidos agregarÃ¡n 10 sentadillas.
                             </p>
 
                         </div>
@@ -1081,7 +1098,7 @@
                         id="saveBitsButton"
                         class="button primary save-bits-button"
                     >
-                        💾 Guardar configuración de Bits
+                        ðŸ’¾ Guardar configuraciÃ³n de Bits
                     </button>
 
                 </div>
@@ -1114,7 +1131,7 @@
                             </h2>
 
                             <p>
-                                Configura OBS, el contador, los controles y las URLs de tu transmisión.
+                                Configura OBS, el contador, los controles y las URLs de tu transmisiÃ³n.
                             </p>
                         </div>
 
@@ -1180,7 +1197,7 @@
                             </strong>
 
                             <p>
-                                Usa el archivo de overlay incluido con la aplicación.
+                                Usa el archivo de overlay incluido con la aplicaciÃ³n.
                             </p>
 
                         </div>
@@ -1197,7 +1214,7 @@
                         <div class="configuration-icon"><img src="assets/icons/obs.svg" alt=""></div>
                         <div>
                             <strong>URLs para OBS</strong>
-                            <p>Estas URLs son exclusivas de tu sesión. No compartas las de otro streamer.</p>
+                            <p>Estas URLs son exclusivas de tu sesiÃ³n. No compartas las de otro streamer.</p>
                         </div>
                     </div>
 
@@ -1230,7 +1247,7 @@
 
 
         <!-- =================================================
-             VISTA: CONFIGURACIÓN
+             VISTA: CONFIGURACIÃ“N
         ================================================== -->
 
         <section
@@ -1248,7 +1265,7 @@
 
                         <div>
                             <h2>
-                                Configuración
+                                ConfiguraciÃ³n
                             </h2>
 
                             <p>
@@ -1298,7 +1315,7 @@
                             </strong>
 
                             <p>
-                                Configuración del canal y conexión.
+                                ConfiguraciÃ³n del canal y conexiÃ³n.
                             </p>
                         </div>
 
@@ -1351,7 +1368,7 @@
 
 
 <!-- =========================================================
-     NAVEGACIÓN DEL FRONTEND
+     NAVEGACIÃ“N DEL FRONTEND
 ========================================================== -->
 
 <script>
@@ -1379,7 +1396,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // =========================================================
     // URLs PERSONALIZADAS PARA OBS
-    // Cada navegador obtiene su propia sesión desde /api/session.
+    // Cada navegador obtiene su propia sesiÃ³n desde /api/session.
     // =========================================================
 
     const obsCounterUrl =
@@ -1412,18 +1429,18 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (!response.ok) {
-                throw new Error("No se pudo obtener la sesión");
+                throw new Error("No se pudo obtener la sesiÃ³n");
             }
 
             const data = await response.json();
             const sessionId = String(data.sessionId || "").trim();
 
             if (!sessionId) {
-                throw new Error("La sesión no tiene identificador");
+                throw new Error("La sesiÃ³n no tiene identificador");
             }
 
             // Siempre usamos el dominio actual de Render.
-            // Así las URLs funcionan aunque el proyecto cambie de entorno.
+            // AsÃ­ las URLs funcionan aunque el proyecto cambie de entorno.
             const baseUrl = window.location.origin;
 
             currentObsCounterUrl =
@@ -1437,7 +1454,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (obsUrlsStatus) {
                 obsUrlsStatus.textContent =
-                    "✓ URLs generadas para esta sesión. Usa estas mismas URLs en el OBS de este streamer.";
+                    "âœ“ URLs generadas para esta sesiÃ³n. Usa estas mismas URLs en el OBS de este streamer.";
             }
 
         } catch (error) {
@@ -1446,7 +1463,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (obsUrlsStatus) {
                 obsUrlsStatus.textContent =
-                    "No se pudieron generar las URLs. Recarga la página e inténtalo de nuevo.";
+                    "No se pudieron generar las URLs. Recarga la pÃ¡gina e intÃ©ntalo de nuevo.";
             }
 
         }
@@ -1460,14 +1477,14 @@ document.addEventListener("DOMContentLoaded", () => {
             await navigator.clipboard.writeText(url);
 
             const originalText = button.textContent;
-            button.textContent = "✓ Copiado";
+            button.textContent = "âœ“ Copiado";
 
             setTimeout(() => {
                 button.textContent = originalText;
             }, 1500);
 
         } catch (error) {
-            // Fallback para navegadores donde Clipboard API no esté disponible.
+            // Fallback para navegadores donde Clipboard API no estÃ© disponible.
             const temporaryInput = document.createElement("textarea");
             temporaryInput.value = url;
             temporaryInput.style.position = "fixed";
@@ -1477,7 +1494,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 document.execCommand("copy");
-                button.textContent = "✓ Copiado";
+                button.textContent = "âœ“ Copiado";
                 setTimeout(() => {
                     button.textContent = "Copiar";
                 }, 1500);
@@ -1512,21 +1529,21 @@ document.addEventListener("DOMContentLoaded", () => {
         },
 
         camara: {
-            title: "Cámara",
-            category: "DETECCIÓN",
+            title: "CÃ¡mara",
+            category: "DETECCIÃ“N",
             description:
-                "Vista de la cámara y detección corporal."
+                "Vista de la cÃ¡mara y detecciÃ³n corporal."
         },
 
         detector: {
             title: "Detector",
-            category: "DETECCIÓN",
+            category: "DETECCIÃ“N",
             description:
-                "Controla cómo se modifica el contador."
+                "Controla cÃ³mo se modifica el contador."
         },
 
         twitch: {
-            title: "Conexión",
+            title: "ConexiÃ³n",
             category: "TWITCH",
             description:
                 "Conecta tu canal de Twitch con Squat Twitch."
@@ -1536,25 +1553,25 @@ document.addEventListener("DOMContentLoaded", () => {
             title: "Recompensas",
             category: "TWITCH",
             description:
-                "Configura cuántas sentadillas vale cada recompensa."
+                "Configura cuÃ¡ntas sentadillas vale cada recompensa."
         },
 
         bits: {
             title: "Bits",
             category: "TWITCH",
             description:
-                "Configura la conversión de Bits a sentadillas."
+                "Configura la conversiÃ³n de Bits a sentadillas."
         },
 
         obs: {
             title: "OBS",
             category: "HERRAMIENTAS",
             description:
-                "Configura OBS, el contador, los controles y las URLs de tu transmisión."
+                "Configura OBS, el contador, los controles y las URLs de tu transmisiÃ³n."
         },
 
         configuracion: {
-            title: "Configuración",
+            title: "ConfiguraciÃ³n",
             category: "SISTEMA",
             description:
                 "Opciones generales de Squat Twitch."
@@ -1830,7 +1847,7 @@ document.addEventListener("DOMContentLoaded", () => {
     /*
      * IMPORTANTE:
      * No cambiamos el script.js principal.
-     * Esta navegación solo controla el frontend.
+     * Esta navegaciÃ³n solo controla el frontend.
      */
 
 });
