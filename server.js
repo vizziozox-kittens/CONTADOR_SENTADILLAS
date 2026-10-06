@@ -391,6 +391,26 @@
         }
     });
 
+    // ============================================================
+    // CODIFICACIÓN UTF-8
+    // Fuerza UTF-8 para HTML/CSS/JS servidos como archivos estáticos.
+    // Evita que caracteres como á, é, í, ó, ú, ñ y emojis aparezcan
+    // como "CÃ¡mara", "ConfiguraciÃ³n", "ðŸŽ¥", etc.
+    // ============================================================
+    app.use((req, res, next) => {
+        const requestPath = String(req.path || "").toLowerCase();
+
+        if (requestPath === "/" || requestPath.endsWith(".html")) {
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
+        } else if (requestPath.endsWith(".js")) {
+            res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        } else if (requestPath.endsWith(".css")) {
+            res.setHeader("Content-Type", "text/css; charset=utf-8");
+        }
+
+        next();
+    });
+
     app.use(express.static(__dirname));
 
     app.use(express.static(path.join(__dirname, "public")));
