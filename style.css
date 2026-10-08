@@ -1932,6 +1932,7 @@ input:focus {
 
     width: 48px;
     height: 48px;
+    flex: 0 0 48px;
 
     display: flex;
 
@@ -1944,6 +1945,15 @@ input:focus {
         rgba(145,71,255,.14);
 
     font-size: 24px;
+
+}
+
+.bits-big-icon img {
+
+    width: 25px;
+    height: 25px;
+    display: block;
+    object-fit: contain;
 
 }
 
@@ -2012,7 +2022,8 @@ input:focus {
 
 .input-with-label input {
 
-    padding-right: 55px;
+    /* Espacio para la unidad y para las flechas nativas. */
+    padding-right: 86px;
 
 }
 
@@ -2020,8 +2031,8 @@ input:focus {
 
     position: absolute;
 
-    right: 12px;
-
+    /* La unidad queda antes de las flechas del input number. */
+    right: 34px;
     top: 50%;
 
     transform:
@@ -2030,6 +2041,8 @@ input:focus {
     color: var(--text-muted);
 
     font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
 
     pointer-events: none;
 
