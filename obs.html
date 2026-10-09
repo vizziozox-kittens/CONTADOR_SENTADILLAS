@@ -893,6 +893,7 @@ function connectWebSocket() {
         "open",
         () => {
 
+            publishDetectorStatus();
             console.log(
                 "\u{1F7E2} OBS conectado al servidor"
             );
@@ -1621,6 +1622,23 @@ const pose =
 
     });
 
+
+// Publica cada cambio real del texto de estado al servidor. La URL
+// estado-detector.html escucha estos cambios sin ejecutar una segunda cámara.
+let lastPublishedDetectorStatus = "";
+function publishDetectorStatus() {
+    if (!socket || socket.readyState !== WebSocket.OPEN || !detectorState) return;
+    const text = (detectorState.textContent || "").trim();
+    if (!text || text === lastPublishedDetectorStatus) return;
+    lastPublishedDetectorStatus = text;
+    socket.send(JSON.stringify({ type: "detector:status", data: { text } }));
+}
+if (detectorState) {
+    new MutationObserver(publishDetectorStatus).observe(detectorState, {
+        childList: true, characterData: true, subtree: true
+    });
+}
+if (socket) socket.addEventListener("open", publishDetectorStatus);
 
 pose.setOptions({
 

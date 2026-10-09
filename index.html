@@ -1234,6 +1234,15 @@
                                 <button id="copyObsControlsUrl" type="button" class="small-action">Copiar</button>
                             </div>
                         </div>
+
+                        <div>
+                            <label style="display:block;margin-bottom:6px;font-weight:600;">Estado del detector</label>
+                            <div class="input-button-row">
+                                <input id="obsDetectorStatusUrl" type="text" readonly value="Generando URL...">
+                                <button id="copyObsDetectorStatusUrl" type="button" class="small-action">Copiar</button>
+                            </div>
+                            <p style="margin:6px 0 0;font-size:12px;opacity:.75;">Fuente independiente para mostrar calibrando, de pie, bajando, subiendo o pausado.</p>
+                        </div>
                     </div>
 
                     <p id="obsUrlsStatus" style="margin:12px 0 0;font-size:13px;opacity:.8;">Cargando tus URLs personalizadas...</p>
@@ -1405,6 +1414,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const obsControlsUrl =
         document.getElementById("obsControlsUrl");
 
+    const obsDetectorStatusUrl =
+        document.getElementById("obsDetectorStatusUrl");
+
     const obsUrlsStatus =
         document.getElementById("obsUrlsStatus");
 
@@ -1414,12 +1426,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const copyObsControlsUrl =
         document.getElementById("copyObsControlsUrl");
 
+    const copyObsDetectorStatusUrl =
+        document.getElementById("copyObsDetectorStatusUrl");
+
     let currentObsCounterUrl = "";
     let currentObsControlsUrl = "";
+    let currentObsDetectorStatusUrl = "";
 
     async function loadObsUrls() {
 
-        if (!obsCounterUrl || !obsControlsUrl) return;
+        if (!obsCounterUrl || !obsControlsUrl || !obsDetectorStatusUrl) return;
 
         try {
 
@@ -1448,9 +1464,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             currentObsControlsUrl =
                 `${baseUrl}/controles.html?session=${encodeURIComponent(sessionId)}`;
+            currentObsDetectorStatusUrl =
+                `${baseUrl}/estado-detector.html?session=${encodeURIComponent(sessionId)}`;
 
             obsCounterUrl.value = currentObsCounterUrl;
             obsControlsUrl.value = currentObsControlsUrl;
+            obsDetectorStatusUrl.value = currentObsDetectorStatusUrl;
 
             if (obsUrlsStatus) {
                 obsUrlsStatus.textContent =
@@ -1513,6 +1532,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (copyObsControlsUrl) {
         copyObsControlsUrl.addEventListener("click", () => {
             copyObsUrl(currentObsControlsUrl, copyObsControlsUrl);
+        });
+    }
+
+    if (copyObsDetectorStatusUrl) {
+        copyObsDetectorStatusUrl.addEventListener("click", () => {
+            copyObsUrl(currentObsDetectorStatusUrl, copyObsDetectorStatusUrl);
         });
     }
 

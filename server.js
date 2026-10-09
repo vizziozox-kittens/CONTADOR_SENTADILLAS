@@ -121,6 +121,9 @@
             // Modo persistente del detector: "add" o "subtract"
             detectorMode: "add",
 
+            // Estado actual del detector para la fuente de estado de OBS
+            detectorStatus: { text: "Esperando al detector", updatedAt: Date.now() },
+
             // Navegadores/OBS pertenecientes a ESTA sesión
 
             browserClients: new Set()
@@ -440,7 +443,9 @@
 
             controlsUrl: session.twitchUser?.id
                 ? `${publicUrl}/controles/${encodeURIComponent(session.twitchUser.id)}`
-                : `${publicUrl}/controles.html?session=${session.id}`
+                : `${publicUrl}/controles.html?session=${session.id}`,
+
+            detectorStatusUrl: `${publicUrl}/estado-detector.html?session=${session.id}`
 
         });
 
@@ -2241,6 +2246,24 @@
         session.browserClients.add(socket);
 
         sendCounterToSocket(socket, session);
+        try {
+            socket.send(JSON.stringify({ type: "detector:status:update", data: session.detectorStatus || { text: "Esperando al detector" } }));
+        } catch (_) {}
+
+        // El OBS principal publica el texto visible del detector para que una
+        // segunda fuente de navegador pueda mostrarlo en tiempo real.
+        socket.on("message", raw => {
+            try {
+                const message = JSON.parse(String(raw));
+                if (message?.type !== "detector:status") return;
+                const text = String(message.data?.text || "Esperando al detector").trim().slice(0, 160);
+                session.detectorStatus = { text, updatedAt: Date.now() };
+                const payload = JSON.stringify({ type: "detector:status:update", data: session.detectorStatus });
+                for (const client of session.browserClients) {
+                    if (client !== socket && client.readyState === WebSocket.OPEN) client.send(payload);
+                }
+            } catch (_) {}
+        });
 
         socket.on("close", () => {
 

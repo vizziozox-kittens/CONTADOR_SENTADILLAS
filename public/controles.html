@@ -2620,5 +2620,38 @@
 
 </script>
 
+
+<script>
+// Publica el estado del detector que ya funciona en esta fuente de controles.
+// Así la fuente de estado de OBS no necesita abrir otra cámara.
+(async function publishDetectorStatusToSession() {
+    const statusElement = document.getElementById("detectorStatus");
+    if (!statusElement || !window.SQUAT_SESSION_READY) return;
+    let statusSocket = null;
+    let lastStatusText = "";
+    function publish() {
+        if (!statusSocket || statusSocket.readyState !== WebSocket.OPEN) return;
+        const text = (statusElement.textContent || "").trim();
+        if (!text || text === lastStatusText) return;
+        lastStatusText = text;
+        statusSocket.send(JSON.stringify({ type: "detector:status", data: { text } }));
+    }
+    try {
+        const session = await window.SQUAT_SESSION_READY;
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        const connect = () => {
+            statusSocket = new WebSocket(`${protocol}//${location.host}/ws?session=${encodeURIComponent(session.sessionId)}`);
+            statusSocket.addEventListener("open", publish);
+            statusSocket.addEventListener("close", () => setTimeout(connect, 2000));
+            statusSocket.addEventListener("error", () => statusSocket && statusSocket.close());
+        };
+        new MutationObserver(publish).observe(statusElement, { childList: true, characterData: true, subtree: true });
+        connect();
+    } catch (error) {
+        console.error("No se pudo publicar el estado del detector para OBS:", error);
+    }
+})();
+</script>
+
 </body>
 </html>
