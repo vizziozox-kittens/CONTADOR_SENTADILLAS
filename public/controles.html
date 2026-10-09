@@ -714,26 +714,34 @@
     ========================================================
     */
 
-    const CALIBRATION_FRAMES = 25;
-
-    const DOWN_THRESHOLD = 0.045;
-
-    const BOTTOM_THRESHOLD = 0.075;
-
-    const MIN_TIME_BETWEEN_SQUATS = 700;
-
+    // Seguimiento de pose con doble señal: descenso de cadera + compresión vertical
+    // del segmento cadera-rodilla. La referencia corporal queda fija durante cada ciclo.
+    const CALIBRATION_FRAMES = 45;
+    const DOWN_THRESHOLD = 0.12;
+    const BOTTOM_THRESHOLD = 0.25;
+    const RETURN_THRESHOLD = 0.055;
+    const MIN_TIME_BETWEEN_SQUATS = 1200;
+    const REQUIRED_BOTTOM_FRAMES = 7;
+    const REQUIRED_STANDING_FRAMES = 10;
+    const MIN_LANDMARK_VISIBILITY = 0.55;
+    const MIN_SQUAT_COMPRESSION = 0.16;
+    const MAX_LOST_FRAMES = 8;
 
     let state = "CALIBRATING";
-
     let calibrationFrames = 0;
-
     let baselineHip = null;
-
-    let smoothedHip = null;
-
+    let baselineBodySize = null;
+    let baselineHipKnee = null;
+    let smoothedDepth = null;
+    let smoothedCompression = null;
     let lastSquatTime = 0;
-
-    let previousHip = null;
+    let previousDepth = null;
+    let bottomFrames = 0;
+    let standingFrames = 0;
+    let lostFrames = 0;
+    let calibrationSamples = [];
+    let bodySizeSamples = [];
+    let hipKneeSamples = [];
 
 
     /*
@@ -1560,295 +1568,146 @@
     */
 
     function processPoseResults(results) {
+        if (detectorPaused) return;
 
-        if (detectorPaused) {
-            return;
-        }
-
-
-        if (!results.poseLandmarks) {
-
-            detectorStatus.textContent =
-                "Detector: cuerpo no encontrado";
-
-            return;
-
-        }
-
-
-        const landmarks =
-            results.poseLandmarks;
-
-
-        const leftShoulder =
-            landmarks[11];
-
-        const rightShoulder =
-            landmarks[12];
-
-        const leftHip =
-            landmarks[23];
-
-        const rightHip =
-            landmarks[24];
-
-
-        if (
-            !leftShoulder ||
-            !rightShoulder ||
-            !leftHip ||
-            !rightHip
-        ) {
-
-            return;
-
-        }
-
-
-        const shoulderY =
-            (
-                leftShoulder.y +
-                rightShoulder.y
-            ) / 2;
-
-
-        const hipY =
-            (
-                leftHip.y +
-                rightHip.y
-            ) / 2;
-
-
-        const torsoSize =
-            Math.abs(
-                hipY -
-                shoulderY
-            );
-
-
-        if (torsoSize < 0.05) {
-            return;
-        }
-
-
-        /*
-        ====================================================
-        CALIBRACI\u{D3}N
-        ====================================================
-        */
-
-        if (
-            calibrationFrames <
-            CALIBRATION_FRAMES
-        ) {
-
-            calibrationFrames++;
-
-
-            if (
-                baselineHip ===
-                null
-            ) {
-
-                baselineHip =
-                    hipY;
-
-            } else {
-
-                baselineHip =
-                    baselineHip * 0.9 +
-                    hipY * 0.1;
-
+        const landmarks = results && results.poseLandmarks;
+        if (!landmarks || landmarks.length < 29) {
+            lostFrames++;
+            detectorStatus.textContent = "Detector: cuerpo no encontrado; muestra el cuerpo completo";
+            bottomFrames = 0;
+            standingFrames = 0;
+            // Si se pierde el seguimiento, no permitir que un ciclo incompleto cuente.
+            if (lostFrames > MAX_LOST_FRAMES) {
+                state = "CALIBRATING";
+                calibrationFrames = 0;
+                calibrationSamples = [];
+            bodySizeSamples = [];
+            hipKneeSamples = [];
+                bodySizeSamples = [];
+                hipKneeSamples = [];
+                baselineHip = baselineBodySize = baselineHipKnee = null;
+                smoothedDepth = smoothedCompression = previousDepth = null;
             }
-
-
-            detectorStatus.textContent =
-                `Detector: calibrando ${calibrationFrames}/${CALIBRATION_FRAMES}`;
-
             return;
+        }
+        lostFrames = 0;
 
+        const point = i => landmarks[i];
+        const required = [point(11), point(12), point(23), point(24), point(25), point(26), point(27), point(28)];
+        if (required.some(p => !p || (typeof p.visibility === "number" && p.visibility < MIN_LANDMARK_VISIBILITY))) {
+            detectorStatus.textContent = "Detector: poca visibilidad; aléjate un poco y muestra torso y piernas";
+            bottomFrames = 0;
+            standingFrames = 0;
+            return;
         }
 
-
-        /*
-        ====================================================
-        DELTA
-        ====================================================
-        */
-
-        const rawDelta =
-            (
-                hipY -
-                baselineHip
-            ) /
-            torsoSize;
-
-
-        if (
-            smoothedHip ===
-            null
-        ) {
-
-            smoothedHip =
-                rawDelta;
-
-        } else {
-
-            smoothedHip =
-                smoothedHip * 0.70 +
-                rawDelta * 0.30;
-
+        const avgY = (a, b) => (a.y + b.y) / 2;
+        const shoulderY = avgY(point(11), point(12));
+        const hipY = avgY(point(23), point(24));
+        const kneeY = avgY(point(25), point(26));
+        const ankleY = avgY(point(27), point(28));
+        const bodySize = Math.abs(ankleY - shoulderY);
+        const hipKnee = Math.abs(kneeY - hipY);
+        if (bodySize < 0.18 || hipKnee < 0.035) {
+            detectorStatus.textContent = "Detector: ajusta la cámara para que se vea casi todo el cuerpo";
+            return;
         }
 
-
-        const currentHip =
-            smoothedHip;
-
-
-        let velocity = 0;
-
-
-        if (
-            previousHip !==
-            null
-        ) {
-
-            velocity =
-                currentHip -
-                previousHip;
-
+        if (calibrationFrames < CALIBRATION_FRAMES || baselineHip === null || baselineBodySize === null || baselineHipKnee === null) {
+            calibrationSamples.push(hipY);
+            bodySizeSamples.push(bodySize);
+            hipKneeSamples.push(hipKnee);
+            calibrationFrames++;
+            if (calibrationFrames >= CALIBRATION_FRAMES) {
+                const median = arr => {
+                    const sorted = [...arr].sort((a, b) => a - b);
+                    return sorted[Math.floor(sorted.length / 2)];
+                };
+                baselineHip = median(calibrationSamples);
+                baselineBodySize = median(bodySizeSamples);
+                baselineHipKnee = median(hipKneeSamples);
+                smoothedDepth = 0;
+                smoothedCompression = 0;
+                previousDepth = 0;
+                state = "STANDING";
+                detectorStatus.textContent = "Detector listo: seguimiento corporal activo";
+            } else {
+                detectorStatus.textContent = `Calibrando ${calibrationFrames}/${CALIBRATION_FRAMES}: permanece de pie y quieto`;
+            }
+            return;
         }
 
-
-        previousHip =
-            currentHip;
-
-
-        /*
-        ====================================================
-        ESTADOS
-        ====================================================
-        */
+        // No se divide por el tamaño corporal actual: inclinar el torso no altera
+        // artificialmente la escala de profundidad del movimiento.
+        const rawDepth = (hipY - baselineHip) / baselineBodySize;
+        // En una sentadilla, la distancia vertical cadera-rodilla se comprime.
+        // Esta segunda señal ayuda a rechazar la inclinación del torso hacia delante.
+        const rawCompression = (baselineHipKnee - hipKnee) / Math.max(baselineHipKnee, 0.06);
+        smoothedDepth = smoothedDepth * 0.72 + rawDepth * 0.28;
+        smoothedCompression = smoothedCompression * 0.70 + rawCompression * 0.30;
+        const depth = smoothedDepth;
+        const compression = smoothedCompression;
+        const velocity = previousDepth === null ? 0 : depth - previousDepth;
+        previousDepth = depth;
 
         switch (state) {
-
             case "CALIBRATING":
-
-                state =
-                    "STANDING";
-
+                state = "STANDING";
                 break;
-
-
             case "STANDING":
-
-                detectorStatus.textContent =
-                    "Detector: \u{1F7E2} de pie";
-
-
-                if (
-                    currentHip >
-                    DOWN_THRESHOLD
-                ) {
-
-                    state =
-                        "DESCENDING";
-
+                detectorStatus.textContent = "Seguimiento activo: de pie";
+                if (depth >= DOWN_THRESHOLD && velocity > -0.01) {
+                    state = "DESCENDING";
+                    bottomFrames = 0;
+                    standingFrames = 0;
                 }
-
                 break;
-
-
             case "DESCENDING":
-
-                detectorStatus.textContent =
-                    "Detector: \u{2B07}\u{FE0F} bajando";
-
-
-                if (
-                    currentHip >
-                    BOTTOM_THRESHOLD
-                ) {
-
-                    state =
-                        "BOTTOM";
-
-                } else if (
-                    currentHip <
-                    DOWN_THRESHOLD * 0.5
-                ) {
-
-                    state =
-                        "STANDING";
-
+                detectorStatus.textContent = "Seguimiento activo: bajando";
+                // La profundidad por sí sola no basta: también debe haber flexión real de piernas.
+                if (depth >= BOTTOM_THRESHOLD && compression >= MIN_SQUAT_COMPRESSION) {
+                    bottomFrames++;
+                    if (bottomFrames >= REQUIRED_BOTTOM_FRAMES) state = "BOTTOM";
+                } else if (depth < DOWN_THRESHOLD * 0.55 && compression < MIN_SQUAT_COMPRESSION * 0.5) {
+                    state = "STANDING";
+                    bottomFrames = 0;
                 }
-
                 break;
-
-
             case "BOTTOM":
-
-                detectorStatus.textContent =
-                    "Detector: \u{1F53D} abajo";
-
-
-                if (
-                    currentHip <
-                    BOTTOM_THRESHOLD
-                ) {
-
-                    state =
-                        "ASCENDING";
-
+                detectorStatus.textContent = "Seguimiento activo: posición baja confirmada";
+                // Permanecer abajo no suma: solo se habilita el conteo al completar la subida.
+                if (depth < BOTTOM_THRESHOLD && velocity < -0.002) {
+                    state = "ASCENDING";
+                    standingFrames = 0;
                 }
-
                 break;
-
-
             case "ASCENDING":
-
-                detectorStatus.textContent =
-                    "Detector: \u{2B06}\u{FE0F} subiendo";
-
-
-                if (
-                    currentHip <
-                    DOWN_THRESHOLD * 0.5
-                ) {
-
-                    const now =
-                        Date.now();
-
-
-                    if (
-                        now -
-                        lastSquatTime >=
-                        MIN_TIME_BETWEEN_SQUATS
-                    ) {
-
-                        lastSquatTime =
-                            now;
-
-
-                        registerSquat();
-
-
-                        console.log(
-                            "\u{1F3CB}\u{FE0F} SENTADILLA DETECTADA"
-                        );
-
+                detectorStatus.textContent = "Seguimiento activo: subiendo; vuelve a estar de pie";
+                if (depth <= RETURN_THRESHOLD && compression <= 0.10) {
+                    standingFrames++;
+                    if (standingFrames >= REQUIRED_STANDING_FRAMES) {
+                        const now = Date.now();
+                        if (now - lastSquatTime >= MIN_TIME_BETWEEN_SQUATS) {
+                            lastSquatTime = now;
+                            registerSquat();
+                            console.log("SENTADILLA COMPLETA CONFIRMADA POR SEGUIMIENTO CORPORAL");
+                        }
+                        state = "STANDING";
+                        bottomFrames = 0;
+                        standingFrames = 0;
+                        // Recalibración lenta solo después de completar una repetición.
+                        baselineHip = baselineHip * 0.98 + hipY * 0.02;
+                        baselineHipKnee = baselineHipKnee * 0.98 + hipKnee * 0.02;
+                        smoothedDepth = 0;
+                        smoothedCompression = 0;
+                        previousDepth = 0;
                     }
-
-
-                    state =
-                        "STANDING";
-
+                } else {
+                    standingFrames = 0;
+                    if (depth >= BOTTOM_THRESHOLD && compression >= MIN_SQUAT_COMPRESSION) state = "BOTTOM";
                 }
-
                 break;
-
         }
-
     }
 
 
@@ -2218,12 +2077,20 @@
 
             baselineHip =
                 null;
+            baselineBodySize = null;
+            baselineHipKnee = null;
+            smoothedDepth = null;
+            smoothedCompression = null;
 
-            smoothedHip =
-                null;
+            smoothedDepth = null;
+            smoothedCompression = null;
 
-            previousHip =
-                null;
+            previousDepth = null;
+            bottomFrames = 0;
+            standingFrames = 0;
+            calibrationSamples = [];
+            bodySizeSamples = [];
+            hipKneeSamples = [];
 
             lastSquatTime =
                 0;
@@ -2399,14 +2266,18 @@
         calibrationFrames =
             0;
 
-        baselineHip =
-            null;
-
-        smoothedHip =
-            null;
-
-        previousHip =
-            null;
+        baselineHip = null;
+        baselineBodySize = null;
+        baselineHipKnee = null;
+        smoothedDepth = null;
+        smoothedCompression = null;
+        previousDepth = null;
+        bottomFrames = 0;
+        standingFrames = 0;
+        lostFrames = 0;
+        calibrationSamples = [];
+        bodySizeSamples = [];
+        hipKneeSamples = [];
 
 
         btnCamera.disabled =
