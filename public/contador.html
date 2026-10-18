@@ -2,169 +2,409 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contador de Sentadillas</title>
-<style>
-    * {
-        box-sizing: border-box;
-    }
 
-    html,
-    body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: transparent;
-        font-family: Georgia, "Times New Roman", serif;
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 
-    #app {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
+    <style>
+        * { box-sizing: border-box; }
 
-    /* El lienzo ocupa todo el tamaño configurado en la fuente de navegador de OBS. */
-    #counterBox {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 0;
-        padding: 0;
-        text-align: center;
-        z-index: 20;
-    }
-
-    /*
-          IMAGEN DE DISEÑO TEMPORAL:
-          Reemplaza public/contador-diseno.png por tu propia imagen.
-          Mantén el mismo nombre para no tener que cambiar el código.
-          La imagen debe tener el marco y las decoraciones, pero deja libre
-          el centro para que el número real se dibuje encima.
-        */
-    #counterContent {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        max-width: 100%;
-        max-height: 100%;
-        aspect-ratio: 1870 / 550;
-        background-image: url('./contador-diseno.png');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: contain;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #302333;
-        overflow: hidden;
-    }
-
-    /* Título centrado en la parte superior de la imagen */
-    #counterLabel {
-        position: absolute;
-        top: 38%;/* Posición vertical, numero menor sube */
-        left: 51%;/* Centrado horizontal */
-        transform: translateX(-50%);
-        width: 60%;
-        margin: 0;
-        text-align: center;
-        font-size: clamp(18px, 3.5vw, 45px);/* Tamaño */
-        line-height: 1.1;
-        font-weight: 500;
-        letter-spacing: .14em;/* Separación entre letras */
-        color: #59405d;
-        white-space: nowrap;
-    }
-
-    /* Número centrado en el espacio central de la imagen */
-    #counter {
-        position: absolute;
-        top: 42%; /* Posición vertical */
-        left: 50%; /* Centrado horizontal */
-        transform: translateX(-50%);
-        width: 60%;
-        margin: 0;
-        text-align: center;
-        font-size: clamp(40px, 15vw, 170px);/* Tamaño */
-        line-height: 1;
-        font-weight: 500;
-        color: #302333;
-        text-shadow: 0 1px 2px rgba(255, 255, 255, .75);
-        white-space: nowrap;
-    }
-
-    /* Texto centrado en la parte inferior de la imagen */
-    #counterSub {
-        position: absolute;
-        top: 59.5%;/* Posición vertical */
-        left: 50%;/* Centrado horizontal */
-        transform: translateX(-50%);
-        width: 60%;
-        margin: 0;
-        text-align: center;
-        font-size: clamp(12px, 2vw, 35px);/* Tamaño */
-        line-height: 1.1;
-        font-weight: 500;
-        letter-spacing: .10em;
-        color: #59405d;
-        white-space: nowrap;
-    }
-
-    .counterPulse {
-        animation: counterPulse .35s ease;
-    }
-
-    @keyframes counterPulse {
-        0% {
-            filter: brightness(1);
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
-        50% {
-            filter: brightness(1.18);
+        #app { position: relative; width: 100%; height: 100%; }
+
+        #counterBox { z-index: 20; text-align: center; }
+        #artwork { display: none; }
+
+        /* ============================================================
+           DISEÑO CLÁSICO (morado) - por defecto
+        ============================================================ */
+        body.design-classic #counterBox {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            min-width: 240px;
+            padding: 18px 30px 20px;
+            border-radius: 20px;
+            background: rgba(10, 10, 18, 0.90);
+            border: 2px solid rgba(145, 71, 255, 0.90);
+            box-shadow: 0 0 30px rgba(145, 71, 255, 0.30);
+            color: white;
+        }
+        body.design-classic #stage { position: static; }
+        body.design-classic #counterLabel {
+            font-size: 15px; font-weight: 700; letter-spacing: 2px;
+            color: #c9b3ff; margin-bottom: 4px;
+        }
+        body.design-classic #counter {
+            font-size: 82px; line-height: .95; font-weight: 900; color: white;
+            text-shadow: 0 0 18px rgba(145, 71, 255, 0.75);
+        }
+        body.design-classic #counterSub {
+            margin-top: 8px; font-size: 11px; letter-spacing: 1.5px; color: #9ca3af;
+        }
+        body.design-classic .counterPulse { animation: pulseScale .35s ease; }
+
+        @keyframes pulseScale {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
         }
 
-        100% {
-            filter: brightness(1);
+        /* ============================================================
+           DISEÑOS CON ARTE (floral / halloween)
+           El "stage" mantiene SIEMPRE la proporción 871:286 de la imagen
+           y se ajusta al tamaño de la fuente de OBS. Todo lo de adentro
+           se posiciona en % y escala con --u (1% del ancho del stage),
+           así no se descuadra sin importar el tamaño en OBS.
+        ============================================================ */
+        body.design-floral #counterBox,
+        body.design-halloween #counterBox {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-    }
-</style>
 
+        body.design-floral #stage,
+        body.design-halloween #stage {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 871 / 286;
+            max-height: 100%;
+            flex: none;
+        }
+
+        body.design-floral #artwork,
+        body.design-halloween #artwork {
+            display: block;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        body.design-floral #artwork svg,
+        body.design-halloween #artwork svg { display: none; }
+        body.design-floral #artwork img { display: block; width: 100%; height: 100%; }
+        body.design-halloween #artwork img { display: none; }
+        body.design-halloween #artwork svg { display: block; width: 100%; height: 100%; }
+
+        body.design-floral #counterLabel,
+        body.design-floral #counter,
+        body.design-floral #counterSub,
+        body.design-halloween #counterLabel,
+        body.design-halloween #counter,
+        body.design-halloween #counterSub {
+            position: absolute;
+            left: var(--cx);
+            transform: translate(-50%, -50%);
+            margin: 0;
+            width: 62%;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        /* ---------- FLORAL PASTEL ---------- */
+        body.design-floral {
+            --cx: 50.7%;
+            --ly: 27%;
+            --ny: 52%;
+            --sy: 76%;
+        }
+        body.design-floral #counterLabel {
+            top: var(--ly);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: calc(var(--u, 1vw) * 3.3);
+            font-weight: 500;
+            letter-spacing: .14em;
+            color: #59405d;
+        }
+        body.design-floral #counter {
+            top: var(--ny);
+            font-family: "Playfair Display", "Times New Roman", Times, serif;
+            font-variant-numeric: lining-nums;
+            font-size: calc(var(--u, 1vw) * 13.5);
+            font-weight: 500;
+            color: #302333;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, .75);
+        }
+        body.design-floral #counterSub {
+            top: var(--sy);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: calc(var(--u, 1vw) * 2.3);
+            font-weight: 500;
+            letter-spacing: .10em;
+            color: #59405d;
+        }
+        body.design-floral .counterPulse { animation: pulseBright .35s ease; }
+
+        /* ---------- HALLOWEEN ---------- */
+        body.design-halloween {
+            --cx: 56%;
+            --ly: 24%;
+            --ny: 51%;
+            --sy: 78%;
+        }
+        body.design-halloween #counterLabel {
+            top: var(--ly);
+            font-family: "Creepster", Impact, "Arial Black", sans-serif;
+            font-size: calc(var(--u, 1vw) * 4.2);
+            letter-spacing: .12em;
+            color: #ff8a1f;
+            text-shadow: 0 0 .5em rgba(255, 120, 0, .75), 0 2px 0 #3a1200;
+        }
+        body.design-halloween #counter {
+            top: var(--ny);
+            font-family: "Creepster", Impact, "Arial Black", sans-serif;
+            font-size: calc(var(--u, 1vw) * 15);
+            letter-spacing: .04em;
+            color: #ffb347;
+            text-shadow: 0 0 .22em rgba(255, 140, 0, .95), 0 0 .6em rgba(255, 90, 0, .55), 0 .04em 0 #5a1d00;
+            animation: numFlicker 3.2s infinite;
+        }
+        body.design-halloween #counterSub {
+            top: var(--sy);
+            font-family: "Creepster", Impact, "Arial Black", sans-serif;
+            font-size: calc(var(--u, 1vw) * 2.9);
+            letter-spacing: .16em;
+            color: #c9a4ea;
+            text-shadow: 0 0 .5em rgba(160, 90, 255, .7);
+        }
+        body.design-halloween .counterPulse { animation: pulseBright .35s ease; }
+
+        /* Números largos: reducir para que nunca se salgan del marco */
+        body.design-floral #counter[data-len="5"],
+        body.design-halloween #counter[data-len="5"] { font-size: calc(var(--u, 1vw) * 11); }
+        body.design-floral #counter[data-len="6"],
+        body.design-halloween #counter[data-len="6"],
+        body.design-floral #counter[data-len="7"],
+        body.design-halloween #counter[data-len="7"] { font-size: calc(var(--u, 1vw) * 8.5); }
+
+        @keyframes pulseBright {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.25); }
+            100% { filter: brightness(1); }
+        }
+
+        @keyframes numFlicker {
+            0%, 100% { opacity: 1; }
+            46% { opacity: 1; }
+            48% { opacity: .82; }
+            50% { opacity: 1; }
+            72% { opacity: .92; }
+            74% { opacity: 1; }
+        }
+
+        /* Animaciones del SVG de Halloween */
+        .hw-flicker { animation: hwFlicker 2.6s infinite; }
+        @keyframes hwFlicker {
+            0%, 100% { opacity: 1; }
+            20% { opacity: .9; }
+            22% { opacity: .65; }
+            24% { opacity: 1; }
+            60% { opacity: .95; }
+            63% { opacity: .75; }
+            66% { opacity: 1; }
+        }
+        .hw-spider { transform-origin: 745px 22px; animation: hwSway 3.4s ease-in-out infinite; }
+        @keyframes hwSway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .hw-bat { animation: hwFloat 3s ease-in-out infinite; }
+        .hw-bat.b2 { animation-duration: 2.4s; animation-delay: -.8s; }
+        .hw-bat.b3 { animation-duration: 3.6s; animation-delay: -1.6s; }
+        @keyframes hwFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .hw-ember { animation: hwEmber 3s ease-in-out infinite; }
+        @keyframes hwEmber {
+            0%, 100% { opacity: .15; }
+            50% { opacity: .9; }
+        }
+    </style>
 </head>
 
+<body class="design-classic">
 
-<body>
-
+    <script>
+        /* Diseño elegido desde la URL: ?design=classic | floral | halloween */
+        (function () {
+            const valid = ["classic", "floral", "halloween"];
+            const wanted = (new URLSearchParams(window.location.search).get("design") || "classic").toLowerCase();
+            const design = valid.includes(wanted) ? wanted : "classic";
+            document.body.className = "design-" + design;
+            window.SQUAT_DESIGN = design;
+        })();
+    </script>
 
     <div id="app">
-
-
         <div id="counterBox">
-            <div id="counterContent" aria-label="Contador de sentadillas">
+            <div id="stage" aria-label="Contador de sentadillas">
+
+                <div id="artwork">
+                    <img src="./contador-diseno.png" alt="">
+
+                    <svg viewBox="0 0 871 286" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <linearGradient id="hwBg" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#1a0a22" />
+                                <stop offset=".5" stop-color="#0d0612" />
+                                <stop offset="1" stop-color="#1b0a1d" />
+                            </linearGradient>
+                            <linearGradient id="hwBorder" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0" stop-color="#ff7a00" />
+                                <stop offset=".5" stop-color="#7a2bd6" />
+                                <stop offset="1" stop-color="#ff7a00" />
+                            </linearGradient>
+                            <radialGradient id="hwPumpkin" cx="50%" cy="38%" r="68%">
+                                <stop offset="0" stop-color="#ffb347" />
+                                <stop offset=".55" stop-color="#e8680c" />
+                                <stop offset="1" stop-color="#7d2700" />
+                            </radialGradient>
+                            <radialGradient id="hwAura" cx="50%" cy="50%" r="50%">
+                                <stop offset="0" stop-color="#ff7a00" stop-opacity=".55" />
+                                <stop offset="1" stop-color="#ff7a00" stop-opacity="0" />
+                            </radialGradient>
+                            <radialGradient id="hwFire" cx="50%" cy="55%" r="60%">
+                                <stop offset="0" stop-color="#fff6a0" />
+                                <stop offset=".5" stop-color="#ffc21a" />
+                                <stop offset="1" stop-color="#ff5a00" />
+                            </radialGradient>
+                            <radialGradient id="hwMoon" cx="40%" cy="38%" r="65%">
+                                <stop offset="0" stop-color="#fff8dc" />
+                                <stop offset="1" stop-color="#d9c57a" />
+                            </radialGradient>
+                            <filter id="hwGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="5" />
+                            </filter>
+                            <clipPath id="hwFrame">
+                                <rect x="14" y="14" width="843" height="258" rx="40" />
+                            </clipPath>
+                            <path id="hwBatShape" d="M0 0 C-5 -9 -17 -10 -28 -3 C-22 -3 -18 0 -16 5 C-12 1 -7 1 -4 6 L0 11 L4 6 C7 1 12 1 16 5 C18 0 22 -3 28 -3 C17 -10 5 -9 0 0 Z" />
+                        </defs>
+
+                        <!-- Marco -->
+                        <rect x="14" y="14" width="843" height="258" rx="40" fill="url(#hwBg)" />
+                        <g clip-path="url(#hwFrame)">
+                            <!-- Telarañas -->
+                            <g fill="none" stroke="#d8cbe8" stroke-width="1.3" opacity=".35">
+                                <path d="M14 14 L14 120 M14 14 L120 14 M14 14 L88 88 M14 14 L40 132 M14 14 L132 40" />
+                                <path d="M14 46 Q42 42 46 14 M14 78 Q64 70 78 14 M14 110 Q86 96 110 14" />
+                                <path d="M857 14 L857 120 M857 14 L751 14 M857 14 L783 88 M857 14 L831 132 M857 14 L739 40" />
+                                <path d="M857 46 Q829 42 825 14 M857 78 Q807 70 793 14 M857 110 Q785 96 761 14" />
+                            </g>
+                            <!-- Niebla baja -->
+                            <ellipse cx="435" cy="285" rx="420" ry="26" fill="#5b2a8a" opacity=".22" />
+                        </g>
+                        <rect x="14" y="14" width="843" height="258" rx="40" fill="none" stroke="url(#hwBorder)" stroke-width="6" />
+                        <rect x="24" y="24" width="823" height="238" rx="32" fill="none" stroke="#ff7a00" stroke-opacity=".35" stroke-width="1.5" />
+
+                        <!-- Brasas -->
+                        <g fill="#ffa63a">
+                            <circle class="hw-ember" cx="270" cy="60" r="2.2" />
+                            <circle class="hw-ember" cx="330" cy="236" r="1.8" style="animation-delay:-1s" />
+                            <circle class="hw-ember" cx="640" cy="48" r="2" style="animation-delay:-2s" />
+                            <circle class="hw-ember" cx="690" cy="232" r="2.4" style="animation-delay:-.5s" />
+                            <circle class="hw-ember" cx="240" cy="190" r="1.6" style="animation-delay:-1.6s" />
+                        </g>
+
+                        <!-- CALABAZA TÉTRICA -->
+                        <circle cx="132" cy="150" r="118" fill="url(#hwAura)" />
+                        <g>
+                            <!-- tallo -->
+                            <path d="M122 96 Q116 74 130 62 Q142 56 148 66 Q139 74 141 96 Z" fill="#4a3516" stroke="#2a1d0b" stroke-width="2" />
+                            <path d="M146 68 Q166 58 164 80 Q158 70 150 74" fill="none" stroke="#5c8a2a" stroke-width="3" stroke-linecap="round" />
+                            <!-- cuerpo -->
+                            <ellipse cx="132" cy="158" rx="64" ry="66" fill="url(#hwPumpkin)" stroke="#6b2200" stroke-width="2" />
+                            <ellipse cx="96" cy="158" rx="40" ry="64" fill="url(#hwPumpkin)" stroke="#6b2200" stroke-width="2" />
+                            <ellipse cx="168" cy="158" rx="40" ry="64" fill="url(#hwPumpkin)" stroke="#6b2200" stroke-width="2" />
+                            <ellipse cx="132" cy="158" rx="30" ry="66" fill="url(#hwPumpkin)" stroke="#6b2200" stroke-width="1.5" />
+                            <g fill="none" stroke="#7a2a00" stroke-width="2" opacity=".55">
+                                <path d="M132 94 Q114 158 132 222" />
+                                <path d="M102 98 Q72 158 102 218" />
+                                <path d="M162 98 Q192 158 162 218" />
+                            </g>
+
+                            <!-- resplandor de la cara (se enciende y parpadea) -->
+                            <g class="hw-flicker">
+                                <g filter="url(#hwGlow)" opacity=".9" fill="#ffb400">
+                                    <path d="M86 128 L124 146 L100 164 Z" />
+                                    <path d="M178 128 L140 146 L164 164 Z" />
+                                    <path d="M132 160 L122 178 L142 178 Z" />
+                                    <path d="M78 178 L96 188 L104 176 L116 194 L124 182 L132 198 L140 182 L148 194 L160 176 L168 188 L186 178 Q176 228 132 230 Q88 228 78 178 Z" />
+                                </g>
+                                <!-- ojos -->
+                                <path d="M86 128 L124 146 L100 164 Z" fill="url(#hwFire)" stroke="#2a0d00" stroke-width="2" stroke-linejoin="round" />
+                                <path d="M178 128 L140 146 L164 164 Z" fill="url(#hwFire)" stroke="#2a0d00" stroke-width="2" stroke-linejoin="round" />
+                                <!-- pupilas -->
+                                <ellipse cx="116" cy="148" rx="3" ry="6" fill="#2a0d00" />
+                                <ellipse cx="148" cy="148" rx="3" ry="6" fill="#2a0d00" />
+                                <!-- nariz -->
+                                <path d="M132 160 L122 178 L142 178 Z" fill="url(#hwFire)" stroke="#2a0d00" stroke-width="2" stroke-linejoin="round" />
+                                <!-- boca con colmillos -->
+                                <path d="M78 178 L96 188 L104 176 L116 194 L124 182 L132 198 L140 182 L148 194 L160 176 L168 188 L186 178 Q176 228 132 230 Q88 228 78 178 Z" fill="url(#hwFire)" stroke="#2a0d00" stroke-width="2" stroke-linejoin="round" />
+                                <!-- dientes de abajo -->
+                                <path d="M106 222 L114 206 L122 228 Z M142 228 L150 206 L158 222 Z" fill="#c85a08" stroke="#2a0d00" stroke-width="1.5" stroke-linejoin="round" />
+                            </g>
+                            <!-- ceño fruncido -->
+                            <path d="M80 122 L126 140" stroke="#5a1d00" stroke-width="4" stroke-linecap="round" />
+                            <path d="M184 122 L138 140" stroke="#5a1d00" stroke-width="4" stroke-linecap="round" />
+                        </g>
+
+                        <!-- Luna -->
+                        <circle cx="800" cy="96" r="52" fill="url(#hwAura)" opacity=".5" />
+                        <circle cx="800" cy="96" r="34" fill="url(#hwMoon)" />
+                        <g fill="#c9b36a" opacity=".55">
+                            <circle cx="788" cy="86" r="6" />
+                            <circle cx="810" cy="108" r="8" />
+                            <circle cx="803" cy="80" r="3" />
+                        </g>
+
+                        <!-- Murciélagos -->
+                        <g fill="#2a1238" stroke="#9a5be0" stroke-width="1.2">
+                            <g transform="translate(776 150)"><g class="hw-bat"><use href="#hwBatShape" transform="scale(1.05)" /></g></g>
+                            <g transform="translate(828 196)"><g class="hw-bat b2"><use href="#hwBatShape" transform="scale(.8)" /></g></g>
+                            <g transform="translate(700 236)"><g class="hw-bat b3"><use href="#hwBatShape" transform="scale(.65)" /></g></g>
+                        </g>
+
+                        <!-- Araña colgando -->
+                        <g class="hw-spider">
+                            <line x1="745" y1="22" x2="745" y2="64" stroke="#d8cbe8" stroke-opacity=".6" stroke-width="1.3" />
+                            <g stroke="#8a62b0" stroke-width="2" fill="none" stroke-linecap="round">
+                                <path d="M739 70 L728 64 L724 74 M739 74 L726 78 L725 88 M751 70 L762 64 L766 74 M751 74 L764 78 L765 88" />
+                            </g>
+                            <ellipse cx="745" cy="74" rx="7.5" ry="9" fill="#241033" stroke="#9a5be0" />
+                            <circle cx="745" cy="66" r="4.5" fill="#241033" stroke="#9a5be0" />
+                            <circle cx="743" cy="65" r="1.2" fill="#ff3b3b" />
+                            <circle cx="747" cy="65" r="1.2" fill="#ff3b3b" />
+                        </g>
+                    </svg>
+                </div>
+
                 <div id="counterLabel">SENTADILLAS</div>
-                <div id="counter">0</div>
+                <div id="counter" data-len="1">0</div>
                 <div id="counterSub">PENDIENTES</div>
             </div>
         </div>
-
-
     </div>
-
 
     <script>
         /* SESI\u{D3}N ESTABLE PARA P\u{C1}GINAS DE OBS */
@@ -198,243 +438,114 @@
     </script>
 
     <script>
-
         /* ============================================================
            ELEMENTOS
         ============================================================ */
-
-        const counterElement =
-            document.getElementById("counter");
-
-        const counterBox =
-            document.getElementById("counterBox");
-
-
-        /* ============================================================
-           VARIABLES
-        ============================================================ */
+        const counterElement = document.getElementById("counter");
+        const counterBox = document.getElementById("counterBox");
+        const stage = document.getElementById("stage");
 
         let counter = 0;
-
         let socket = null;
 
+        /* ============================================================
+           AJUSTE DEL ESCENARIO (floral / halloween)
+           Mantiene la proporci\u{F3}n 871:286 sin importar el tama\u{F1}o de OBS
+        ============================================================ */
+        const STAGE_RATIO = 871 / 286;
+
+        function fitStage() {
+            if (window.SQUAT_DESIGN === "classic") return;
+
+            const W = window.innerWidth;
+            const H = window.innerHeight;
+
+            let w = W;
+            let h = W / STAGE_RATIO;
+
+            if (h > H) {
+                h = H;
+                w = H * STAGE_RATIO;
+            }
+
+            stage.style.width = w + "px";
+            stage.style.height = h + "px";
+            stage.style.setProperty("--u", (w / 100) + "px");
+        }
+
+        window.addEventListener("resize", fitStage);
+        fitStage();
 
         /* ============================================================
            ACTUALIZAR CONTADOR
         ============================================================ */
-
         function updateCounter(value) {
+            const newValue = Math.max(0, Math.floor(Number(value) || 0));
 
-            const newValue =
-                Math.max(
-                    0,
-                    Math.floor(
-                        Number(value) || 0
-                    )
-                );
-
+            counterElement.dataset.len = String(newValue).length;
 
             if (newValue !== counter) {
-
                 counter = newValue;
+                counterElement.textContent = counter;
 
-                counterElement.textContent =
-                    counter;
-
-
-                counterBox.classList.remove(
-                    "counterPulse"
-                );
-
-
+                counterBox.classList.remove("counterPulse");
                 void counterBox.offsetWidth;
-
-
-                counterBox.classList.add(
-                    "counterPulse"
-                );
-
+                counterBox.classList.add("counterPulse");
             } else {
-
-                counterElement.textContent =
-                    counter;
-
+                counterElement.textContent = counter;
             }
-
         }
-
 
         /* ============================================================
            CARGAR CONTADOR
         ============================================================ */
-
         async function loadCounter() {
-
             try {
-
-                const response =
-                    await fetch(
-                        "/api/squats",
-                        {
-                            cache: "no-store"
-                        }
-                    );
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        "No se pudo obtener el contador"
-                    );
-
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                updateCounter(
-                    data.pendingSquats
-                );
-
+                const response = await fetch("/api/squats", { cache: "no-store" });
+                if (!response.ok) throw new Error("No se pudo obtener el contador");
+                const data = await response.json();
+                updateCounter(data.pendingSquats);
             } catch (error) {
-
-                console.error(
-                    "Error cargando contador:",
-                    error
-                );
-
+                console.error("Error cargando contador:", error);
             }
-
         }
-
 
         /* ============================================================
            WEBSOCKET
         ============================================================ */
-
         function connectWebSocket() {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
 
-            if (
-                socket &&
-                (
-                    socket.readyState ===
-                    WebSocket.OPEN ||
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
 
-                    socket.readyState ===
-                    WebSocket.CONNECTING
-                )
-            ) {
+            socket = new WebSocket(`${protocol}//${location.host}/ws?session=${encodeURIComponent(window.SQUAT_SESSION_ID || "")}`);
 
-                return;
+            socket.addEventListener("open", () => console.log("\u{1F7E2} Contador conectado"));
 
-            }
-
-
-            const protocol =
-                location.protocol === "https:"
-                    ? "wss:"
-                    : "ws:";
-
-
-            socket =
-                new WebSocket(
-                    `${protocol}//${location.host}/ws?session=${encodeURIComponent(window.SQUAT_SESSION_ID || "")}`
-                );
-
-
-            socket.addEventListener(
-                "open",
-                () => {
-
-                    console.log(
-                        "\u{1F7E2} Contador conectado"
-                    );
-
-                }
-            );
-
-
-            socket.addEventListener(
-                "message",
-                event => {
-
-                    try {
-
-                        const message =
-                            JSON.parse(
-                                event.data
-                            );
-
-
-                        if (
-                            message.type ===
-                            "counter:update"
-                        ) {
-
-                            updateCounter(
-                                message.data
-                                    ?.pendingSquats
-                            );
-
-                        }
-
-                    } catch (error) {
-
-                        console.error(
-                            "Error leyendo WebSocket:",
-                            error
-                        );
-
+            socket.addEventListener("message", event => {
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message.type === "counter:update") {
+                        updateCounter(message.data?.pendingSquats);
                     }
-
+                } catch (error) {
+                    console.error("Error leyendo WebSocket:", error);
                 }
-            );
+            });
 
+            socket.addEventListener("close", () => {
+                console.log("\u{1F534} WebSocket desconectado");
+                setTimeout(connectWebSocket, 2000);
+            });
 
-            socket.addEventListener(
-                "close",
-                () => {
-
-                    console.log(
-                        "\u{1F534} WebSocket desconectado"
-                    );
-
-
-                    setTimeout(
-                        connectWebSocket,
-                        2000
-                    );
-
-                }
-            );
-
-
-            socket.addEventListener(
-                "error",
-                error => {
-
-                    console.error(
-                        "Error WebSocket:",
-                        error
-                    );
-
-                }
-            );
-
+            socket.addEventListener("error", error => console.error("Error WebSocket:", error));
         }
-
 
         /* ============================================================
            INICIO
         ============================================================ */
-
         loadCounter();
-
         connectWebSocket();
-
-
     </script>
 
 </body>

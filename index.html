@@ -1217,6 +1217,7 @@
                     <select id="obsCounterDesign" style="width:100%;max-width:420px;padding:12px;border-radius:10px;border:1px solid var(--border-light,#30394d);background:var(--panel,#131925);color:var(--text,#fff);font:inherit;">
                         <option value="classic">Clásico morado</option>
                         <option value="floral">Floral pastel (nuevo)</option>
+                        <option value="halloween">Halloween – calabaza tétrica (nuevo)</option>
                     </select>
                     <p id="obsCounterDesignStatus" style="margin:8px 0 0;font-size:12px;opacity:.75;">El diseño seleccionado se aplicará a la URL del contador.</p>
                 </div>
@@ -1570,9 +1571,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (obsCounterUrl) obsCounterUrl.value = currentObsCounterUrl;
         }
         if (obsCounterDesignStatus) {
-            obsCounterDesignStatus.textContent = design === "floral"
-                ? "✓ Diseño floral pastel seleccionado. Copia la URL actualizada para OBS."
-                : "✓ Diseño clásico morado seleccionado. Copia la URL actualizada para OBS.";
+            const designNames = {
+                classic: "clásico morado",
+                floral: "floral pastel",
+                halloween: "Halloween (calabaza tétrica)"
+            };
+            obsCounterDesignStatus.textContent =
+                "✓ Diseño " + (designNames[design] || designNames.classic) + " seleccionado. Copia la URL actualizada para OBS.";
         }
     }
     if (obsCounterDesign) obsCounterDesign.addEventListener("change", updateCounterDesignUrl);
