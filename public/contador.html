@@ -11,178 +11,139 @@
     >
 
     <title>Contador de Sentadillas</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        font-family: Georgia, "Times New Roman", serif;
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    #app {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
 
-        html,
-        body {
+    /* El lienzo ocupa todo el tamaño configurado en la fuente de navegador de OBS. */
+    #counterBox {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        text-align: center;
+        z-index: 20;
+    }
 
-            margin: 0;
-            padding: 0;
-
-            width: 100%;
-            height: 100%;
-
-            overflow: hidden;
-
-            background: transparent;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-        }
-
-
-        #app {
-
-            position: relative;
-
-            width: 100%;
-            height: 100%;
-        }
-
-
-        /* =====================================================
-           CONTADOR
-        ====================================================== */
-
-        /*
-           EL LIENZO COMPLETO DE LA BROWSER SOURCE
-           Ahora #counterBox ocupa exactamente todo el tama&#241;o
-           que tenga la fuente de navegador en OBS.
-           El dise&#241;o visible se adapta dentro de ese lienzo.
+    /*
+          IMAGEN DE DISEÑO TEMPORAL:
+          Reemplaza public/contador-diseno.png por tu propia imagen.
+          Mantén el mismo nombre para no tener que cambiar el código.
+          La imagen debe tener el marco y las decoraciones, pero deja libre
+          el centro para que el número real se dibuje encima.
         */
-        #counterBox {
+    #counterContent {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        aspect-ratio: 1870 / 550;
+        background-image: url('./contador-diseno.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #302333;
+        overflow: hidden;
+    }
 
-            position: absolute;
+    /* Título centrado en la parte superior de la imagen */
+    #counterLabel {
+        position: absolute;
+        top: 38%;/* Posición vertical, numero menor sube */
+        left: 51%;/* Centrado horizontal */
+        transform: translateX(-50%);
+        width: 60%;
+        margin: 0;
+        text-align: center;
+        font-size: clamp(18px, 3.5vw, 45px);/* Tamaño */
+        line-height: 1.1;
+        font-weight: 500;
+        letter-spacing: .14em;/* Separación entre letras */
+        color: #59405d;
+        white-space: nowrap;
+    }
 
-            inset: 0;
+    /* Número centrado en el espacio central de la imagen */
+    #counter {
+        position: absolute;
+        top: 42%; /* Posición vertical */
+        left: 50%; /* Centrado horizontal */
+        transform: translateX(-50%);
+        width: 60%;
+        margin: 0;
+        text-align: center;
+        font-size: clamp(40px, 15vw, 170px);/* Tamaño */
+        line-height: 1;
+        font-weight: 500;
+        color: #302333;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, .75);
+        white-space: nowrap;
+    }
 
-            width: 100%;
-            height: 100%;
+    /* Texto centrado en la parte inferior de la imagen */
+    #counterSub {
+        position: absolute;
+        top: 59.5%;/* Posición vertical */
+        left: 50%;/* Centrado horizontal */
+        transform: translateX(-50%);
+        width: 60%;
+        margin: 0;
+        text-align: center;
+        font-size: clamp(12px, 2vw, 35px);/* Tamaño */
+        line-height: 1.1;
+        font-weight: 500;
+        letter-spacing: .10em;
+        color: #59405d;
+        white-space: nowrap;
+    }
 
-            min-width: 0;
-            min-height: 0;
+    .counterPulse {
+        animation: counterPulse .35s ease;
+    }
 
-            padding: clamp(12px, 4vmin, 40px);
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            background: transparent;
-            border: 0;
-            box-shadow: none;
-            border-radius: 0;
-
-            text-align: center;
-            color: white;
-
-            z-index: 20;
+    @keyframes counterPulse {
+        0% {
+            filter: brightness(1);
         }
 
-
-        /* Tarjeta visual. Su tama&#241;o depende del tama&#241;o de la fuente OBS. */
-        #counterContent {
-
-            width: min(82vw, 82vh, 620px);
-
-            min-width: 180px;
-
-            padding: clamp(14px, 3vmin, 30px)
-                     clamp(18px, 4vmin, 48px)
-                     clamp(16px, 3vmin, 32px);
-
-            border-radius: clamp(14px, 2.5vmin, 24px);
-
-            background: rgba(10, 10, 18, 0.90);
-
-            border: clamp(1px, 0.25vmin, 2px) solid
-                    rgba(145, 71, 255, 0.90);
-
-            box-shadow:
-                0 0 clamp(18px, 4vmin, 40px)
-                rgba(145, 71, 255, 0.30);
-
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        50% {
+            filter: brightness(1.18);
         }
 
-
-        #counterLabel {
-
-            font-size: clamp(11px, 2.2vmin, 18px);
-
-            font-weight: 700;
-
-            letter-spacing: 2px;
-
-            color: #c9b3ff;
-
-            margin-bottom: 4px;
+        100% {
+            filter: brightness(1);
         }
-
-
-        #counter {
-
-            font-size: clamp(54px, 14vmin, 150px);
-
-            line-height: 0.95;
-
-            font-weight: 900;
-
-            color: white;
-
-            text-shadow:
-                0 0 18px
-                rgba(145, 71, 255, 0.75);
-        }
-
-
-        #counterSub {
-
-            margin-top: 8px;
-
-            font-size: clamp(9px, 1.6vmin, 14px);
-
-            letter-spacing: 1.5px;
-
-            color: #9ca3af;
-        }
-
-
-        .counterPulse {
-
-            animation:
-                counterPulse
-                0.35s
-                ease;
-        }
-
-
-        @keyframes counterPulse {
-
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.08);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-    </style>
+    }
+</style>
 
 </head>
 
@@ -190,303 +151,291 @@
 <body>
 
 
-<div id="app">
+    <div id="app">
 
 
-    <div id="counterBox">
-
-        <div id="counterContent">
-
-            <div id="counterLabel">
-                SENTADILLAS
+        <div id="counterBox">
+            <div id="counterContent" aria-label="Contador de sentadillas">
+                <div id="counterLabel">SENTADILLAS</div>
+                <div id="counter">0</div>
+                <div id="counterSub">PENDIENTES</div>
             </div>
-
-            <div id="counter">
-                0
-            </div>
-
-            <div id="counterSub">
-                PENDIENTES
-            </div>
-
         </div>
+
 
     </div>
 
 
-</div>
+    <script>
+        /* SESI\u{D3}N ESTABLE PARA P\u{C1}GINAS DE OBS */
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            let sessionId = params.get("session") || localStorage.getItem("squat_session_id") || "";
+            window.SQUAT_SESSION_ID = sessionId;
+            const nativeFetch = window.fetch.bind(window);
+            function addSession(url) {
+                const absolute = new URL(url, window.location.origin);
+                if (absolute.origin !== window.location.origin) return url;
+                if (absolute.pathname.startsWith("/api/") && window.SQUAT_SESSION_ID) absolute.searchParams.set("session", window.SQUAT_SESSION_ID);
+                return absolute.pathname + absolute.search + absolute.hash;
+            }
+            window.SQUAT_SESSION_READY = (async () => {
+                const endpoint = sessionId ? `/api/session?session=${encodeURIComponent(sessionId)}` : "/api/session";
+                const response = await nativeFetch(endpoint, { credentials: "same-origin" });
+                const data = await response.json();
+                if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesi\u{F3}n.");
+                window.SQUAT_SESSION_ID = data.sessionId;
+                localStorage.setItem("squat_session_id", data.sessionId);
+                return data;
+            })();
+            window.fetch = async function (input, init) {
+                await window.SQUAT_SESSION_READY;
+                if (typeof input === "string") input = addSession(input);
+                else if (input instanceof Request) input = new Request(addSession(input.url), input);
+                return nativeFetch(input, init);
+            };
+        })();
+    </script>
+
+    <script>
+
+        /* ============================================================
+           ELEMENTOS
+        ============================================================ */
+
+        const counterElement =
+            document.getElementById("counter");
+
+        const counterBox =
+            document.getElementById("counterBox");
 
 
-<script>
-/* SESI\u{D3}N ESTABLE PARA P\u{C1}GINAS DE OBS */
-(function () {
-    const params = new URLSearchParams(window.location.search);
-    let sessionId = params.get("session") || localStorage.getItem("squat_session_id") || "";
-    window.SQUAT_SESSION_ID = sessionId;
-    const nativeFetch = window.fetch.bind(window);
-    function addSession(url) {
-        const absolute = new URL(url, window.location.origin);
-        if (absolute.origin !== window.location.origin) return url;
-        if (absolute.pathname.startsWith("/api/") && window.SQUAT_SESSION_ID) absolute.searchParams.set("session", window.SQUAT_SESSION_ID);
-        return absolute.pathname + absolute.search + absolute.hash;
-    }
-    window.SQUAT_SESSION_READY = (async () => {
-        const endpoint = sessionId ? `/api/session?session=${encodeURIComponent(sessionId)}` : "/api/session";
-        const response = await nativeFetch(endpoint, { credentials: "same-origin" });
-        const data = await response.json();
-        if (!response.ok || !data.ok || !data.sessionId) throw new Error("No se pudo recuperar la sesi\u{F3}n.");
-        window.SQUAT_SESSION_ID = data.sessionId;
-        localStorage.setItem("squat_session_id", data.sessionId);
-        return data;
-    })();
-    window.fetch = async function (input, init) {
-        await window.SQUAT_SESSION_READY;
-        if (typeof input === "string") input = addSession(input);
-        else if (input instanceof Request) input = new Request(addSession(input.url), input);
-        return nativeFetch(input, init);
-    };
-})();
-</script>
+        /* ============================================================
+           VARIABLES
+        ============================================================ */
 
-<script>
+        let counter = 0;
 
-/* ============================================================
-   ELEMENTOS
-============================================================ */
-
-const counterElement =
-    document.getElementById("counter");
-
-const counterBox =
-    document.getElementById("counterBox");
+        let socket = null;
 
 
-/* ============================================================
-   VARIABLES
-============================================================ */
+        /* ============================================================
+           ACTUALIZAR CONTADOR
+        ============================================================ */
 
-let counter = 0;
+        function updateCounter(value) {
 
-let socket = null;
-
-
-/* ============================================================
-   ACTUALIZAR CONTADOR
-============================================================ */
-
-function updateCounter(value) {
-
-    const newValue =
-        Math.max(
-            0,
-            Math.floor(
-                Number(value) || 0
-            )
-        );
+            const newValue =
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(value) || 0
+                    )
+                );
 
 
-    if (newValue !== counter) {
+            if (newValue !== counter) {
 
-        counter = newValue;
+                counter = newValue;
 
-        counterElement.textContent =
-            counter;
-
-
-        counterBox.classList.remove(
-            "counterPulse"
-        );
+                counterElement.textContent =
+                    counter;
 
 
-        void counterBox.offsetWidth;
+                counterBox.classList.remove(
+                    "counterPulse"
+                );
 
 
-        counterBox.classList.add(
-            "counterPulse"
-        );
-
-    } else {
-
-        counterElement.textContent =
-            counter;
-
-    }
-
-}
+                void counterBox.offsetWidth;
 
 
-/* ============================================================
-   CARGAR CONTADOR
-============================================================ */
+                counterBox.classList.add(
+                    "counterPulse"
+                );
 
-async function loadCounter() {
+            } else {
 
-    try {
+                counterElement.textContent =
+                    counter;
 
-        const response =
-            await fetch(
-                "/api/squats",
-                {
-                    cache: "no-store"
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "No se pudo obtener el contador"
-            );
+            }
 
         }
 
 
-        const data =
-            await response.json();
+        /* ============================================================
+           CARGAR CONTADOR
+        ============================================================ */
 
-
-        updateCounter(
-            data.pendingSquats
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Error cargando contador:",
-            error
-        );
-
-    }
-
-}
-
-
-/* ============================================================
-   WEBSOCKET
-============================================================ */
-
-function connectWebSocket() {
-
-    if (
-        socket &&
-        (
-            socket.readyState ===
-            WebSocket.OPEN ||
-
-            socket.readyState ===
-            WebSocket.CONNECTING
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    const protocol =
-        location.protocol === "https:"
-            ? "wss:"
-            : "ws:";
-
-
-    socket =
-        new WebSocket(
-            `${protocol}//${location.host}/ws?session=${encodeURIComponent(window.SQUAT_SESSION_ID || "")}`
-        );
-
-
-    socket.addEventListener(
-        "open",
-        () => {
-
-            console.log(
-                "\u{1F7E2} Contador conectado"
-            );
-
-        }
-    );
-
-
-    socket.addEventListener(
-        "message",
-        event => {
+        async function loadCounter() {
 
             try {
 
-                const message =
-                    JSON.parse(
-                        event.data
+                const response =
+                    await fetch(
+                        "/api/squats",
+                        {
+                            cache: "no-store"
+                        }
                     );
 
 
-                if (
-                    message.type ===
-                    "counter:update"
-                ) {
+                if (!response.ok) {
 
-                    updateCounter(
-                        message.data
-                            ?.pendingSquats
+                    throw new Error(
+                        "No se pudo obtener el contador"
                     );
 
                 }
+
+
+                const data =
+                    await response.json();
+
+
+                updateCounter(
+                    data.pendingSquats
+                );
 
             } catch (error) {
 
                 console.error(
-                    "Error leyendo WebSocket:",
+                    "Error cargando contador:",
                     error
                 );
 
             }
 
         }
-    );
 
 
-    socket.addEventListener(
-        "close",
-        () => {
+        /* ============================================================
+           WEBSOCKET
+        ============================================================ */
 
-            console.log(
-                "\u{1F534} WebSocket desconectado"
+        function connectWebSocket() {
+
+            if (
+                socket &&
+                (
+                    socket.readyState ===
+                    WebSocket.OPEN ||
+
+                    socket.readyState ===
+                    WebSocket.CONNECTING
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const protocol =
+                location.protocol === "https:"
+                    ? "wss:"
+                    : "ws:";
+
+
+            socket =
+                new WebSocket(
+                    `${protocol}//${location.host}/ws?session=${encodeURIComponent(window.SQUAT_SESSION_ID || "")}`
+                );
+
+
+            socket.addEventListener(
+                "open",
+                () => {
+
+                    console.log(
+                        "\u{1F7E2} Contador conectado"
+                    );
+
+                }
             );
 
 
-            setTimeout(
-                connectWebSocket,
-                2000
+            socket.addEventListener(
+                "message",
+                event => {
+
+                    try {
+
+                        const message =
+                            JSON.parse(
+                                event.data
+                            );
+
+
+                        if (
+                            message.type ===
+                            "counter:update"
+                        ) {
+
+                            updateCounter(
+                                message.data
+                                    ?.pendingSquats
+                            );
+
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            "Error leyendo WebSocket:",
+                            error
+                        );
+
+                    }
+
+                }
+            );
+
+
+            socket.addEventListener(
+                "close",
+                () => {
+
+                    console.log(
+                        "\u{1F534} WebSocket desconectado"
+                    );
+
+
+                    setTimeout(
+                        connectWebSocket,
+                        2000
+                    );
+
+                }
+            );
+
+
+            socket.addEventListener(
+                "error",
+                error => {
+
+                    console.error(
+                        "Error WebSocket:",
+                        error
+                    );
+
+                }
             );
 
         }
-    );
 
 
-    socket.addEventListener(
-        "error",
-        error => {
+        /* ============================================================
+           INICIO
+        ============================================================ */
 
-            console.error(
-                "Error WebSocket:",
-                error
-            );
+        loadCounter();
 
-        }
-    );
-
-}
+        connectWebSocket();
 
 
-/* ============================================================
-   INICIO
-============================================================ */
-
-loadCounter();
-
-connectWebSocket();
-
-
-</script>
+    </script>
 
 </body>
 

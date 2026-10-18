@@ -1207,6 +1207,20 @@
                 </div>
 
 
+                <!-- DISEÑO DEL CONTADOR PARA OBS -->
+                <div class="configuration-item" style="display:block;margin-top:24px;">
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                        <div class="configuration-icon"><img src="assets/icons/obs.svg" alt=""></div>
+                        <div><strong>Diseño del contador</strong><p>Selecciona una apariencia. La URL del contador se actualizará automáticamente.</p></div>
+                    </div>
+                    <label for="obsCounterDesign" style="display:block;margin-bottom:6px;font-weight:600;">Diseño disponible</label>
+                    <select id="obsCounterDesign" style="width:100%;max-width:420px;padding:12px;border-radius:10px;border:1px solid var(--border-light,#30394d);background:var(--panel,#131925);color:var(--text,#fff);font:inherit;">
+                        <option value="classic">Clásico morado</option>
+                        <option value="floral">Floral pastel (nuevo)</option>
+                    </select>
+                    <p id="obsCounterDesignStatus" style="margin:8px 0 0;font-size:12px;opacity:.75;">El diseño seleccionado se aplicará a la URL del contador.</p>
+                </div>
+
                 <!-- URLs PERSONALIZADAS PARA OBS -->
                 <div class="configuration-item" style="display:block;margin-top:24px;">
 
@@ -1410,6 +1424,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const obsCounterUrl =
         document.getElementById("obsCounterUrl");
+    const obsCounterDesign = document.getElementById("obsCounterDesign");
+    const obsCounterDesignStatus = document.getElementById("obsCounterDesignStatus");
 
     const obsControlsUrl =
         document.getElementById("obsControlsUrl");
@@ -1459,8 +1475,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // As\u{ED} las URLs funcionan aunque el proyecto cambie de entorno.
             const baseUrl = window.location.origin;
 
+            const savedDesign = localStorage.getItem("squat_obs_counter_design") || "classic";
+            if (obsCounterDesign) obsCounterDesign.value = savedDesign;
             currentObsCounterUrl =
-                `${baseUrl}/contador.html?session=${encodeURIComponent(sessionId)}`;
+                `${baseUrl}/contador.html?session=${encodeURIComponent(sessionId)}&design=${encodeURIComponent(savedDesign)}`;
 
             currentObsControlsUrl =
                 `${baseUrl}/controles.html?session=${encodeURIComponent(sessionId)}`;
@@ -1540,6 +1558,24 @@ document.addEventListener("DOMContentLoaded", () => {
             copyObsUrl(currentObsDetectorStatusUrl, copyObsDetectorStatusUrl);
         });
     }
+
+    function updateCounterDesignUrl() {
+        if (!obsCounterDesign) return;
+        const design = obsCounterDesign.value || "classic";
+        localStorage.setItem("squat_obs_counter_design", design);
+        if (currentObsCounterUrl) {
+            const url = new URL(currentObsCounterUrl);
+            url.searchParams.set("design", design);
+            currentObsCounterUrl = url.toString();
+            if (obsCounterUrl) obsCounterUrl.value = currentObsCounterUrl;
+        }
+        if (obsCounterDesignStatus) {
+            obsCounterDesignStatus.textContent = design === "floral"
+                ? "✓ Diseño floral pastel seleccionado. Copia la URL actualizada para OBS."
+                : "✓ Diseño clásico morado seleccionado. Copia la URL actualizada para OBS.";
+        }
+    }
+    if (obsCounterDesign) obsCounterDesign.addEventListener("change", updateCounterDesignUrl);
 
     loadObsUrls();
 
