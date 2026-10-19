@@ -1142,21 +1142,12 @@
 
                 <div class="obs-preview">
 
-                    <div class="obs-counter-preview">
+                    <style>
+                        .obs-preview { position: relative; overflow: hidden; height: clamp(260px, 32vw, 380px); }
+                        .obs-preview iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; color-scheme: light; }
+                    </style>
 
-                        <div>
-                            SENTADILLAS
-                        </div>
-
-                        <strong>
-                            0
-                        </strong>
-
-                        <span>
-                            PENDIENTES
-                        </span>
-
-                    </div>
+                    <iframe id="obsDesignPreview" title="Vista previa del diseño seleccionado" loading="lazy"></iframe>
 
                 </div>
 
@@ -1231,6 +1222,12 @@
                         <option value="kawaii">Gatito kawaii – corazones (nuevo)</option>
                         <option value="ninja">Ninja dojo – shuriken (nuevo)</option>
                         <option value="mecha">Mecha robot – HUD (nuevo)</option>
+                        <option value="live">Stream en vivo – cámara y chat (nuevo)</option>
+                        <option value="rgb">Gamer RGB – setup (nuevo)</option>
+                        <option value="fps">Shooter HUD – mira y radar (nuevo)</option>
+                        <option value="rpg">RPG pixel – menú de batalla (nuevo)</option>
+                        <option value="boss">Boss fight – barra de jefe (nuevo)</option>
+                        <option value="lofi">Lo-fi chill – cuarto nocturno (nuevo)</option>
                     </select>
                     <p id="obsCounterDesignStatus" style="margin:8px 0 0;font-size:12px;opacity:.75;">El diseño seleccionado se aplicará a las URLs del contador, los controles y el estado del detector.</p>
                 </div>
@@ -1502,6 +1499,7 @@ document.addEventListener("DOMContentLoaded", () => {
             obsCounterUrl.value = currentObsCounterUrl;
             obsControlsUrl.value = currentObsControlsUrl;
             obsDetectorStatusUrl.value = currentObsDetectorStatusUrl;
+            updateObsPreview();
 
             if (obsUrlsStatus) {
                 obsUrlsStatus.textContent =
@@ -1573,6 +1571,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function updateObsPreview() {
+        const frame = document.getElementById("obsDesignPreview");
+        if (!frame || !currentObsCounterUrl) return;
+        const url = new URL(currentObsCounterUrl);
+        url.searchParams.set("preview", "1");
+        const next = url.toString();
+        if (frame.dataset.src !== next) {
+            frame.dataset.src = next;
+            frame.src = next;
+        }
+    }
+
     function updateCounterDesignUrl() {
         if (!obsCounterDesign) return;
         const design = obsCounterDesign.value || "classic";
@@ -1595,6 +1605,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentObsDetectorStatusUrl = withDesign(currentObsDetectorStatusUrl);
             if (obsDetectorStatusUrl) obsDetectorStatusUrl.value = currentObsDetectorStatusUrl;
         }
+        updateObsPreview();
         if (obsCounterDesignStatus) {
             const designNames = {
                 classic: "clásico morado",
@@ -1612,7 +1623,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 slime: "Slime",
                 kawaii: "Gatito kawaii",
                 ninja: "Ninja dojo",
-                mecha: "Mecha robot"
+                mecha: "Mecha robot",
+                live: "Stream en vivo",
+                rgb: "Gamer RGB",
+                fps: "Shooter HUD",
+                rpg: "RPG pixel",
+                boss: "Boss fight",
+                lofi: "Lo-fi chill"
             };
             obsCounterDesignStatus.textContent =
                 "✓ Diseño " + (designNames[design] || designNames.classic) + " seleccionado. Copia la URL actualizada para OBS.";

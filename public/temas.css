@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=Baloo+2:wght@700&family=Bangers&family=Black+Ops+One&family=Bungee&family=Creepster&family=Fredoka:wght@600&family=Mountains+of+Christmas:wght@700&family=Orbitron:wght@700&family=Press+Start+2P&family=Rajdhani:wght@700&family=Russo+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=Baloo+2:wght@700&family=Bangers&family=Black+Ops+One&family=Bungee&family=Creepster&family=Fredoka:wght@600&family=Mountains+of+Christmas:wght@700&family=Orbitron:wght@700&family=Press+Start+2P&family=Rajdhani:wght@700&family=Russo+One&family=Cinzel:wght@700&family=Teko:wght@600&display=swap");
 
 /* ==========================================================================
    ESTILO COMPARTIDO: CONTROLES + ESTADO DEL DETECTOR
@@ -1347,4 +1347,280 @@ body.tema-arcade .panel .status {
 
 body.tema-arcade #controlPanel button {
     font-weight: 700;
+}
+
+
+/* ======================= TEMAS PARA STREAMERS ======================= */
+/* ------------------------------ EN VIVO ------------------------------ */
+body.tema-live {
+    --font-title: "Segoe UI", system-ui, Arial, sans-serif;
+    --text: #efe8ff;
+    --muted: #a99bd0;
+    --title: #ffffff;
+    --label: #c9b3ff;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(145, 70, 255, .7);
+    --title-ls: .01em;
+    --accent: #9146ff;
+    --accent-2: #ff3b6b;
+    --glow: rgba(145, 70, 255, .5);
+    --panel-bg: radial-gradient(circle at 100% 0%, rgba(255, 59, 107, .18), transparent 40%), radial-gradient(circle at 0% 100%, rgba(145, 70, 255, .28), transparent 45%), linear-gradient(180deg, #1d1038, #0b0716);
+    --bw: 2px;
+    --bc: #9146ff;
+    --pr: 16px;
+    --panel-sh: inset 0 0 26px rgba(145, 70, 255, .18);
+    --card-bg: rgba(255, 255, 255, .05);
+    --card-bd: 1px solid rgba(145, 70, 255, .4);
+    --card-r: 12px;
+    --input-bg: #0b0716;
+    --input-bd: 1px solid rgba(145, 70, 255, .55);
+    --btn-main: linear-gradient(135deg, #a561ff, #7a3cff);
+    --btn-warn: linear-gradient(135deg, #ffb020, #e07a00);
+    --btn-danger: linear-gradient(135deg, #ff3b6b, #c0123e);
+    --btn-neutral: linear-gradient(135deg, #3a2a5e, #291c47);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(201, 179, 255, .3);
+    --btn-r: 10px;
+    --btn-sh: 0 5px 14px rgba(0, 0, 0, .4);
+    --btn-ls: .06em;
+    --btn-ts: none;
+    --brand-bg: linear-gradient(135deg, #ff3b6b, #9146ff);
+    --brand-fg: #fff;
+    --ok: #3ee6a5;
+    --work: #ffd23f;
+    --err: #ff3b6b;
+    --idle: #8d80b3;
+}
+
+/* ----------------------------- GAMER RGB ----------------------------- */
+body.tema-rgb {
+    --font-title: "Orbitron", "Segoe UI", "Arial Black", sans-serif;
+    --text: #e6e6ff;
+    --muted: #8f8fb8;
+    --title: #ffffff;
+    --label: #00d5ff;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .4em #00d5ff, 0 0 .9em rgba(255, 0, 200, .6);
+    --title-ls: .08em;
+    --accent: #00d5ff;
+    --accent-2: #ff00c8;
+    --glow: rgba(0, 213, 255, .5);
+    --panel-bg: radial-gradient(circle at 0% 0%, rgba(255, 0, 200, .2), transparent 40%), radial-gradient(circle at 100% 100%, rgba(0, 213, 255, .2), transparent 40%), linear-gradient(180deg, #0f0f17, #06060a);
+    --bw: 2px;
+    --bc: #7a3cff;
+    --pr: 14px;
+    --panel-sh: inset 0 0 24px rgba(122, 60, 255, .25);
+    --card-bg: rgba(255, 255, 255, .04);
+    --card-bd: 1px solid rgba(122, 60, 255, .5);
+    --card-r: 10px;
+    --input-bg: #07070c;
+    --input-bd: 1px solid #00d5ff;
+    --btn-main: linear-gradient(135deg, #7a3cff, #00d5ff);
+    --btn-warn: linear-gradient(135deg, #ff9a00, #ff0040);
+    --btn-danger: linear-gradient(135deg, #ff0040, #8a0026);
+    --btn-neutral: linear-gradient(135deg, #2a2a38, #1a1a24);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 255, 255, .18);
+    --btn-r: 8px;
+    --btn-sh: 0 0 14px rgba(122, 60, 255, .4);
+    --btn-ls: .1em;
+    --btn-ts: 0 1px 3px rgba(0, 0, 0, .6);
+    --brand-bg: linear-gradient(135deg, #ff00c8, #00d5ff);
+    --brand-fg: #06060a;
+    --ok: #00ff6a;
+    --work: #fff200;
+    --err: #ff0040;
+    --idle: #6a6a88;
+}
+
+/* ----------------------------- SHOOTER HUD ----------------------------- */
+body.tema-fps {
+    --font-title: "Teko", "Rajdhani", "Arial Narrow", Impact, sans-serif;
+    --text: #e8eede;
+    --muted: #94a088;
+    --title: #ffb000;
+    --label: #ffb000;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(255, 176, 0, .5);
+    --title-ls: .12em;
+    --accent: #ffb000;
+    --accent-2: #9fe870;
+    --glow: rgba(255, 176, 0, .45);
+    --panel-bg: repeating-linear-gradient(0deg, rgba(0, 0, 0, .22) 0 1px, transparent 1px 4px), repeating-linear-gradient(90deg, rgba(255, 176, 0, .05) 0 1px, transparent 1px 24px), linear-gradient(180deg, #141a12, #070908);
+    --bw: 2px;
+    --bc: rgba(255, 176, 0, .7);
+    --pr: 4px;
+    --panel-sh: inset 0 0 28px rgba(255, 176, 0, .1);
+    --card-bg: rgba(255, 176, 0, .05);
+    --card-bd: 1px solid rgba(255, 176, 0, .35);
+    --card-r: 2px;
+    --input-bg: #080b07;
+    --input-bd: 1px solid rgba(255, 176, 0, .5);
+    --btn-main: linear-gradient(180deg, #ffb000, #cc8400);
+    --btn-main-text: #1a1000;
+    --btn-warn: linear-gradient(180deg, #5a6a48, #3c4830);
+    --btn-danger: linear-gradient(180deg, #d1341f, #8f1c10);
+    --btn-neutral: linear-gradient(180deg, #3a4034, #262a22);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 176, 0, .4);
+    --btn-r: 2px;
+    --btn-sh: 0 3px 0 rgba(0, 0, 0, .5);
+    --btn-ls: .12em;
+    --btn-ts: none;
+    --brand-bg: #ffb000;
+    --brand-fg: #1a1000;
+    --ok: #7dff6a;
+    --work: #ffb000;
+    --err: #ff3b30;
+    --idle: #7a8470;
+}
+
+body.tema-fps #controlPanel h2 {
+    font-size: clamp(20px, 2.8vw, 28px);
+}
+
+body.tema-fps #controlPanel button {
+    font-size: clamp(14px, 1.7vw, 17px);
+    font-weight: 600;
+}
+
+/* ------------------------------- RPG PIXEL ------------------------------- */
+body.tema-rpg {
+    --font: "Courier New", Courier, monospace;
+    --font-title: "Press Start 2P", "Courier New", monospace;
+    --text: #ffffff;
+    --muted: #b8c8ff;
+    --title: #ffd23f;
+    --label: #9fe8ff;
+    --status-color: #ffffff;
+    --title-sh: 2px 2px 0 #000;
+    --title-ls: .02em;
+    --status-fs: clamp(11px, 2.4vw, 18px);
+    --accent: #ffd23f;
+    --accent-2: #8fb0ff;
+    --glow: rgba(143, 176, 255, .5);
+    --panel-bg: repeating-linear-gradient(0deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 6px), linear-gradient(180deg, #2a3fd0, #0a1260);
+    --bw: 4px;
+    --bc: #ffffff;
+    --pr: 10px;
+    --panel-sh: inset 0 0 0 3px #0a1260, inset 0 0 0 5px #8fb0ff;
+    --card-bg: rgba(10, 18, 96, .7);
+    --card-bd: 2px solid #8fb0ff;
+    --card-r: 4px;
+    --input-bg: #0a1260;
+    --input-bd: 2px solid #ffffff;
+    --btn-main: #3ee66a;
+    --btn-main-text: #06240f;
+    --btn-warn: #ffd23f;
+    --btn-danger: #ff3b5c;
+    --btn-neutral: #8fb0ff;
+    --btn-text: #0a1260;
+    --btn-bd: 3px solid #0a1260;
+    --btn-r: 4px;
+    --btn-sh: 0 4px 0 rgba(0, 0, 0, .5), inset 0 0 0 2px rgba(255, 255, 255, .55);
+    --btn-ls: .03em;
+    --btn-ts: none;
+    --brand-bg: #ffd23f;
+    --brand-fg: #0a1260;
+    --ok: #3ee66a;
+    --work: #ffd23f;
+    --err: #ff3b5c;
+    --idle: #8fb0ff;
+}
+
+body.tema-rpg #controlPanel h2 {
+    font-size: clamp(11px, 1.7vw, 15px);
+    line-height: 1.5;
+}
+
+body.tema-rpg #controlPanel button {
+    font-weight: 700;
+}
+
+/* ------------------------------ BOSS FIGHT ------------------------------ */
+body.tema-boss {
+    --font-title: "Cinzel", Georgia, "Times New Roman", serif;
+    --text: #f1e6d8;
+    --muted: #b09a86;
+    --title: #e8c870;
+    --label: #e8c870;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(232, 200, 112, .45), 0 .06em 0 #2a1004;
+    --title-ls: .08em;
+    --accent: #e8c870;
+    --accent-2: #b3182d;
+    --glow: rgba(232, 200, 112, .4);
+    --panel-bg: radial-gradient(circle at 0% 0%, rgba(179, 24, 45, .35), transparent 42%), radial-gradient(circle at 100% 100%, rgba(179, 24, 45, .25), transparent 40%), linear-gradient(180deg, #1e0a0e, #090305);
+    --bw: 3px;
+    --bc: #b8923a;
+    --pr: 12px;
+    --panel-sh: inset 0 0 0 1px rgba(232, 200, 112, .5), inset 0 0 34px rgba(0, 0, 0, .6);
+    --card-bg: rgba(255, 255, 255, .04);
+    --card-bd: 1px solid rgba(232, 200, 112, .4);
+    --card-r: 6px;
+    --input-bg: #0d0406;
+    --input-bd: 1px solid rgba(232, 200, 112, .55);
+    --btn-main: linear-gradient(180deg, #d9262c, #8a0f14);
+    --btn-warn: linear-gradient(180deg, #e8c870, #b8923a);
+    --btn-danger: linear-gradient(180deg, #5a1018, #33080d);
+    --btn-neutral: linear-gradient(180deg, #3a2a2a, #241818);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(232, 200, 112, .55);
+    --btn-r: 4px;
+    --btn-sh: 0 4px 12px rgba(0, 0, 0, .55);
+    --btn-ls: .1em;
+    --btn-ts: 0 1px 2px rgba(0, 0, 0, .7);
+    --brand-bg: linear-gradient(135deg, #e8c870, #b8923a);
+    --brand-fg: #2a1004;
+    --ok: #7dff9a;
+    --work: #e8c870;
+    --err: #ff3b3b;
+    --idle: #8a7a6e;
+}
+
+body.tema-boss #btnPause {
+    color: #2a1004;
+    text-shadow: none;
+}
+
+/* ------------------------------- LO-FI CHILL ------------------------------- */
+body.tema-lofi {
+    --font: "Trebuchet MS", Arial, sans-serif;
+    --font-title: "Baloo 2", "Fredoka", "Arial Rounded MT Bold", sans-serif;
+    --text: #f4e9ff;
+    --muted: #c0a9e0;
+    --title: #ffd6f0;
+    --label: #ff9ad5;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .4em rgba(255, 154, 213, .5);
+    --title-ls: .03em;
+    --accent: #ff9ad5;
+    --accent-2: #bfa8ff;
+    --glow: rgba(255, 154, 213, .45);
+    --panel-bg: radial-gradient(circle at 12% 100%, rgba(255, 184, 112, .3), transparent 42%), linear-gradient(180deg, #241a4a, #5b3a86 65%, #a85a9a);
+    --bw: 3px;
+    --bc: #ff9ad5;
+    --pr: 26px;
+    --panel-sh: inset 0 0 26px rgba(255, 214, 240, .12);
+    --card-bg: rgba(255, 255, 255, .1);
+    --card-bd: 1px solid rgba(255, 214, 240, .35);
+    --card-r: 18px;
+    --input-bg: rgba(20, 10, 50, .55);
+    --input-bd: 1px solid rgba(255, 154, 213, .55);
+    --btn-main: linear-gradient(180deg, #ff9ad5, #e06aa8);
+    --btn-warn: linear-gradient(180deg, #ffc890, #ff9a5a);
+    --btn-danger: linear-gradient(180deg, #ff7a9a, #d03a64);
+    --btn-neutral: rgba(255, 255, 255, .18);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 255, 255, .35);
+    --btn-r: 16px;
+    --btn-sh: 0 4px 0 rgba(40, 10, 70, .4);
+    --btn-ls: .04em;
+    --btn-ts: 0 1px 2px rgba(60, 10, 80, .5);
+    --brand-bg: linear-gradient(135deg, #ff9ad5, #ffb870);
+    --brand-fg: #3a1050;
+    --ok: #7dffc0;
+    --work: #ffd166;
+    --err: #ff7a9a;
+    --idle: #b6a3d6;
 }
