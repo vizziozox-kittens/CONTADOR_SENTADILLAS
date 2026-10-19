@@ -1211,15 +1211,28 @@
                 <div class="configuration-item" style="display:block;margin-top:24px;">
                     <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
                         <div class="configuration-icon"><img src="assets/icons/obs.svg" alt=""></div>
-                        <div><strong>Diseño del contador</strong><p>Selecciona una apariencia. La URL del contador se actualizará automáticamente.</p></div>
+                        <div><strong>Diseño de OBS</strong><p>Selecciona una apariencia. Se aplica al contador, a los controles y al estado del detector, y las tres URLs se actualizan automáticamente.</p></div>
                     </div>
                     <label for="obsCounterDesign" style="display:block;margin-bottom:6px;font-weight:600;">Diseño disponible</label>
                     <select id="obsCounterDesign" style="width:100%;max-width:420px;padding:12px;border-radius:10px;border:1px solid var(--border-light,#30394d);background:var(--panel,#131925);color:var(--text,#fff);font:inherit;">
                         <option value="classic">Clásico morado</option>
                         <option value="floral">Floral pastel (nuevo)</option>
                         <option value="halloween">Halloween – calabaza tétrica (nuevo)</option>
+                        <option value="christmas">Navidad – árbol y luces (nuevo)</option>
+                        <option value="birthday">Cumpleaños – globos y pastel (nuevo)</option>
+                        <option value="cyber">Cyberpunk – neón y ciudad (nuevo)</option>
+                        <option value="space">Espacial – planeta y cohete (nuevo)</option>
+                        <option value="ocean">Océano – medusa y peces (nuevo)</option>
+                        <option value="arcade">Arcade 8-bit – retro (nuevo)</option>
+                        <option value="beast">Bestia de fuego – gym (nuevo)</option>
+                        <option value="storm">Tormenta eléctrica – rayos amarillos (nuevo)</option>
+                        <option value="aura">Energía suprema – aura dorada (nuevo)</option>
+                        <option value="slime">Slime – gelatina verde (nuevo)</option>
+                        <option value="kawaii">Gatito kawaii – corazones (nuevo)</option>
+                        <option value="ninja">Ninja dojo – shuriken (nuevo)</option>
+                        <option value="mecha">Mecha robot – HUD (nuevo)</option>
                     </select>
-                    <p id="obsCounterDesignStatus" style="margin:8px 0 0;font-size:12px;opacity:.75;">El diseño seleccionado se aplicará a la URL del contador.</p>
+                    <p id="obsCounterDesignStatus" style="margin:8px 0 0;font-size:12px;opacity:.75;">El diseño seleccionado se aplicará a las URLs del contador, los controles y el estado del detector.</p>
                 </div>
 
                 <!-- URLs PERSONALIZADAS PARA OBS -->
@@ -1482,9 +1495,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 `${baseUrl}/contador.html?session=${encodeURIComponent(sessionId)}&design=${encodeURIComponent(savedDesign)}`;
 
             currentObsControlsUrl =
-                `${baseUrl}/controles.html?session=${encodeURIComponent(sessionId)}`;
+                `${baseUrl}/controles.html?session=${encodeURIComponent(sessionId)}&design=${encodeURIComponent(savedDesign)}`;
             currentObsDetectorStatusUrl =
-                `${baseUrl}/estado-detector.html?session=${encodeURIComponent(sessionId)}`;
+                `${baseUrl}/estado-detector.html?session=${encodeURIComponent(sessionId)}&design=${encodeURIComponent(savedDesign)}`;
 
             obsCounterUrl.value = currentObsCounterUrl;
             obsControlsUrl.value = currentObsControlsUrl;
@@ -1564,17 +1577,42 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!obsCounterDesign) return;
         const design = obsCounterDesign.value || "classic";
         localStorage.setItem("squat_obs_counter_design", design);
-        if (currentObsCounterUrl) {
-            const url = new URL(currentObsCounterUrl);
+        const withDesign = (value) => {
+            if (!value) return value;
+            const url = new URL(value);
             url.searchParams.set("design", design);
-            currentObsCounterUrl = url.toString();
+            return url.toString();
+        };
+        if (currentObsCounterUrl) {
+            currentObsCounterUrl = withDesign(currentObsCounterUrl);
             if (obsCounterUrl) obsCounterUrl.value = currentObsCounterUrl;
+        }
+        if (currentObsControlsUrl) {
+            currentObsControlsUrl = withDesign(currentObsControlsUrl);
+            if (obsControlsUrl) obsControlsUrl.value = currentObsControlsUrl;
+        }
+        if (currentObsDetectorStatusUrl) {
+            currentObsDetectorStatusUrl = withDesign(currentObsDetectorStatusUrl);
+            if (obsDetectorStatusUrl) obsDetectorStatusUrl.value = currentObsDetectorStatusUrl;
         }
         if (obsCounterDesignStatus) {
             const designNames = {
                 classic: "clásico morado",
                 floral: "floral pastel",
-                halloween: "Halloween (calabaza tétrica)"
+                halloween: "Halloween (calabaza tétrica)",
+                christmas: "Navidad (árbol y luces)",
+                birthday: "Cumpleaños (globos y pastel)",
+                cyber: "Cyberpunk (neón y ciudad)",
+                space: "Espacial (planeta y cohete)",
+                ocean: "Océano (medusa y peces)",
+                arcade: "Arcade 8-bit (retro)",
+                beast: "Bestia de fuego (gym)",
+                storm: "Tormenta eléctrica",
+                aura: "Energía suprema",
+                slime: "Slime",
+                kawaii: "Gatito kawaii",
+                ninja: "Ninja dojo",
+                mecha: "Mecha robot"
             };
             obsCounterDesignStatus.textContent =
                 "✓ Diseño " + (designNames[design] || designNames.classic) + " seleccionado. Copia la URL actualizada para OBS.";

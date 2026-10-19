@@ -26,130 +26,6 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /*
-       El panel ocupa SIEMPRE todo el lienzo de la fuente de navegador.
-       As&#237;, el tama&#241;o que pongas en OBS es tambi&#233;n el tama&#241;o real de
-       esta p&#225;gina y puedes redimensionarla libremente desde OBS.
-    */
-    #controlPanel {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        max-width: none;
-        min-width: 0;
-        min-height: 100%;
-        max-height: none;
-        overflow: auto;
-        margin: 0;
-        padding: clamp(16px, 3vw, 32px);
-        background: rgba(15, 15, 20, 0.95);
-        border-radius: 0;
-        color: white;
-        z-index: 1000;
-        box-sizing: border-box;
-    }
-
-    /* Los controles se adaptan al ancho disponible de OBS. */
-    #controlPanel > button {
-        width: 100%;
-    }
-
-    #controlPanel h2 {
-        margin-top: 0;
-        margin-bottom: clamp(12px, 2vh, 18px);
-        font-size: clamp(18px, 2.2vw, 24px);
-    }
-
-    button {
-        width: 100%;
-        padding: clamp(10px, 1.8vh, 14px) clamp(12px, 2vw, 18px);
-        margin-top: clamp(6px, 1vh, 10px);
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: clamp(13px, 1.6vw, 16px);
-        font-weight: bold;
-        user-select: none;
-    }
-
-    button:hover:not(:disabled) {
-        filter: brightness(1.08);
-    }
-
-    button:active:not(:disabled) {
-        transform: scale(0.99);
-    }
-
-    #btnCamera {
-        background: #9147ff;
-        color: white;
-    }
-
-    #btnPause {
-        background: #f59e0b;
-        color: white;
-    }
-
-    #btnStop {
-        background: #dc2626;
-        color: white;
-    }
-
-    #btnReset {
-        background: #374151;
-        color: white;
-    }
-
-    button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    #cameraStatus {
-        margin-top: 15px;
-        padding: 10px;
-        border-radius: 8px;
-        background: #27272a;
-        font-size: 14px;
-        line-height: 1.4;
-    }
-
-    #detectorStatus {
-        margin-top: 8px;
-        font-size: 14px;
-        line-height: 1.4;
-    }
-
-    #cameraSelectorContainer {
-        margin-top: 12px;
-        padding: 12px;
-        border-radius: 12px;
-        background: #202024;
-        border: 1px solid #3f3f46;
-    }
-
-    #cameraSelectorContainer label {
-        display: block;
-        margin-bottom: 6px;
-        font-size: 12px;
-        color: #d4d4d8;
-    }
-
-    #btnRefreshCameras {
-        background: #52525b;
-        color: white;
-        margin-top: 8px;
-        font-size: 13px;
-        padding: 9px;
-    }
-
-    .camera-help {
-        margin-top: 8px;
-        color: #a1a1aa;
-        font-size: 11px;
-        line-height: 1.4;
-    }
-
     #cameraContainer {
         position: fixed;
         left: 0;
@@ -177,124 +53,6 @@
         width: 100%;
         height: 100%;
         opacity: 0;
-    }
-
-    #btnObsSettings {
-        background: #4b5563;
-        color: white;
-    }
-
-    #btnObsSettings.back-mode {
-        background: #374151;
-    }
-
-    #obsStatus {
-        margin-top: 10px;
-        padding: 9px 10px;
-        border-radius: 8px;
-        background: #18181b;
-        font-size: 13px;
-        line-height: 1.35;
-        word-break: break-word;
-    }
-
-    #obsSettings {
-        display: none;
-        margin-top: 12px;
-        padding: 12px;
-        border-radius: 12px;
-        background: #202024;
-        border: 1px solid #3f3f46;
-    }
-
-    #obsSettings.open {
-        display: block;
-    }
-
-    #obsSettings h3 {
-        margin: 0 0 10px;
-        font-size: 15px;
-    }
-
-    #obsSettings label {
-        display: block;
-        margin-top: 9px;
-        margin-bottom: 4px;
-        font-size: 12px;
-        color: #d4d4d8;
-    }
-
-    #obsSettings input {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 9px 10px;
-        border: 1px solid #52525b;
-        border-radius: 8px;
-        background: #111113;
-        color: white;
-        outline: none;
-    }
-
-    #obsSettings input:focus {
-        border-color: #9147ff;
-    }
-
-    #obsSettingsActions {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-    }
-
-    #obsSettingsActions button {
-        margin-top: 0;
-        flex: 1;
-        padding: 10px;
-    }
-
-    #btnObsConnect {
-        background: #9147ff;
-        color: white;
-    }
-
-    #btnObsDisconnect {
-        background: #52525b;
-        color: white;
-    }
-
-    .obs-help {
-        margin-top: 8px;
-        color: #a1a1aa;
-        font-size: 11px;
-        line-height: 1.4;
-    }
-
-    /* En fuentes peque&#241;as o bajas, todo sigue dentro del lienzo. */
-    @media (max-height: 500px) {
-        #controlPanel {
-            padding: 12px;
-        }
-
-        #controlPanel h2 {
-            margin-bottom: 8px;
-        }
-
-        button {
-            padding-top: 8px;
-            padding-bottom: 8px;
-            margin-top: 5px;
-        }
-
-        #cameraStatus,
-        #detectorStatus,
-        #obsStatus {
-            margin-top: 6px;
-        }
-
-        #cameraSelectorContainer,
-        #obsSettings {
-            margin-top: 8px;
-            padding: 9px;
-        }
     }
 
     body.obs-mode {
@@ -325,10 +83,14 @@
         touch-action: manipulation;
     }
 </style>
+<link rel="stylesheet" href="/temas.css">
 
 </head>
 
 <body>
+<script>
+(function(){var v=["floral","halloween","christmas","birthday","cyber","space","ocean","arcade","beast","storm","aura","slime","kawaii","ninja","mecha"];var d=(new URLSearchParams(location.search).get("design")||"").toLowerCase();if(v.indexOf(d)>-1){document.body.classList.add("tema-"+d);}})();
+</script>
 
 
 <!-- =====================================================
@@ -355,163 +117,84 @@
 
 <div id="controlPanel">
 
-    <h2>
-        &#127947;&#65039; Controles de sentadillas
-    </h2>
+    <header class="cp-head">
+        <div class="cp-brand" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>
+        </div>
+        <div class="cp-titles">
+            <h2>Controles de sentadillas</h2>
+            <p class="cp-sub">Panel del detector</p>
+        </div>
+    </header>
 
-    <button id="btnCamera">
-        &#127909; ACTIVAR C&#193;MARA
-    </button>
+    <section class="cp-actions">
+        <button id="btnCamera">ACTIVAR CÁMARA</button>
+        <button id="btnPause" disabled>PAUSAR DETECTOR</button>
+        <button id="btnStop" disabled>DESACTIVAR CÁMARA</button>
+        <button id="btnReset">REINICIAR CONTADOR</button>
+    </section>
 
-    <button
-        id="btnPause"
-        disabled>
-        &#9208; PAUSAR DETECTOR
-    </button>
+    <section id="cameraSelectorContainer">
+        <label>Cámara utilizada por el detector</label>
 
-    <button
-        id="btnStop"
-        disabled>
-        &#9209; DESACTIVAR C&#193;MARA
-    </button>
-
-    <button id="btnReset">
-        &#128260; REINICIAR CONTADOR
-    </button>
-
-
-    <div id="cameraSelectorContainer">
-
-        <label>
-            C&#225;mara utilizada por el detector
-        </label>
-
-        <div
-            class="camera-help"
-            style="font-size:13px;color:#e4e4e7;">
-            El detector utilizar&#225; directamente la se&#241;al de la
-            <strong>fuente de c&#225;mara de OBS</strong>.
-            No necesita permiso de c&#225;mara del navegador.
+        <div class="camera-help" style="font-size:13px;color:#e4e4e7;">
+            El detector utilizará directamente la señal de la
+            <strong>fuente de cámara de OBS</strong>.
+            No necesita permiso de cámara del navegador.
         </div>
 
-        <button
-            id="btnRefreshCameras"
-            type="button">
-            &#128260; PROBAR CONEXI&#211;N CON OBS
-        </button>
+        <button id="btnRefreshCameras" type="button">PROBAR CONEXIÓN CON OBS</button>
 
         <div class="camera-help">
             En OBS debe existir una escena y una fuente de tipo
-            <strong>Dispositivo de captura de v&#237;deo</strong>.
+            <strong>Dispositivo de captura de vídeo</strong>.
             Escribe abajo el nombre exacto de esa fuente.
         </div>
+    </section>
 
-    </div>
+    <section class="cp-status">
+        <div class="stat"><span class="stat-label">Cámara</span><div id="cameraStatus" data-state="err">Cámara desconectada</div></div>
+        <div class="stat"><span class="stat-label">Detector</span><div id="detectorStatus" data-state="idle">Detector: detenido</div></div>
+        <div class="stat"><span class="stat-label">OBS</span><div id="obsStatus" data-state="idle">OBS: no conectado</div></div>
+    </section>
 
-
-    <div id="cameraStatus">
-        &#128308; C&#225;mara desconectada
-    </div>
-
-    <div id="detectorStatus">
-        Detector: detenido
-    </div>
-
-    <div id="obsStatus">
-        &#128993; OBS: no conectado
-    </div>
-
-
-    <button
-        id="btnObsSettings"
-        type="button">
-        &#9881;&#65039; CONFIGURAR OBS
-    </button>
-
+    <button id="btnObsSettings" type="button">CONFIGURAR OBS</button>
 
     <div id="obsSettings">
 
-        <h3>
-            Configuraci&#243;n de OBS
-        </h3>
+        <h3>Configuración de OBS</h3>
 
-        <label for="obsHost">
-            Host
-        </label>
-
-        <input
-            id="obsHost"
-            type="text"
-            value="127.0.0.1"
-            autocomplete="off">
-
-
-        <label for="obsPort">
-            Puerto
-        </label>
-
-        <input
-            id="obsPort"
-            type="number"
-            value="4455"
-            min="1"
-            max="65535"
-            inputmode="numeric">
-
-
-        <label for="obsPassword">
-            Contrase&#241;a de WebSocket
-        </label>
-
-        <input
-            id="obsPassword"
-            type="password"
-            autocomplete="off"
-            placeholder="Contrase&#241;a de OBS">
-
-
-        <label for="obsScene">
-            Escena donde est&#225; la c&#225;mara
-        </label>
-
-        <input
-            id="obsScene"
-            type="text"
-            placeholder="Ej.: Principal"
-            autocomplete="off">
-
-
-        <label for="obsSource">
-            Nombre exacto de la fuente de c&#225;mara
-        </label>
-
-        <input
-            id="obsSource"
-            type="text"
-            placeholder="Ej.: C&#225;mara"
-            autocomplete="off">
-
-
-        <div id="obsSettingsActions">
-
-            <button
-                id="btnObsConnect"
-                type="button">
-                &#128268; CONECTAR OBS
-            </button>
-
-            <button
-                id="btnObsDisconnect"
-                type="button">
-                &#9940; DESCONECTAR
-            </button>
-
+        <div class="fields">
+            <div class="field">
+                <label for="obsHost">Host</label>
+                <input id="obsHost" type="text" value="127.0.0.1" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="obsPort">Puerto</label>
+                <input id="obsPort" type="number" value="4455" min="1" max="65535" inputmode="numeric">
+            </div>
+            <div class="field full">
+                <label for="obsPassword">Contraseña de WebSocket</label>
+                <input id="obsPassword" type="password" autocomplete="off" placeholder="Contraseña de OBS">
+            </div>
+            <div class="field full">
+                <label for="obsScene">Escena donde está la cámara</label>
+                <input id="obsScene" type="text" placeholder="Ej.: Principal" autocomplete="off">
+            </div>
+            <div class="field full">
+                <label for="obsSource">Nombre exacto de la fuente de cámara</label>
+                <input id="obsSource" type="text" placeholder="Ej.: Cámara" autocomplete="off">
+            </div>
         </div>
 
+        <div id="obsSettingsActions">
+            <button id="btnObsConnect" type="button">CONECTAR OBS</button>
+            <button id="btnObsDisconnect" type="button">DESCONECTAR</button>
+        </div>
 
         <div class="obs-help">
-            La configuraci&#243;n se guarda en este navegador.
-            La contrase&#241;a se guarda localmente y no se env&#237;a
+            La configuración se guarda en este navegador.
+            La contraseña se guarda localmente y no se envía
             a nuestro servidor; solo se usa para autenticarse
             con OBS.
         </div>
@@ -519,6 +202,33 @@
     </div>
 
 </div>
+
+<script>
+/* Semáforo de estado + icono del botón de pausa (sin emojis) */
+(function () {
+    function classify(t) {
+        t = (t || "").toLowerCase();
+        if (/error|no se pudo|no se carg|cerrad|desconectada|sin se[ñn]al/.test(t)) return "err";
+        if (/conectando|probando|buscando|esperando|calibrando/.test(t)) return "work";
+        if (/no conectado|desconectado|detenido|pausad/.test(t)) return "idle";
+        if (/conectad|activo|se[ñn]al de c|lista|detectando/.test(t)) return "ok";
+        return "idle";
+    }
+    ["cameraStatus", "detectorStatus", "obsStatus"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var set = function () { el.dataset.state = classify(el.textContent); };
+        set();
+        new MutationObserver(set).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+    var bp = document.getElementById("btnPause");
+    if (bp) {
+        var f = function () { bp.dataset.mode = /reanudar/i.test(bp.textContent) ? "play" : "pause"; };
+        f();
+        new MutationObserver(f).observe(bp, { childList: true, characterData: true, subtree: true });
+    }
+})();
+</script>
 
 
 <!-- =====================================================
@@ -998,7 +708,7 @@
 
 
         setObsStatus(
-            `\u{1F7E2} OBS conectado \u{B7} Escena: ${config.sceneName} \u{B7} Fuente: ${config.sourceName} \u{B7} Estado: ${enabled ? "visible" : "oculta"}`
+            `OBS conectado \u{B7} Escena: ${config.sceneName} \u{B7} Fuente: ${config.sourceName} \u{B7} Estado: ${enabled ? "visible" : "oculta"}`
         );
 
     }
@@ -1022,10 +732,10 @@
             true;
 
         btnObsConnect.textContent =
-            "\u{1F7E1} CONECTANDO...";
+            "CONECTANDO...";
 
         setObsStatus(
-            "\u{1F7E1} Conectando con OBS..."
+            "Conectando con OBS..."
         );
 
 
@@ -1108,7 +818,7 @@
             */
 
             setObsStatus(
-                "\u{1F7E1} OBS conectado. Buscando la fuente..."
+                "OBS conectado. Buscando la fuente..."
             );
 
 
@@ -1164,7 +874,7 @@
             */
 
             btnObsConnect.textContent =
-                "\u{1F7E2} OBS CONECTADO";
+                "OBS CONECTADO";
 
             btnObsConnect.disabled =
                 true;
@@ -1193,12 +903,12 @@
 
 
                     setObsStatus(
-                        "\u{1F534} OBS: conexi\u{F3}n cerrada"
+                        "OBS: conexi\u{F3}n cerrada"
                     );
 
 
                     btnObsConnect.textContent =
-                        "\u{1F50C} CONECTAR OBS";
+                        "CONECTAR OBS";
 
                     btnObsConnect.disabled =
                         false;
@@ -1252,13 +962,13 @@
 
 
             setObsStatus(
-                "\u{1F534} OBS: " +
+                "OBS: " +
                 errorMessage
             );
 
 
             btnObsConnect.textContent =
-                "\u{1F50C} CONECTAR OBS";
+                "CONECTAR OBS";
 
             btnObsConnect.disabled =
                 false;
@@ -1326,12 +1036,12 @@
 
 
             setObsStatus(
-                "\u{1F7E1} OBS: desconectado"
+                "OBS: desconectado"
             );
 
 
             btnObsConnect.textContent =
-                "\u{1F50C} CONECTAR OBS";
+                "CONECTAR OBS";
 
             btnObsConnect.disabled =
                 false;
@@ -1390,7 +1100,7 @@
 
 
         setObsStatus(
-            `\u{1F7E2} OBS conectado \u{B7} Escena: ${config.sceneName} \u{B7} Fuente: ${config.sourceName} \u{B7} Estado: ${verifiedState ? "visible" : "oculta"}`
+            `OBS conectado \u{B7} Escena: ${config.sceneName} \u{B7} Fuente: ${config.sourceName} \u{B7} Estado: ${verifiedState ? "visible" : "oculta"}`
         );
 
 
@@ -1917,7 +1627,7 @@
 
 
             setObsStatus(
-                "\u{1F534} OBS conectado, pero no se pudo leer la fuente: " +
+                "OBS conectado, pero no se pudo leer la fuente: " +
                 (
                     error?.message ||
                     error
@@ -2021,7 +1731,7 @@
 
 
             cameraStatus.textContent =
-                "\u{1F7E1} Conectando directamente con la c\u{E1}mara de OBS...";
+                "Conectando directamente con la c\u{E1}mara de OBS...";
 
 
             if (!obsConnected) {
@@ -2055,7 +1765,7 @@
 
 
             cameraStatus.textContent =
-                "\u{1F7E2} C\u{E1}mara de OBS conectada \u{B7} detector usando la se\u{F1}al de OBS";
+                "C\u{E1}mara de OBS conectada \u{B7} detector usando la se\u{F1}al de OBS";
 
 
             detectorStatus.textContent =
@@ -2100,7 +1810,7 @@
 
 
             btnPause.textContent =
-                "\u{23F8} PAUSAR DETECTOR";
+                "PAUSAR DETECTOR";
 
 
             processCamera();
@@ -2115,7 +1825,7 @@
 
 
             cameraStatus.textContent =
-                "\u{1F534} C\u{E1}mara de OBS: " +
+                "C\u{E1}mara de OBS: " +
                 (
                     error?.message ||
                     "No se pudo obtener la se\u{F1}al de OBS."
@@ -2181,19 +1891,19 @@
         ) {
 
             btnPause.textContent =
-                "\u{25B6}\u{FE0F} REANUDAR DETECTOR";
+                "REANUDAR DETECTOR";
 
             detectorStatus.textContent =
-                "Detector: \u{23F8} pausado";
+                "Detector: pausado";
 
 
         } else {
 
             btnPause.textContent =
-                "\u{23F8} PAUSAR DETECTOR";
+                "PAUSAR DETECTOR";
 
             detectorStatus.textContent =
-                "Detector: \u{1F7E2} activo";
+                "Detector: activo";
 
         }
 
@@ -2291,11 +2001,11 @@
 
 
         btnPause.textContent =
-            "\u{23F8} PAUSAR DETECTOR";
+            "PAUSAR DETECTOR";
 
 
         cameraStatus.textContent =
-            "\u{1F534} C\u{E1}mara de OBS desconectada";
+            "C\u{E1}mara de OBS desconectada";
 
 
         detectorStatus.textContent =
@@ -2361,7 +2071,7 @@
             try {
 
                 cameraStatus.textContent =
-                    "\u{1F7E1} Probando la fuente de c\u{E1}mara de OBS...";
+                    "Probando la fuente de c\u{E1}mara de OBS...";
 
 
                 if (!obsConnected) {
@@ -2390,7 +2100,7 @@
 
 
                 cameraStatus.textContent =
-                    "\u{1F7E2} Se\u{F1}al de c\u{E1}mara de OBS disponible.";
+                    "Se\u{F1}al de c\u{E1}mara de OBS disponible.";
 
 
             } catch (error) {
@@ -2401,7 +2111,7 @@
 
 
                 cameraStatus.textContent =
-                    "\u{1F534} No se pudo leer la c\u{E1}mara de OBS: " +
+                    "No se pudo leer la c\u{E1}mara de OBS: " +
                     (
                         error?.message ||
                         error
@@ -2444,7 +2154,7 @@
             if (opening) {
 
                 btnObsSettings.textContent =
-                    "\u{21A9} VOLVER A CONTROLES";
+                    "VOLVER A CONTROLES";
 
                 btnObsSettings.classList.add(
                     "back-mode"
@@ -2454,7 +2164,7 @@
             } else {
 
                 btnObsSettings.textContent =
-                    "\u{2699}\u{FE0F} CONFIGURAR OBS";
+                    "CONFIGURAR OBS";
 
                 btnObsSettings.classList.remove(
                     "back-mode"
@@ -2540,7 +2250,7 @@
 
 
             setObsStatus(
-                "\u{1F534} Error: no se carg\u{F3} OBS WebSocket"
+                "Error: no se carg\u{F3} OBS WebSocket"
             );
 
         } else {
@@ -2550,7 +2260,7 @@
             );
 
             setObsStatus(
-                "\u{1F7E1} OBS: no conectado"
+                "OBS: no conectado"
             );
 
         }

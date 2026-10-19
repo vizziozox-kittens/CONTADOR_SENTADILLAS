@@ -1,0 +1,1350 @@
+@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=Baloo+2:wght@700&family=Bangers&family=Black+Ops+One&family=Bungee&family=Creepster&family=Fredoka:wght@600&family=Mountains+of+Christmas:wght@700&family=Orbitron:wght@700&family=Press+Start+2P&family=Rajdhani:wght@700&family=Russo+One&display=swap");
+
+/* ==========================================================================
+   ESTILO COMPARTIDO: CONTROLES + ESTADO DEL DETECTOR
+   - Sin ?design (o design=classic) se ve el tema morado por defecto.
+   - Con ?design=XXXX el script de cada página agrega la clase tema-XXXX
+     y solo cambian las variables de color / tipografía / bordes.
+   ========================================================================== */
+
+:root {
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --font-title: var(--font);
+    --text: #eceaf7;
+    --muted: #9a97b3;
+    --title: #ffffff;
+    --label: #b9a4ff;
+    --status-color: #ffffff;
+    --title-sh: none;
+    --title-ls: .01em;
+    --accent: #9147ff;
+    --accent-2: #c9a7ff;
+    --glow: rgba(145, 71, 255, .45);
+    --panel-bg: radial-gradient(circle at 100% 0%, rgba(145, 71, 255, .20), transparent 45%), radial-gradient(circle at 0% 100%, rgba(80, 120, 255, .10), transparent 45%), linear-gradient(180deg, #17171f, #101016);
+    --bw: 0px;
+    --bc: transparent;
+    --pr: 0px;
+    --pr-est: 16px;
+    --panel-sh: inset 0 0 0 1px rgba(255, 255, 255, .08);
+    --card-bg: rgba(255, 255, 255, .04);
+    --card-bd: 1px solid rgba(255, 255, 255, .09);
+    --card-r: 14px;
+    --input-bg: #0d0d13;
+    --input-bd: 1px solid rgba(255, 255, 255, .14);
+    --btn-main: linear-gradient(135deg, #a561ff, #7b3fe4);
+    --btn-warn: linear-gradient(135deg, #f5a524, #d9820b);
+    --btn-danger: linear-gradient(135deg, #ef4444, #c02626);
+    --btn-neutral: linear-gradient(135deg, #3b4358, #2b3144);
+    --btn-text: #ffffff;
+    --btn-bd: 1px solid rgba(255, 255, 255, .12);
+    --btn-r: 12px;
+    --btn-sh: 0 6px 16px rgba(0, 0, 0, .28);
+    --btn-ls: .06em;
+    --btn-ts: none;
+    --brand-bg: linear-gradient(135deg, #a561ff, #6d36d8);
+    --brand-fg: #ffffff;
+    --ok: #34d399;
+    --work: #fbbf24;
+    --err: #fb7185;
+    --idle: #8b8ba3;
+    --status-fs: clamp(18px, 4vw, 30px);
+}
+
+body[class*="tema-"] {
+    --pr-est: var(--pr);
+}
+
+/* =========================== CONTROLES =========================== */
+#controlPanel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: clamp(14px, 2.6vw, 28px);
+    box-sizing: border-box;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 1.8vh, 16px);
+    background: var(--panel-bg);
+    border: var(--bw) solid var(--bc);
+    border-radius: var(--pr);
+    box-shadow: var(--panel-sh);
+    color: var(--text);
+    font-family: var(--font);
+    z-index: 1000;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+}
+
+#controlPanel::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+    background-size: 200% 100%;
+    animation: cpFlow 6s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes cpFlow {
+    to {
+        background-position: 200% 0;
+    }
+}
+
+.cp-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cp-brand {
+    flex: none;
+    width: clamp(38px, 5vw, 48px);
+    aspect-ratio: 1;
+    border-radius: min(calc(var(--card-r) + 2px), 16px);
+    background: var(--brand-bg);
+    color: var(--brand-fg);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 0 18px var(--glow);
+}
+
+.cp-brand svg {
+    width: 56%;
+    height: 56%;
+}
+
+.cp-titles {
+    min-width: 0;
+}
+
+#controlPanel h2 {
+    margin: 0;
+    font-family: var(--font-title);
+    font-size: clamp(17px, 2.4vw, 24px);
+    line-height: 1.15;
+    color: var(--title);
+    text-shadow: var(--title-sh);
+    letter-spacing: var(--title-ls);
+}
+
+.cp-sub {
+    margin: 3px 0 0;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.cp-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+    gap: 10px;
+}
+
+#controlPanel button {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6em;
+    width: 100%;
+    margin: 0;
+    padding: clamp(11px, 1.9vh, 15px) clamp(12px, 2vw, 18px);
+    border: var(--btn-bd);
+    border-radius: var(--btn-r);
+    color: var(--btn-text);
+    font-family: var(--font);
+    font-size: clamp(12px, 1.5vw, 14px);
+    font-weight: 700;
+    letter-spacing: var(--btn-ls);
+    text-shadow: var(--btn-ts);
+    box-shadow: var(--btn-sh);
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+#controlPanel button::before {
+    content: "";
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    background: currentColor;
+    -webkit-mask: var(--ico) center / contain no-repeat;
+    mask: var(--ico) center / contain no-repeat;
+}
+
+#controlPanel button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .28) 50%, transparent 65%);
+    transform: translateX(-130%);
+    transition: transform .6s ease;
+}
+
+#controlPanel button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--btn-sh), 0 0 18px var(--glow);
+    filter: brightness(1.07);
+}
+
+#controlPanel button:hover:not(:disabled)::after {
+    transform: translateX(130%);
+}
+
+#controlPanel button:active:not(:disabled) {
+    transform: translateY(0) scale(.985);
+}
+
+#controlPanel button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+    filter: saturate(.6);
+}
+
+#controlPanel button:focus-visible {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+}
+
+#btnCamera,
+#btnObsConnect {
+    background: var(--btn-main);
+    color: var(--btn-main-text, var(--btn-text)) !important;
+}
+
+#btnPause {
+    background: var(--btn-warn);
+}
+
+#btnStop {
+    background: var(--btn-danger);
+}
+
+#btnReset,
+#btnObsSettings,
+#btnObsSettings.back-mode,
+#btnRefreshCameras,
+#btnObsDisconnect {
+    background: var(--btn-neutral);
+}
+
+#btnCamera {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8h3l2-3h8l2 3h3v11H3z'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3C/svg%3E");
+}
+
+#btnPause {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 5v14M16 5v14'/%3E%3C/svg%3E");
+}
+
+#btnPause[data-mode="play"] {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4l13 8-13 8z'/%3E%3C/svg%3E");
+}
+
+#btnStop {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='5' width='14' height='14' rx='2'/%3E%3C/svg%3E");
+}
+
+#btnReset {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 3-6.7M3 4v5h5'/%3E%3C/svg%3E");
+}
+
+#btnObsSettings {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h10M18 7h2M4 17h2M10 17h10'/%3E%3Ccircle cx='16' cy='7' r='2'/%3E%3Ccircle cx='8' cy='17' r='2'/%3E%3C/svg%3E");
+}
+
+#btnObsSettings.back-mode {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M11 6l-6 6 6 6'/%3E%3C/svg%3E");
+}
+
+#btnRefreshCameras {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5a10 10 0 0 1 14 0M8.5 15.5a5.5 5.5 0 0 1 7 0M12 19h.01'/%3E%3C/svg%3E");
+}
+
+#btnObsConnect {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5'/%3E%3C/svg%3E");
+}
+
+#btnObsDisconnect {
+    --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+}
+
+#cameraSelectorContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    margin: 0;
+    border-radius: var(--card-r);
+    background: var(--card-bg);
+    border: var(--card-bd);
+}
+
+#cameraSelectorContainer>label {
+    margin: 0;
+    font-family: var(--font-title);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--label);
+}
+
+.camera-help,
+.obs-help {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+.camera-help[style] {
+    color: var(--text) !important;
+    font-size: 13px !important;
+}
+
+.cp-status {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: 10px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 11px 13px;
+    border-radius: var(--card-r);
+    background: var(--card-bg);
+    border: var(--card-bd);
+}
+
+.stat-label {
+    font-family: var(--font-title);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--label);
+}
+
+#cameraStatus,
+#detectorStatus,
+#obsStatus {
+    --led: var(--idle);
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text);
+    word-break: break-word;
+}
+
+#cameraStatus::before,
+#detectorStatus::before,
+#obsStatus::before {
+    content: "";
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: var(--led);
+    box-shadow: 0 0 9px 1px var(--led);
+}
+
+#cameraStatus[data-state="ok"],
+#detectorStatus[data-state="ok"],
+#obsStatus[data-state="ok"] {
+    --led: var(--ok);
+}
+
+#cameraStatus[data-state="work"],
+#detectorStatus[data-state="work"],
+#obsStatus[data-state="work"] {
+    --led: var(--work);
+}
+
+#cameraStatus[data-state="err"],
+#detectorStatus[data-state="err"],
+#obsStatus[data-state="err"] {
+    --led: var(--err);
+}
+
+#cameraStatus[data-state="ok"]::before,
+#detectorStatus[data-state="ok"]::before,
+#obsStatus[data-state="ok"]::before,
+#cameraStatus[data-state="work"]::before,
+#detectorStatus[data-state="work"]::before,
+#obsStatus[data-state="work"]::before {
+    animation: ledPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ledPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: .55;
+        transform: scale(.8);
+    }
+}
+
+#obsSettings {
+    display: none;
+    margin: 0;
+    padding: 14px;
+    border-radius: var(--card-r);
+    background: var(--card-bg);
+    border: var(--card-bd);
+}
+
+#obsSettings.open {
+    display: block;
+    animation: cpDrop .28s ease both;
+}
+
+@keyframes cpDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+#obsSettings h3 {
+    margin: 0 0 12px;
+    font-family: var(--font-title);
+    font-size: 13px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--title);
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 10px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.field.full {
+    grid-column: 1 / -1;
+}
+
+#obsSettings label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+#obsSettings input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: min(var(--btn-r), 12px);
+    border: var(--input-bd);
+    background: var(--input-bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+#obsSettings input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--glow);
+}
+
+#obsSettingsActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+#obsSettingsActions button {
+    flex: 1;
+}
+
+.obs-help {
+    margin-top: 10px;
+}
+
+.cp-head,
+.cp-actions button,
+#cameraSelectorContainer,
+.stat,
+#btnObsSettings {
+    animation: cpIn .45s ease both;
+}
+
+.cp-actions button:nth-child(2) {
+    animation-delay: .05s;
+}
+
+.cp-actions button:nth-child(3) {
+    animation-delay: .1s;
+}
+
+.cp-actions button:nth-child(4) {
+    animation-delay: .15s;
+}
+
+#cameraSelectorContainer {
+    animation-delay: .2s;
+}
+
+.stat:nth-child(2) {
+    animation-delay: .25s;
+}
+
+.stat:nth-child(3) {
+    animation-delay: .3s;
+}
+
+#btnObsSettings {
+    animation-delay: .35s;
+}
+
+@keyframes cpIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (max-height: 520px) {
+    #controlPanel {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    #controlPanel button {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    #controlPanel *,
+    #controlPanel::before,
+    .panel,
+    .panel * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ======================== ESTADO DEL DETECTOR ======================== */
+.panel {
+    --led: var(--idle);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    min-height: 100px;
+    box-sizing: border-box;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--panel-bg);
+    border: var(--bw) solid var(--bc);
+    border-radius: var(--pr-est);
+    box-shadow: var(--panel-sh);
+    color: var(--text);
+    font-family: var(--font);
+}
+
+.panel::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+    background-size: 200% 100%;
+    animation: cpFlow 6s linear infinite;
+}
+
+.panel[data-state="active"] {
+    --led: var(--ok);
+}
+
+.panel[data-state="work"] {
+    --led: var(--work);
+}
+
+.panel[data-state="error"] {
+    --led: var(--err);
+}
+
+.panel .dot {
+    position: relative;
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--led);
+    box-shadow: 0 0 14px 2px var(--led);
+}
+
+.panel[data-state="active"] .dot::after,
+.panel[data-state="work"] .dot::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--led);
+    animation: estPing 1.8s ease-out infinite;
+}
+
+@keyframes estPing {
+    0% {
+        transform: scale(.6);
+        opacity: .9;
+    }
+
+    100% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+.panel .content {
+    min-width: 0;
+}
+
+.panel .label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 7px;
+    font-family: var(--font-title);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--label);
+}
+
+.panel .label svg {
+    width: 14px;
+    height: 14px;
+    flex: none;
+}
+
+.panel .status {
+    font-family: var(--font-title);
+    font-size: var(--status-fs);
+    line-height: 1.15;
+    font-weight: 750;
+    color: var(--status-color);
+    text-shadow: var(--title-sh);
+    overflow-wrap: anywhere;
+}
+
+.panel .sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* ============================== TEMAS ============================== */
+/* ------------------------------ FLORAL ------------------------------ */
+body.tema-floral {
+    --font: Georgia, "Times New Roman", serif;
+    --font-title: Georgia, "Times New Roman", serif;
+    --text: #3a2a3f;
+    --muted: #7a6580;
+    --title: #59405d;
+    --label: #8a6d90;
+    --status-color: #302333;
+    --title-sh: 0 1px 1px rgba(255, 255, 255, .8);
+    --title-ls: .04em;
+    --accent: #c08bd8;
+    --panel-bg: radial-gradient(circle at 8% 10%, rgba(255, 170, 195, .55), transparent 36%), radial-gradient(circle at 94% 92%, rgba(180, 160, 240, .5), transparent 38%), linear-gradient(160deg, #fdf7fb, #eef2fb);
+    --bw: 3px;
+    --bc: rgba(190, 170, 215, .9);
+    --pr: 22px;
+    --panel-sh: inset 0 0 0 1px rgba(255, 255, 255, .8);
+    --card-bg: rgba(255, 255, 255, .65);
+    --card-bd: 1px solid rgba(190, 170, 215, .7);
+    --input-bg: #ffffff;
+    --input-bd: 1px solid #d9c6e6;
+    --btn-main: linear-gradient(135deg, #d88fc6, #a98be0);
+    --btn-warn: linear-gradient(135deg, #f4c08a, #ee9fa0);
+    --btn-danger: linear-gradient(135deg, #ee8a9c, #d9607a);
+    --btn-neutral: linear-gradient(135deg, #b9a7cf, #9c8fb8);
+    --btn-text: #fff;
+    --btn-bd: none;
+    --btn-r: 14px;
+    --btn-sh: 0 2px 6px rgba(120, 80, 140, .25);
+    --btn-ls: .03em;
+    --btn-ts: 0 1px 2px rgba(80, 40, 90, .35);
+    --ok: #4fb88a;
+    --work: #e8b04a;
+    --err: #e0607a;
+    --idle: #b0a3bd;
+}
+
+/* ----------------------------- HALLOWEEN ----------------------------- */
+body.tema-halloween {
+    --font: Arial, Helvetica, sans-serif;
+    --font-title: "Creepster", Impact, "Arial Black", sans-serif;
+    --text: #f1e3ff;
+    --muted: #b79bd6;
+    --title: #ff8a1f;
+    --label: #ff9a45;
+    --status-color: #ffb347;
+    --title-sh: 0 0 .5em rgba(255, 120, 0, .6);
+    --title-ls: .08em;
+    --accent: #ff8a1f;
+    --panel-bg: radial-gradient(circle at 94% 8%, rgba(255, 138, 31, .30), transparent 30%), radial-gradient(circle at 6% 100%, rgba(122, 43, 214, .38), transparent 42%), linear-gradient(160deg, #1a0a22, #0d0612);
+    --bw: 3px;
+    --bc: #ff7a00;
+    --pr: 18px;
+    --panel-sh: inset 0 0 30px rgba(122, 43, 214, .3), inset 0 0 0 1px rgba(255, 160, 60, .25);
+    --card-bg: rgba(255, 255, 255, .05);
+    --card-bd: 1px solid rgba(255, 138, 31, .45);
+    --input-bg: #0b0610;
+    --input-bd: 1px solid #7a2bd6;
+    --btn-main: linear-gradient(180deg, #ff9a2a, #d9520a);
+    --btn-warn: linear-gradient(180deg, #b57bff, #6f35c4);
+    --btn-danger: linear-gradient(180deg, #e0314a, #8f0f24);
+    --btn-neutral: linear-gradient(180deg, #46295f, #2a1640);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 160, 60, .55);
+    --btn-r: 12px;
+    --btn-sh: 0 0 10px rgba(255, 122, 0, .25);
+    --btn-ls: .06em;
+    --btn-ts: 0 1px 2px rgba(0, 0, 0, .6);
+    --ok: #7dff6a;
+    --work: #ffb020;
+    --err: #ff3b55;
+    --idle: #9a84b8;
+}
+
+/* ------------------------------ NAVIDAD ------------------------------ */
+body.tema-christmas {
+    --font: "Trebuchet MS", Arial, sans-serif;
+    --font-title: "Mountains of Christmas", Georgia, serif;
+    --text: #f6f1e0;
+    --muted: #cfdcc6;
+    --title: #f7dd8a;
+    --label: #f7dd8a;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .45em rgba(255, 200, 80, .55), 0 .05em 0 #5a0d0d;
+    --title-ls: .06em;
+    --accent: #f7dd8a;
+    --panel-bg: radial-gradient(circle, rgba(255, 255, 255, .6) 1.2px, transparent 2px) 0 0/52px 52px, radial-gradient(circle, rgba(255, 255, 255, .35) 1px, transparent 2px) 26px 26px/52px 52px, linear-gradient(160deg, #145a3a, #0b3a26);
+    --bw: 3px;
+    --bc: #e0b64a;
+    --pr: 20px;
+    --panel-sh: inset 0 0 0 1px rgba(255, 240, 176, .35);
+    --card-bg: rgba(0, 0, 0, .28);
+    --card-bd: 1px solid rgba(247, 221, 138, .4);
+    --input-bg: #0a2a1b;
+    --input-bd: 1px solid #e0b64a;
+    --btn-main: linear-gradient(180deg, #e8323f, #a01220);
+    --btn-warn: linear-gradient(180deg, #e0952a, #b8690a);
+    --btn-danger: linear-gradient(180deg, #9a1f1f, #5f0f0f);
+    --btn-neutral: linear-gradient(180deg, #228a58, #146a3e);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(247, 221, 138, .65);
+    --btn-r: 12px;
+    --btn-sh: 0 2px 0 rgba(0, 0, 0, .35);
+    --btn-ls: .03em;
+    --btn-ts: 0 1px 2px rgba(0, 0, 0, .5);
+    --ok: #6dff9a;
+    --work: #ffd23f;
+    --err: #ff5a5a;
+    --idle: #b9c9b0;
+}
+
+/* ---------------------------- CUMPLEAÑOS ---------------------------- */
+body.tema-birthday {
+    --font: "Trebuchet MS", Arial, sans-serif;
+    --font-title: "Fredoka", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    --text: #4b2d73;
+    --muted: #7a60a0;
+    --title: #8a2fb0;
+    --label: #8a2fb0;
+    --status-color: #e8287a;
+    --title-sh: 0 .05em 0 rgba(255, 255, 255, .9);
+    --title-ls: .03em;
+    --accent: #ff5fa2;
+    --panel-bg: radial-gradient(circle, rgba(255, 95, 162, .5) 2.5px, transparent 3px) 0 0/70px 70px padding-box, radial-gradient(circle, rgba(74, 168, 255, .5) 2px, transparent 2.5px) 35px 20px/70px 70px padding-box, radial-gradient(circle, rgba(255, 194, 51, .55) 2px, transparent 2.5px) 15px 48px/70px 70px padding-box, linear-gradient(160deg, #fff0f8, #e5f3ff) padding-box, linear-gradient(90deg, #ff5fa2, #ffb02e, #3ed6a5, #4aa8ff, #a45cff) border-box;
+    --bw: 5px;
+    --bc: transparent;
+    --pr: 24px;
+    --panel-sh: none;
+    --card-bg: rgba(255, 255, 255, .75);
+    --card-bd: 2px dashed rgba(164, 92, 255, .45);
+    --input-bg: #ffffff;
+    --input-bd: 2px solid #d8c6f2;
+    --btn-main: linear-gradient(180deg, #ff6fae, #e8287a);
+    --btn-warn: linear-gradient(180deg, #ffbe45, #ff8a3d);
+    --btn-danger: linear-gradient(180deg, #ff6a86, #d9264a);
+    --btn-neutral: linear-gradient(180deg, #b79af0, #7a62c8);
+    --btn-text: #fff;
+    --btn-bd: none;
+    --btn-r: 999px;
+    --btn-sh: 0 3px 0 rgba(120, 40, 120, .35);
+    --btn-ls: .03em;
+    --btn-ts: 0 1px 2px rgba(90, 20, 90, .4);
+    --ok: #2fc98f;
+    --work: #ffb02e;
+    --err: #ff4d6d;
+    --idle: #a9a0c4;
+}
+
+/* ----------------------------- CYBERPUNK ----------------------------- */
+body.tema-cyber {
+    --font: "Segoe UI", Arial, sans-serif;
+    --font-title: "Orbitron", "Arial Black", sans-serif;
+    --text: #d9f6ff;
+    --muted: #8fb5d6;
+    --title: #5ef2ff;
+    --label: #ff6ee0;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(0, 240, 255, .7);
+    --title-ls: .1em;
+    --accent: #ff2bd6;
+    --panel-bg: repeating-linear-gradient(0deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 4px), linear-gradient(transparent 65%, rgba(255, 43, 214, .2)), linear-gradient(160deg, #0d0524, #150a36);
+    --bw: 2px;
+    --bc: #00f0ff;
+    --pr: 6px;
+    --panel-sh: 0 0 0 1px rgba(255, 43, 214, .6) inset, 0 0 22px rgba(0, 240, 255, .45) inset;
+    --card-bg: rgba(0, 240, 255, .07);
+    --card-bd: 1px solid rgba(0, 240, 255, .45);
+    --input-bg: #07021a;
+    --input-bd: 1px solid #ff2bd6;
+    --btn-main: linear-gradient(90deg, #ff2bd6, #7a2bff);
+    --btn-warn: linear-gradient(90deg, #ffb000, #ff6a00);
+    --btn-danger: linear-gradient(90deg, #ff2b5e, #b0003a);
+    --btn-neutral: rgba(0, 240, 255, .14);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(94, 242, 255, .7);
+    --btn-r: 4px;
+    --btn-sh: 0 0 10px rgba(0, 240, 255, .35);
+    --btn-ls: .08em;
+    --btn-ts: 0 0 6px rgba(0, 0, 0, .6);
+    --ok: #39ff88;
+    --work: #ffd400;
+    --err: #ff2b5e;
+    --idle: #6f7fa8;
+}
+
+/* ------------------------------ ESPACIAL ------------------------------ */
+body.tema-space {
+    --font: "Segoe UI", Arial, sans-serif;
+    --font-title: "Audiowide", "Arial Black", sans-serif;
+    --text: #e6ecff;
+    --muted: #9fb0e0;
+    --title: #9fd4ff;
+    --label: #c9b0ff;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(110, 170, 255, .7);
+    --title-ls: .08em;
+    --accent: #7a9cff;
+    --panel-bg: radial-gradient(circle, #fff 1px, transparent 1.5px) 0 0/90px 90px, radial-gradient(circle, rgba(255, 255, 255, .7) 1px, transparent 1.5px) 40px 55px/130px 130px, radial-gradient(circle at 88% 10%, rgba(140, 90, 255, .38), transparent 40%), radial-gradient(circle at 8% 92%, rgba(40, 160, 255, .32), transparent 42%), linear-gradient(160deg, #0b1030, #050818);
+    --bw: 2px;
+    --bc: rgba(159, 212, 255, .75);
+    --pr: 22px;
+    --panel-sh: inset 0 0 28px rgba(120, 150, 255, .3);
+    --card-bg: rgba(120, 150, 255, .1);
+    --card-bd: 1px solid rgba(159, 212, 255, .35);
+    --input-bg: #070b22;
+    --input-bd: 1px solid #5a6fd8;
+    --btn-main: linear-gradient(135deg, #7a5cff, #3aa0ff);
+    --btn-warn: linear-gradient(135deg, #ff9d3a, #ff6a5a);
+    --btn-danger: linear-gradient(135deg, #ff4f7a, #b5174a);
+    --btn-neutral: linear-gradient(135deg, #323f8a, #222b66);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(159, 212, 255, .45);
+    --btn-r: 14px;
+    --btn-sh: 0 0 12px rgba(100, 140, 255, .3);
+    --btn-ls: .04em;
+    --btn-ts: 0 1px 2px rgba(0, 0, 0, .5);
+    --ok: #5dffb0;
+    --work: #ffd35a;
+    --err: #ff5f7a;
+    --idle: #8f9cc8;
+}
+
+/* ------------------------------- OCÉANO ------------------------------- */
+body.tema-ocean {
+    --font: "Trebuchet MS", Arial, sans-serif;
+    --font-title: "Fredoka", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    --text: #eafcff;
+    --muted: #b8e8f2;
+    --title: #ffffff;
+    --label: #c8f3ff;
+    --status-color: #ffffff;
+    --title-sh: 0 2px 4px rgba(0, 60, 110, .55);
+    --title-ls: .03em;
+    --accent: #ffd23f;
+    --panel-bg: radial-gradient(circle, transparent 5px, rgba(255, 255, 255, .35) 5.5px, transparent 7px) 0 0/90px 110px, radial-gradient(circle, transparent 3px, rgba(255, 255, 255, .3) 3.5px, transparent 5px) 45px 55px/70px 90px, linear-gradient(180deg, #2ec4d6, #1470b5 55%, #0a3f7a);
+    --bw: 4px;
+    --bc: #bff3ff;
+    --pr: 26px;
+    --panel-sh: inset 0 0 0 1px rgba(255, 255, 255, .35);
+    --card-bg: rgba(4, 50, 100, .38);
+    --card-bd: 1px solid rgba(190, 245, 255, .5);
+    --input-bg: rgba(2, 30, 70, .55);
+    --input-bd: 1px solid #7fdcf0;
+    --btn-main: linear-gradient(180deg, #ffa043, #ff6a1a);
+    --btn-warn: linear-gradient(180deg, #ffd84a, #f0a500);
+    --btn-danger: linear-gradient(180deg, #ff6a7e, #c4223a);
+    --btn-neutral: rgba(255, 255, 255, .2);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 255, 255, .45);
+    --btn-r: 16px;
+    --btn-sh: 0 3px 0 rgba(0, 40, 80, .35);
+    --btn-ls: .03em;
+    --btn-ts: 0 1px 2px rgba(0, 40, 80, .5);
+    --ok: #6dffb8;
+    --work: #ffd23f;
+    --err: #ff6a7e;
+    --idle: #a8d8e8;
+}
+
+/* ------------------------------- ARCADE ------------------------------- */
+body.tema-arcade {
+    --font: "Courier New", Courier, monospace;
+    --font-title: "Press Start 2P", "Courier New", monospace;
+    --text: #e8f6ff;
+    --muted: #8fa0d8;
+    --title: #ffe600;
+    --label: #00e5ff;
+    --status-color: #ffe600;
+    --title-sh: 3px 3px 0 #ff3d3d;
+    --title-ls: .04em;
+    --accent: #ffe600;
+    --status-fs: clamp(11px, 2.4vw, 18px);
+    --panel-bg: repeating-linear-gradient(0deg, rgba(0, 0, 0, .28) 0 2px, transparent 2px 4px), linear-gradient(160deg, #0b0b2b, #14084a);
+    --bw: 4px;
+    --bc: #00e5ff;
+    --pr: 0px;
+    --panel-sh: inset 0 0 0 4px #0b0b2b, inset 0 0 0 7px #ff3df0;
+    --card-bg: #0b0b2b;
+    --card-bd: 2px solid #00e5ff;
+    --input-bg: #000000;
+    --input-bd: 2px solid #ffe600;
+    --btn-main: #00e5ff;
+    --btn-warn: #ffe600;
+    --btn-danger: #ff3d3d;
+    --btn-neutral: #8f9cff;
+    --btn-text: #0b0b2b;
+    --btn-bd: 3px solid #0b0b2b;
+    --btn-r: 0px;
+    --btn-sh: 0 4px 0 rgba(0, 0, 0, .6), inset 0 0 0 2px rgba(255, 255, 255, .4);
+    --btn-ls: .04em;
+    --btn-ts: none;
+    --ok: #39ff14;
+    --work: #ffe600;
+    --err: #ff3d3d;
+    --idle: #7a86c0;
+}
+
+/* --------------------------- BESTIA DE FUEGO --------------------------- */
+body.tema-beast {
+    --font: Arial, Helvetica, sans-serif;
+    --font-title: "Bangers", Impact, "Arial Black", sans-serif;
+    --text: #fff4e6;
+    --muted: #d9a98c;
+    --title: #ffd166;
+    --label: #ff8a4d;
+    --status-color: #ffffff;
+    --title-sh: 2px 2px 0 #7a1200, 0 0 .5em rgba(255, 100, 0, .6);
+    --title-ls: .06em;
+    --accent: #ff7a1a;
+    --panel-bg: repeating-linear-gradient(-45deg, #ffc400 0 10px, #111 10px 20px) 0 100%/100% 8px no-repeat padding-box, radial-gradient(ellipse at 50% 120%, rgba(255, 90, 0, .55), transparent 60%) padding-box, linear-gradient(160deg, #1c1c20, #0b0b0e) padding-box;
+    --bw: 3px;
+    --bc: #ff5a00;
+    --pr: 14px;
+    --panel-sh: inset 0 0 36px rgba(255, 70, 0, .3);
+    --card-bg: rgba(255, 255, 255, .06);
+    --card-bd: 1px solid rgba(255, 120, 40, .5);
+    --input-bg: #0b0b0e;
+    --input-bd: 1px solid #ff7a1a;
+    --btn-main: linear-gradient(180deg, #ff8a1f, #d93a00);
+    --btn-warn: linear-gradient(180deg, #e8a800, #b87800);
+    --btn-danger: linear-gradient(180deg, #c1121f, #7a0a12);
+    --btn-neutral: linear-gradient(180deg, #4a4a54, #2c2c34);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 160, 60, .6);
+    --btn-r: 8px;
+    --btn-sh: 0 3px 0 rgba(0, 0, 0, .5);
+    --btn-ls: .05em;
+    --btn-ts: 0 1px 2px rgba(0, 0, 0, .7);
+    --ok: #7dff6a;
+    --work: #ffc107;
+    --err: #ff3b30;
+    --idle: #9a9aa5;
+}
+
+/* ---- variables extra de los temas anteriores ---- */
+body.tema-floral {
+    --accent-2: #a98be0;
+    --glow: rgba(192, 139, 216, .45);
+    --brand-bg: linear-gradient(135deg, #d88fc6, #a98be0);
+    --card-r: 16px;
+}
+
+body.tema-halloween {
+    --accent-2: #7a2bd6;
+    --glow: rgba(255, 122, 0, .5);
+    --brand-bg: linear-gradient(135deg, #ff9a2a, #d9520a);
+    --card-r: 12px;
+}
+
+body.tema-christmas {
+    --accent-2: #e8323f;
+    --glow: rgba(247, 221, 138, .45);
+    --brand-bg: linear-gradient(135deg, #e8323f, #a01220);
+    --card-r: 14px;
+}
+
+body.tema-birthday {
+    --accent-2: #4aa8ff;
+    --glow: rgba(255, 95, 162, .4);
+    --brand-bg: linear-gradient(135deg, #ff6fae, #ffb02e);
+    --card-r: 18px;
+}
+
+body.tema-cyber {
+    --accent-2: #00f0ff;
+    --glow: rgba(0, 240, 255, .5);
+    --brand-bg: linear-gradient(135deg, #ff2bd6, #7a2bff);
+    --card-r: 4px;
+}
+
+body.tema-space {
+    --accent-2: #3aa0ff;
+    --glow: rgba(100, 140, 255, .5);
+    --brand-bg: linear-gradient(135deg, #7a5cff, #3aa0ff);
+    --card-r: 14px;
+}
+
+body.tema-ocean {
+    --accent-2: #ff8a1f;
+    --glow: rgba(190, 245, 255, .5);
+    --brand-bg: linear-gradient(135deg, #ffa043, #ff6a1a);
+    --card-r: 18px;
+}
+
+body.tema-arcade {
+    --accent-2: #ff3df0;
+    --glow: rgba(0, 229, 255, .55);
+    --brand-bg: #ffe600;
+    --brand-fg: #0b0b2b;
+    --card-r: 0px;
+}
+
+body.tema-beast {
+    --accent-2: #ffd166;
+    --glow: rgba(255, 90, 0, .5);
+    --brand-bg: linear-gradient(135deg, #ff8a1f, #d93a00);
+    --card-r: 10px;
+}
+
+/* ------------------------- TORMENTA ELÉCTRICA ------------------------- */
+body.tema-storm {
+    --font-title: "Bungee", "Arial Black", Impact, sans-serif;
+    --text: #f4f1e6;
+    --muted: #aaa79a;
+    --title: #ffd400;
+    --label: #ffe566;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(255, 212, 0, .5);
+    --title-ls: .04em;
+    --accent: #ffd400;
+    --accent-2: #fff27a;
+    --glow: rgba(255, 212, 0, .5);
+    --panel-bg: radial-gradient(circle at 92% 0%, rgba(255, 212, 0, .22), transparent 40%), radial-gradient(circle at 0% 100%, rgba(120, 120, 150, .25), transparent 45%), linear-gradient(180deg, #1b1b22, #0f0f14);
+    --bw: 2px;
+    --bc: #ffd400;
+    --pr: 16px;
+    --panel-sh: inset 0 0 28px rgba(255, 212, 0, .12);
+    --card-bg: rgba(255, 255, 255, .05);
+    --card-bd: 1px solid rgba(255, 212, 0, .28);
+    --card-r: 12px;
+    --input-bg: #0c0c10;
+    --input-bd: 1px solid rgba(255, 212, 0, .4);
+    --btn-main: linear-gradient(135deg, #ffd400, #f0a800);
+    --btn-main-text: #1a1400;
+    --btn-warn: linear-gradient(135deg, #ff9f1a, #e07800);
+    --btn-danger: linear-gradient(135deg, #ef4444, #b91c1c);
+    --btn-neutral: linear-gradient(135deg, #3a3a46, #26262e);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 212, 0, .35);
+    --btn-r: 10px;
+    --btn-sh: 0 5px 14px rgba(0, 0, 0, .4);
+    --btn-ls: .05em;
+    --btn-ts: none;
+    --brand-bg: linear-gradient(135deg, #ffd400, #f0a800);
+    --brand-fg: #1a1400;
+    --ok: #5dff9a;
+    --work: #ffd400;
+    --err: #ff5a5f;
+    --idle: #8e8e9a;
+}
+
+/* --------------------------- ENERGÍA SUPREMA --------------------------- */
+body.tema-aura {
+    --font-title: "Russo One", "Arial Black", Impact, sans-serif;
+    --text: #eef2ff;
+    --muted: #9fa9d6;
+    --title: #ffd36b;
+    --label: #ffcf66;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .5em rgba(255, 150, 0, .6);
+    --title-ls: .05em;
+    --accent: #ffb000;
+    --accent-2: #ff6a00;
+    --glow: rgba(255, 150, 0, .5);
+    --panel-bg: radial-gradient(circle at 12% 100%, rgba(255, 150, 0, .38), transparent 45%), radial-gradient(circle at 95% 0%, rgba(80, 200, 255, .2), transparent 40%), linear-gradient(180deg, #0b1030, #05071a);
+    --bw: 2px;
+    --bc: #ffb000;
+    --pr: 18px;
+    --panel-sh: inset 0 0 30px rgba(255, 150, 0, .18);
+    --card-bg: rgba(255, 255, 255, .05);
+    --card-bd: 1px solid rgba(255, 176, 0, .35);
+    --card-r: 14px;
+    --input-bg: #070a1e;
+    --input-bd: 1px solid rgba(255, 176, 0, .5);
+    --btn-main: linear-gradient(135deg, #ffc832, #ff8a00);
+    --btn-main-text: #2a1200;
+    --btn-warn: linear-gradient(135deg, #38b6ff, #1c7fd6);
+    --btn-danger: linear-gradient(135deg, #e8344a, #9e1030);
+    --btn-neutral: linear-gradient(135deg, #26305f, #1a2248);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 200, 80, .45);
+    --btn-r: 12px;
+    --btn-sh: 0 5px 14px rgba(0, 0, 0, .4);
+    --btn-ls: .05em;
+    --btn-ts: none;
+    --brand-bg: linear-gradient(135deg, #ffc832, #ff6a00);
+    --brand-fg: #2a1200;
+    --ok: #5dffb0;
+    --work: #ffd24a;
+    --err: #ff4f6a;
+    --idle: #8f9cc8;
+}
+
+/* ------------------------------- SLIME ------------------------------- */
+body.tema-slime {
+    --font-title: "Fredoka", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    --text: #eafff0;
+    --muted: #a6d9b7;
+    --title: #d4ffb8;
+    --label: #8bffc0;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .45em rgba(125, 255, 106, .5);
+    --title-ls: .03em;
+    --accent: #7dff6a;
+    --accent-2: #2ee6a8;
+    --glow: rgba(125, 255, 106, .45);
+    --panel-bg: radial-gradient(circle at 10% 100%, rgba(125, 255, 106, .28), transparent 45%), radial-gradient(circle at 95% 5%, rgba(46, 230, 168, .22), transparent 40%), linear-gradient(180deg, #123826, #0a2218);
+    --bw: 3px;
+    --bc: #7dff6a;
+    --pr: 28px;
+    --panel-sh: inset 0 0 26px rgba(125, 255, 106, .16);
+    --card-bg: rgba(255, 255, 255, .08);
+    --card-bd: 1px solid rgba(125, 255, 106, .35);
+    --card-r: 20px;
+    --input-bg: rgba(0, 20, 10, .55);
+    --input-bd: 1px solid rgba(125, 255, 106, .5);
+    --btn-main: linear-gradient(180deg, #8cff6e, #34c75a);
+    --btn-main-text: #0a2a12;
+    --btn-warn: linear-gradient(180deg, #ffe35a, #f0b800);
+    --btn-danger: linear-gradient(180deg, #ff6a7a, #d02a46);
+    --btn-neutral: rgba(255, 255, 255, .16);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 255, 255, .35);
+    --btn-r: 18px;
+    --btn-sh: 0 4px 0 rgba(0, 40, 20, .4);
+    --btn-ls: .03em;
+    --btn-ts: 0 1px 2px rgba(0, 40, 20, .5);
+    --brand-bg: linear-gradient(135deg, #8cff6e, #2ee6a8);
+    --brand-fg: #0a2a12;
+    --ok: #7dff6a;
+    --work: #ffe35a;
+    --err: #ff6a7a;
+    --idle: #9fc9ae;
+}
+
+/* ----------------------------- GATITO KAWAII ----------------------------- */
+body.tema-kawaii {
+    --font: "Trebuchet MS", Arial, sans-serif;
+    --font-title: "Baloo 2", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    --text: #6b3a55;
+    --muted: #9b6f89;
+    --title: #d85a93;
+    --label: #d85a93;
+    --status-color: #ff5c9c;
+    --title-sh: 0 .05em 0 rgba(255, 255, 255, .9);
+    --title-ls: .02em;
+    --accent: #ff7eb6;
+    --accent-2: #8be9d0;
+    --glow: rgba(255, 126, 182, .45);
+    --panel-bg: radial-gradient(circle, rgba(255, 160, 200, .55) 3px, transparent 3.5px) 0 0/48px 48px, radial-gradient(circle, rgba(255, 214, 102, .5) 2.5px, transparent 3px) 24px 24px/48px 48px, linear-gradient(160deg, #fff3f8, #fdeaff);
+    --bw: 4px;
+    --bc: #ffb3d1;
+    --pr: 28px;
+    --panel-sh: none;
+    --card-bg: rgba(255, 255, 255, .78);
+    --card-bd: 2px dashed rgba(255, 126, 182, .5);
+    --card-r: 20px;
+    --input-bg: #ffffff;
+    --input-bd: 2px solid #ffc4dc;
+    --btn-main: linear-gradient(180deg, #ff8fc0, #ff5c9c);
+    --btn-warn: linear-gradient(180deg, #ffc96b, #ffa94d);
+    --btn-danger: linear-gradient(180deg, #ff7a8a, #e8456a);
+    --btn-neutral: linear-gradient(180deg, #c9a7e8, #a784d4);
+    --btn-text: #fff;
+    --btn-bd: none;
+    --btn-r: 999px;
+    --btn-sh: 0 3px 0 rgba(160, 60, 110, .3);
+    --btn-ls: .03em;
+    --btn-ts: 0 1px 2px rgba(120, 30, 80, .35);
+    --brand-bg: linear-gradient(135deg, #ff8fc0, #ff5c9c);
+    --brand-fg: #fff;
+    --ok: #34c996;
+    --work: #ffb02e;
+    --err: #ff4d6d;
+    --idle: #b9a3c6;
+}
+
+/* ------------------------------ NINJA DOJO ------------------------------ */
+body.tema-ninja {
+    --font-title: "Black Ops One", Impact, "Arial Black", sans-serif;
+    --text: #efe6d6;
+    --muted: #a79d8c;
+    --title: #f2e9d8;
+    --label: #e0314a;
+    --status-color: #f2e9d8;
+    --title-sh: 2px 2px 0 #7a0f1e;
+    --title-ls: .06em;
+    --accent: #d7263d;
+    --accent-2: #5aa05a;
+    --glow: rgba(215, 38, 61, .5);
+    --panel-bg: radial-gradient(circle at 92% 8%, rgba(215, 38, 61, .35), transparent 32%), linear-gradient(180deg, #171717, #0c0c0c);
+    --bw: 2px;
+    --bc: #d7263d;
+    --pr: 6px;
+    --panel-sh: inset 0 0 0 1px rgba(255, 255, 255, .06);
+    --card-bg: rgba(255, 255, 255, .04);
+    --card-bd: 1px solid rgba(215, 38, 61, .4);
+    --card-r: 4px;
+    --input-bg: #0a0a0a;
+    --input-bd: 1px solid #5a5a5a;
+    --btn-main: linear-gradient(135deg, #e0314a, #9e1022);
+    --btn-warn: linear-gradient(135deg, #d9972a, #a8690a);
+    --btn-danger: linear-gradient(135deg, #5a0f1a, #33060d);
+    --btn-neutral: linear-gradient(135deg, #343434, #222222);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(255, 255, 255, .14);
+    --btn-r: 3px;
+    --btn-sh: 0 4px 12px rgba(0, 0, 0, .5);
+    --btn-ls: .08em;
+    --btn-ts: none;
+    --brand-bg: linear-gradient(135deg, #e0314a, #9e1022);
+    --brand-fg: #fff;
+    --ok: #6fd36f;
+    --work: #f0b429;
+    --err: #ff4560;
+    --idle: #8a8478;
+}
+
+/* ------------------------------ MECHA ROBOT ------------------------------ */
+body.tema-mecha {
+    --font-title: "Rajdhani", "Segoe UI", "Arial Narrow", sans-serif;
+    --text: #dbeaf7;
+    --muted: #8aa3bb;
+    --title: #3ad8ff;
+    --label: #ff9d4a;
+    --status-color: #ffffff;
+    --title-sh: 0 0 .45em rgba(58, 216, 255, .55);
+    --title-ls: .08em;
+    --accent: #3ad8ff;
+    --accent-2: #ff7a1a;
+    --glow: rgba(58, 216, 255, .5);
+    --panel-bg: repeating-linear-gradient(0deg, rgba(58, 216, 255, .05) 0 1px, transparent 1px 28px), repeating-linear-gradient(90deg, rgba(58, 216, 255, .05) 0 1px, transparent 1px 28px), linear-gradient(180deg, #101c2b, #0a111b);
+    --bw: 2px;
+    --bc: #3ad8ff;
+    --pr: 8px;
+    --panel-sh: inset 0 0 26px rgba(58, 216, 255, .14);
+    --card-bg: rgba(58, 216, 255, .06);
+    --card-bd: 1px solid rgba(58, 216, 255, .35);
+    --card-r: 6px;
+    --input-bg: #070d15;
+    --input-bd: 1px solid rgba(58, 216, 255, .5);
+    --btn-main: linear-gradient(135deg, #27c4ee, #1673b8);
+    --btn-warn: linear-gradient(135deg, #ff8a2a, #d9560a);
+    --btn-danger: linear-gradient(135deg, #e8344a, #9e1030);
+    --btn-neutral: linear-gradient(135deg, #34465c, #243244);
+    --btn-text: #fff;
+    --btn-bd: 1px solid rgba(58, 216, 255, .4);
+    --btn-r: 6px;
+    --btn-sh: 0 4px 12px rgba(0, 0, 0, .45);
+    --btn-ls: .1em;
+    --btn-ts: none;
+    --brand-bg: linear-gradient(135deg, #27c4ee, #ff7a1a);
+    --brand-fg: #04101a;
+    --ok: #39ff88;
+    --work: #ffc400;
+    --err: #ff4560;
+    --idle: #6f8499;
+}
+
+/* Ajustes finos */
+body.tema-arcade .panel .status {
+    text-shadow: 2px 2px 0 #ff3d3d;
+}
+
+body.tema-arcade #controlPanel button {
+    font-weight: 700;
+}

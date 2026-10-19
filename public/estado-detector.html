@@ -5,16 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Estado del detector | SquatBeast</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:#fff}
-body{display:flex;align-items:center;justify-content:center;padding:12px}.panel{width:100%;min-height:100px;padding:18px 22px;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(18,18,28,.92);box-shadow:0 8px 28px rgba(0,0,0,.24);display:flex;align-items:center;gap:14px}
-.dot{width:12px;height:12px;flex:0 0 12px;border-radius:50%;background:#a1a1aa;box-shadow:0 0 0 5px rgba(161,161,170,.14)}.content{min-width:0}.label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaa7bd;margin-bottom:7px}.status{font-size:clamp(18px,4vw,30px);line-height:1.15;font-weight:750;overflow-wrap:anywhere}.sub{margin-top:6px;font-size:12px;color:#aaa7bd}.panel[data-state="active"] .dot{background:#34d399;box-shadow:0 0 0 5px rgba(52,211,153,.14)}.panel[data-state="work"] .dot{background:#fbbf24;box-shadow:0 0 0 5px rgba(251,191,36,.14)}.panel[data-state="error"] .dot{background:#fb7185;box-shadow:0 0 0 5px rgba(251,113,133,.14)}
+html,body{margin:0;width:100%;height:100%;background:transparent}
+body{display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
 </style>
+<link rel="stylesheet" href="/temas.css">
 </head>
 
 <body>
+<script>
+(function(){var v=["floral","halloween","christmas","birthday","cyber","space","ocean","arcade","beast","storm","aura","slime","kawaii","ninja","mecha"];var d=(new URLSearchParams(location.search).get("design")||"").toLowerCase();if(v.indexOf(d)>-1){document.body.classList.add("tema-"+d);}})();
+</script>
     <div class="panel" id="panel" data-state="idle"><span class="dot"></span>
         <div class="content">
-            <div class="label">Estado del detector</div>
+            <div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Estado del detector</div>
             <div class="status" id="status">Conectando...</div>
             <div class="sub" id="sub">Esperando información de la fuente principal de OBS</div>
         </div>
