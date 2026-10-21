@@ -158,6 +158,8 @@
         <div class="stat"><span class="stat-label">OBS</span><div id="obsStatus" data-state="idle">OBS: no conectado</div></div>
     </section>
 
+    <div id="detectorDebug" style="font-size:11px;opacity:.65;margin:6px 2px;font-family:monospace;color:#e4e4e7;word-break:break-word;"></div>
+
     <button id="btnObsSettings" type="button">CONFIGURAR OBS</button>
 
     <div id="obsSettings">
@@ -424,35 +426,840 @@
     ========================================================
     */
 
-    // Seguimiento de pose con doble señal: descenso de cadera + compresión vertical
-    // del segmento cadera-rodilla. La referencia corporal queda fija durante cada ciclo.
-    const CALIBRATION_FRAMES = 45;
-    const DOWN_THRESHOLD = 0.12;
-    const BOTTOM_THRESHOLD = 0.25;
-    const RETURN_THRESHOLD = 0.055;
-    const MIN_TIME_BETWEEN_SQUATS = 1200;
-    const REQUIRED_BOTTOM_FRAMES = 7;
-    const REQUIRED_STANDING_FRAMES = 10;
-    const MIN_LANDMARK_VISIBILITY = 0.55;
-    const MIN_SQUAT_COMPRESSION = 0.16;
-    const MAX_LOST_FRAMES = 8;
+    // Detector de sentadillas v2 (funciona con encuadre de solo torso:
+    // usa hombros y cabeza; las caderas solo si se ven bien).
+// ============================================================
+// DETECTOR DE SENTADILLAS v2
+// ------------------------------------------------------------
+// Mejoras principales respecto a la version anterior:
+//  - Calibracion real: solo cuenta tiempo cuando la persona esta
+//    de pie, quieta y con las rodillas estiradas. Usa el promedio
+//    de muestras (no una media movil que arrastra el primer frame).
+//  - Recalibracion automatica si te mueves, cambias de distancia
+//    o calibraste agachado.
+//  - Umbrales de profundidad mucho mas altos (antes 2.5% del torso,
+//    ahora 14% para empezar y 34% para validar el fondo).
+//  - Filtro de picos (mediana de 3) + suavizado por tiempo, asi
+//    el detector funciona igual a 15, 30 o 60 FPS.
+//  - La sentadilla se cuenta cuando ya subiste a mitad de camino,
+//    no por ruido en el fondo (antes un bug hacia que la velocidad
+//    siempre pareciera "subiendo").
+//  - Se corrige la relacion de aspecto del video en las distancias.
+// Las unidades de profundidad son "torsos": 1.0 = distancia
+// hombros-cadera de pie.
+// ============================================================
 
-    let state = "CALIBRATING";
-    let calibrationFrames = 0;
-    let baselineHip = null;
-    let baselineBodySize = null;
-    let baselineHipKnee = null;
-    let smoothedDepth = null;
-    let smoothedCompression = null;
-    let lastSquatTime = 0;
-    let previousDepth = null;
-    let bottomFrames = 0;
-    let standingFrames = 0;
-    let lostFrames = 0;
-    let calibrationSamples = [];
-    let bodySizeSamples = [];
-    let hipKneeSamples = [];
+const SQUAT_CONFIG = {
 
+    // --- Calibracion ---
+    DEBUG: (typeof location !== "undefined" && /[?&]debug=1/.test(location.search)),  // abre la pagina con ?debug=1 para ver valores
+    CALIBRATION_MS: 600,           // tiempo quieto y de pie necesario
+    CALIBRATION_MIN_SAMPLES: 3,
+    CALIBRATION_MAX_MOTION: 0.14,  // movimiento maximo (en torsos) para calibrar
+    CALIBRATION_GRACE_MS: 350,     // frames malos tolerados sin reiniciar
+    STANDING_KNEE_ANGLE: 150,      // rodilla "estirada" (solo para ajustes finos)
+    CALIBRATION_MIN_KNEE: 115,     // por debajo de esto se asume que estas agachado
+    MIN_VISIBILITY: 0.35,          // hombros y cabeza
+    MIN_HIP_VISIBILITY: 0.50,      // caderas (si no se ven bien se usa solo el torso superior)
+    HIP_MAX_Y: 0.80,               // caderas mas abajo que esto (en el encuadre) = modo torso
+    BEND_LIMIT: 0.30,              // cabeza cayendo respecto a hombros = te inclinas, no sentadilla
+    MIN_KNEE_VISIBILITY: 0.35,
+    STILL_MOTION: 0.06,            // movimiento maximo (en torsos) para "estas quieto"
+    STILL_VELOCITY: 0.12,          // torsos/seg
+
+    // --- Profundidad (en torsos) ---
+    DOWN_START: 0.10,              // empieza a bajar
+    DOWN_EXIT: 0.07,               // ya volviste a estar de pie
+    BOTTOM_DEPTH: 0.27,            // profundidad minima para valer como sentadilla
+    KNEE_BOTTOM_ANGLE: 125,        // rodilla muy flexionada (vista lateral)
+    KNEE_BOTTOM_MIN_DEPTH: 0.16,
+    RISE_DELTA: 0.07,              // cuanto debe subir desde el fondo
+    COUNT_ASCENT_RATIO: 0.55,      // cuenta al subir ~45% del recorrido
+
+    // --- Tiempos (ms) ---
+    BOTTOM_HOLD_MS: 80,
+    RISE_CONFIRM_MS: 60,
+    DOWN_CONFIRM_MS: 50,
+    MIN_REP_MS: 450,
+    MIN_TIME_BETWEEN_SQUATS: 700,
+    MAX_DESCENT_MS: 8000,
+    MAX_ASCENT_MS: 8000,
+    MAX_BOTTOM_MS: 6000,
+    LOST_RESET_MS: 3500,
+    LOW_FPS_DT: 200                // si pasan >= 200 ms entre frames se usa el modo de pocos FPS
+};
+
+
+class SquatDetector {
+
+    constructor(config) {
+        this.cfg = Object.assign({}, SQUAT_CONFIG, config || {});
+        this.lastCount = -1e9;
+        this.reset();
+    }
+
+
+    reset() {
+        this.phase = "CALIBRATING";
+        this.baseline = null;
+        this.cal = null;
+        this.calMs = 0;
+        this.lastT = 0;
+        this.lastSeen = 0;
+        this.rawHist = [];
+        this.depth = 0;
+        this.prevDepth = 0;
+        this.vel = 0;
+        this.motion = 0;
+        this.anchorLP = null;
+        this.depthHist = [];
+        this.motionEff = 0;
+        this._changed = false;
+        this.bending = false;
+        this.sinceCalMs = 0;
+        this.distStillMs = 0;
+        this.badMs = 0;
+        this.stillMs = 0;
+        this.downMs = 0;
+        this.scaleOffMs = 0;
+        this.phaseStart = 0;
+        this.rep = null;
+    }
+
+
+    // --------------------------------------------------------
+    // Utilidades
+    // --------------------------------------------------------
+
+    static _angle(a, b, c) {
+        const abx = a.x - b.x, aby = a.y - b.y;
+        const cbx = c.x - b.x, cby = c.y - b.y;
+        const m1 = Math.hypot(abx, aby);
+        const m2 = Math.hypot(cbx, cby);
+        if (!m1 || !m2) return null;
+        const cos = Math.max(-1, Math.min(1, (abx * cbx + aby * cby) / (m1 * m2)));
+        return Math.acos(cos) * 180 / Math.PI;
+    }
+
+    static _median3(list) {
+        const s = list.slice().sort((a, b) => a - b);
+        return s[Math.floor(s.length / 2)];
+    }
+
+    static _k(dt, tau) {
+        return 1 - Math.exp(-dt / tau);
+    }
+
+    _out(text, counted) {
+        if (this.cfg.DEBUG && !counted) {
+            text += ` [${this.baseline ? this.baseline.mode : "?"} p=${this.depth.toFixed(2)} meta=${this.cfg.BOTTOM_DEPTH}` +
+                (this._knee !== null && this._knee !== undefined ? ` rod=${Math.round(this._knee)}` : "") + "]";
+        }
+        return {
+            phase: this.phase,
+            text,
+            counted: !!counted,
+            lost: false,
+            depth: this.depth
+        };
+    }
+
+    _enter(phase, now) {
+        this._changed = true;
+        this.phase = phase;
+        this.phaseStart = now;
+    }
+
+    _recalibrate() {
+        this.reset();
+    }
+
+
+    // --------------------------------------------------------
+    // Lectura de landmarks de MediaPipe
+    // --------------------------------------------------------
+
+    _read(lm, aspect) {
+
+        const c = this.cfg;
+        const vis = i => (lm[i] && lm[i].visibility !== undefined ? lm[i].visibility : 0);
+
+        // Solo se exigen los hombros. Caderas y piernas son opcionales
+        // (muchos encuadres solo muestran el torso).
+        if (vis(11) < c.MIN_VISIBILITY || vis(12) < c.MIN_VISIBILITY) {
+            return null;
+        }
+
+        // x se multiplica por la relacion de aspecto para que las
+        // distancias horizontales y verticales usen la misma escala.
+        const P = i => ({ x: lm[i].x * aspect, y: lm[i].y });
+
+        const shoulders = {
+            x: (P(11).x + P(12).x) / 2,
+            y: (P(11).y + P(12).y) / 2
+        };
+
+        const sw = Math.hypot(P(11).x - P(12).x, P(11).y - P(12).y);
+
+        // Cabeza: promedio de nariz, ojos y orejas que se vean.
+        let hx = 0, hy = 0, hn = 0;
+
+        for (const i of [0, 2, 5, 7, 8]) {
+            if (vis(i) >= c.MIN_VISIBILITY) {
+                hx += P(i).x;
+                hy += P(i).y;
+                hn++;
+            }
+        }
+
+        const head = hn >= 2 ? { x: hx / hn, y: hy / hn } : null;
+
+        // Caderas: solo si se ven bien y estan dentro del encuadre.
+        const hipOk = i => vis(i) >= c.MIN_HIP_VISIBILITY && lm[i].y <= 0.97;
+        let hips = null;
+        let torso = null;
+
+        if (hipOk(23) && hipOk(24)) {
+            hips = {
+                x: (P(23).x + P(24).x) / 2,
+                y: (P(23).y + P(24).y) / 2
+            };
+            torso = Math.hypot(hips.x - shoulders.x, hips.y - shoulders.y);
+
+            if (torso < 0.04) {
+                hips = null;
+                torso = null;
+            }
+        }
+
+        // Unidad de medida: torso si hay caderas; si no, ancho de hombros
+        // (un torso mide aprox. 1.25 anchos de hombros).
+        const unit = torso !== null ? torso : sw * 1.25;
+
+        if (unit < 0.04) {
+            return null;
+        }
+
+        const leg = (h, k, a) =>
+            (hips !== null && vis(h) >= c.MIN_KNEE_VISIBILITY && vis(k) >= c.MIN_KNEE_VISIBILITY && vis(a) >= c.MIN_KNEE_VISIBILITY)
+                ? SquatDetector._angle(P(h), P(k), P(a))
+                : null;
+
+        const left = leg(23, 25, 27);
+        const right = leg(24, 26, 28);
+
+        let knee = null;
+
+        if (left !== null && right !== null) {
+            knee = Math.abs(left - right) <= 40 ? (left + right) / 2 : null;
+        } else if (left !== null) {
+            knee = left;
+        } else if (right !== null) {
+            knee = right;
+        }
+
+        return { shoulders, head, hips, torso, sw, unit, unitT: sw * 1.25, knee, hipY: hips ? hips.y : null };
+    }
+
+
+    _axis(shoulders, hips) {
+        const vx = hips.x - shoulders.x;
+        const vy = hips.y - shoulders.y;
+        const m = Math.hypot(vx, vy);
+        if (!m) return { x: 0, y: 1 };
+        return { x: vx / m, y: vy / m };
+    }
+
+
+    _depth(d) {
+
+        const b = this.baseline;
+        const s = Math.max(b.unit, 0.001);
+
+        if (b.mode === "hips") {
+
+            if (!d.hips) {
+                return null;
+            }
+
+            const ax = b.axis;
+            const hipDown = ((d.hips.x - b.hips.x) * ax.x + (d.hips.y - b.hips.y) * ax.y) / s;
+            const shDown = ((d.shoulders.x - b.shoulders.x) * ax.x + (d.shoulders.y - b.shoulders.y) * ax.y) / s;
+
+            // La cadera manda; los hombros evitan que un simple temblor de cadera cuente.
+            return hipDown * 0.8 + shDown * 0.2;
+        }
+
+        // Modo torso: solo hombros y cabeza (movimiento vertical).
+        const shDown = (d.shoulders.y - b.shoulders.y) / s;
+
+        this.bending = false;
+
+        if (d.head && b.head) {
+            const headDown = (d.head.y - b.head.y) / s;
+
+            // Si la cabeza cae mucho mas que los hombros te estas inclinando
+            // hacia adelante (amarrarte un zapato), no es una sentadilla.
+            const bendRel = ((d.head.y - d.shoulders.y) - (b.head.y - b.shoulders.y)) / s;
+            this.bending = bendRel > this.cfg.BEND_LIMIT;
+
+            return shDown * 0.7 + headDown * 0.3;
+        }
+
+        return shDown;
+    }
+
+
+    _blendBaseline(d, k) {
+        const b = this.baseline;
+        b.shoulders.x += (d.shoulders.x - b.shoulders.x) * k;
+        b.shoulders.y += (d.shoulders.y - b.shoulders.y) * k;
+
+        if (d.head && b.head) {
+            b.head.x += (d.head.x - b.head.x) * k;
+            b.head.y += (d.head.y - b.head.y) * k;
+        }
+
+        if (b.mode === "hips" && d.hips) {
+            b.hips.x += (d.hips.x - b.hips.x) * k;
+            b.hips.y += (d.hips.y - b.hips.y) * k;
+            b.torso += (d.torso - b.torso) * k;
+            b.unit = b.torso;
+            b.axis = this._axis(b.shoulders, b.hips);
+        } else if (b.mode === "torso") {
+            b.sw += (d.sw - b.sw) * k;
+            b.unit = b.sw * 1.25;
+        }
+
+        if (d.knee !== null) {
+            b.knee = b.knee === null ? d.knee : b.knee + (d.knee - b.knee) * k;
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // Cuerpo no visible
+    // --------------------------------------------------------
+
+    lost(now, text) {
+        if (this.lastSeen && now - this.lastSeen > this.cfg.LOST_RESET_MS) {
+            this.reset();
+        }
+        return {
+            phase: this.phase,
+            text: text || "No se detecta el cuerpo",
+            counted: false,
+            lost: true,
+            depth: this.depth
+        };
+    }
+
+
+    // --------------------------------------------------------
+    // Actualizacion principal (llamar en cada frame)
+    // --------------------------------------------------------
+
+    update(landmarks, now, aspect) {
+
+        const c = this.cfg;
+        const d = this._read(landmarks, aspect || 1);
+        this._knee = d ? d.knee : null;
+
+        if (!d) {
+            return this.lost(now, "Cuerpo no visible");
+        }
+
+        if (this.lastSeen && now - this.lastSeen > c.LOST_RESET_MS) {
+            this.reset();
+        }
+
+        let dt = this.lastT ? now - this.lastT : 33;
+
+        if (dt > 2500) {
+            // Hubo una pausa larga: no usamos datos viejos.
+            dt = 33;
+            this.rawHist.length = 0;
+            this.depthHist.length = 0;
+            this.vel = 0;
+            this.motion = 0;
+            this.anchorLP = null;
+            this.lastAnchor = null;
+        }
+
+        dt = Math.max(1, Math.min(dt, 1000));
+        this.lastT = now;
+        this.lastSeen = now;
+
+        // Cantidad de movimiento reciente de los hombros: distancia entre la
+        // posicion actual y su promedio de los ultimos ~0.4 s, en unidades
+        // de cuerpo. Es mucho mas estable que derivar frame a frame.
+        const scale = this.baseline ? this.baseline.unit : (d.hips ? d.unit : d.unitT);
+
+        let stepDev = 0;
+
+        if (!this.anchorLP) {
+            this.anchorLP = { x: d.shoulders.x, y: d.shoulders.y };
+            this.lastAnchor = { x: d.shoulders.x, y: d.shoulders.y };
+        } else {
+            const dev = Math.hypot(d.shoulders.x - this.anchorLP.x, d.shoulders.y - this.anchorLP.y) / scale;
+            this.motion += (dev - this.motion) * SquatDetector._k(dt, 150);
+            const kLP = SquatDetector._k(dt, 400);
+            this.anchorLP.x += (d.shoulders.x - this.anchorLP.x) * kLP;
+            this.anchorLP.y += (d.shoulders.y - this.anchorLP.y) * kLP;
+
+            // Con pocos FPS el promedio "alcanza" a la posicion actual y el
+            // movimiento se subestima: se usa tambien el salto entre frames.
+            stepDev = Math.hypot(d.shoulders.x - this.lastAnchor.x, d.shoulders.y - this.lastAnchor.y) / scale;
+            this.lastAnchor = { x: d.shoulders.x, y: d.shoulders.y };
+        }
+
+        const lowFps = dt >= c.LOW_FPS_DT;
+        this.motionEff = lowFps ? Math.max(this.motion, stepDev * 0.8) : this.motion;
+
+        // ====================================================
+        // CALIBRANDO
+        // ====================================================
+
+        if (this.phase === "CALIBRATING") {
+            return this._calibrate(d, dt, now);
+        }
+
+        // ====================================================
+        // PROFUNDIDAD FILTRADA
+        // ====================================================
+
+        const raw = this._depth(d);
+
+        if (raw === null) {
+            return this.lost(now, "Cuerpo no visible");
+        }
+
+        // La mediana de 3 quita picos sueltos, pero con pocos FPS atrasa
+        // demasiado la lectura: solo se usa si hay muchos cuadros por segundo.
+        let med = raw;
+
+        if (dt < 100) {
+            this.rawHist.push(raw);
+            if (this.rawHist.length > 3) this.rawHist.shift();
+            med = SquatDetector._median3(this.rawHist);
+        } else {
+            this.rawHist.length = 0;
+        }
+
+        this.depth += (med - this.depth) * SquatDetector._k(dt, 70);
+
+        // Velocidad en torsos/seg: contra la muestra mas reciente que tenga al
+        // menos 100 ms de antiguedad (sirve igual a 30 FPS que a 1-2 FPS).
+        this.depthHist.push({ t: now, d: this.depth });
+
+        while (this.depthHist.length > 2 && now - this.depthHist[0].t > 1500) {
+            this.depthHist.shift();
+        }
+
+        let ref = null;
+
+        for (let i = this.depthHist.length - 2; i >= 0; i--) {
+            if (now - this.depthHist[i].t >= 100) {
+                ref = this.depthHist[i];
+                break;
+            }
+        }
+
+        this.vel = ref ? (this.depth - ref.d) / ((now - ref.t) / 1000) : 0;
+
+        const depth = this.depth;
+        const vel = this.vel;
+        const b = this.baseline;
+
+        // ====================================================
+        // CAMBIO DE DISTANCIA (modo torso, de frente a la camara)
+        // El ancho de hombros no cambia al hacer una sentadilla, pero si
+        // al acercarte o alejarte. Si cambia y te quedas quieto, se
+        // recalibra rapido en lugar de quedarse atascado.
+        // ====================================================
+
+        this.sinceCalMs += dt;
+
+        if (b.mode === "torso") {
+
+            const swR = d.sw / b.sw;
+            const off = swR < 0.82 || swR > 1.22;
+            const calm = this.motionEff < c.STILL_MOTION * 1.5 && Math.abs(vel) < c.STILL_VELOCITY;
+
+            this.distStillMs = (off && calm) ? this.distStillMs + dt : 0;
+
+            if (off && this.rep) {
+                this.rep.bend = true;   // te estas moviendo de lugar: no cuenta
+            }
+
+            if (this.sinceCalMs > 1500 && this.distStillMs > 600) {
+                this._recalibrate();
+                return this._out("Calibrando... cambio de distancia");
+            }
+        }
+
+        // Fases. Con pocos FPS una sentadilla completa son pocos cuadros, asi que
+        // se encadenan las fases dentro del mismo cuadro en lugar de esperar
+        // un frame por cada transicion.
+        this._changed = false;
+        let res = this._phase(d, now, dt, lowFps);
+        let counted = res.counted;
+        let n = 0;
+
+        while (
+            lowFps && this._changed && n < 3 &&
+            (this.phase === "DESCENDING" || this.phase === "BOTTOM" || this.phase === "ASCENDING")
+        ) {
+            this._changed = false;
+            const r2 = this._phase(d, now, 0, lowFps);
+            counted = counted || r2.counted;
+            res = r2;
+            n++;
+        }
+
+        if (counted && !res.counted) {
+            res = this._out("Sentadilla", true);
+        }
+
+        return res;
+    }
+
+
+    _phase(d, now, dt, lowFps) {
+
+        const c = this.cfg;
+        const b = this.baseline;
+        const depth = this.depth;
+        const vel = this.vel;
+        const kneeStraight = d.knee === null || d.knee >= c.STANDING_KNEE_ANGLE - 5;
+        const cf = lowFps ? 0 : 1;     // con pocos FPS un frame basta como confirmacion
+
+        // ====================================================
+        // DE PIE
+        // ====================================================
+
+        if (this.phase === "STANDING") {
+
+            const still = this.motionEff < c.STILL_MOTION && Math.abs(vel) < c.STILL_VELOCITY;
+            this.stillMs = still ? this.stillMs + dt : 0;
+
+            // Te acercaste o alejaste de la camara: recalibrar.
+            const ratio = b.mode === "hips" ? (d.torso || b.unit) / b.unit : 1;
+
+            if (this.sinceCalMs > 1500 && this.stillMs > 0 && (ratio < 0.75 || ratio > 1.35)) {
+                this.scaleOffMs += dt;
+            } else {
+                this.scaleOffMs = 0;
+            }
+
+            if (this.scaleOffMs > 800) {
+                this._recalibrate();
+                return this._out("Calibrando... cambio de distancia");
+            }
+
+            // La base sigue tus cambios lentos de postura cuando estas quieto.
+            if (this.stillMs > 800 && kneeStraight && depth < 0.30) {
+                const tau = Math.abs(depth) < c.DOWN_EXIT ? 1500 : 400;
+                this._blendBaseline(d, SquatDetector._k(dt, tau));
+            }
+
+            const goingDown = depth > c.DOWN_START && vel > 0.02;
+
+            this.downMs = goingDown ? this.downMs + dt : 0;
+
+            if (goingDown && this.downMs >= c.DOWN_CONFIRM_MS * cf) {
+                this.downMs = 0;
+                this.rep = {
+                    start: now,
+                    max: depth,
+                    bottomMs: 0,
+                    riseMs: 0,
+                    ascMin: depth,
+                    valid: false,
+                    bend: false,
+                    counted: false
+                };
+                this._enter("DESCENDING", now);
+                return this._out("Bajando...");
+            }
+
+            return this._out("Listo");
+        }
+
+        const r = this.rep;
+
+        // ====================================================
+        // BAJANDO
+        // ====================================================
+
+        if (this.phase === "DESCENDING") {
+
+            r.max = Math.max(r.max, depth);
+
+            if (this.bending) {
+                r.bend = true;
+            }
+
+            const kneeBent =
+                d.knee !== null &&
+                d.knee <= c.KNEE_BOTTOM_ANGLE &&
+                depth >= c.KNEE_BOTTOM_MIN_DEPTH;
+
+            const atBottom = (depth >= c.BOTTOM_DEPTH || kneeBent) && !r.bend;
+
+            r.bottomMs = atBottom ? r.bottomMs + dt : 0;
+
+            if (atBottom && r.bottomMs >= c.BOTTOM_HOLD_MS * cf) {
+                r.valid = true;
+                r.riseMs = 0;
+                this._enter("BOTTOM", now);
+                return this._out("Fondo");
+            }
+
+            if (depth < c.DOWN_EXIT) {
+                this.rep = null;
+                this._enter("STANDING", now);
+                this.stillMs = 0;
+                return this._out("Movimiento incompleto");
+            }
+
+            if (r.max - depth > c.RISE_DELTA + 0.02 && vel < -0.05) {
+                // Te arrepentiste antes de llegar al fondo.
+                r.valid = false;
+                r.ascMin = depth;
+                this._enter("ASCENDING", now);
+                return this._out("Subiendo...");
+            }
+
+            if (now - this.phaseStart > c.MAX_DESCENT_MS) {
+                this.rep = null;
+                this._enter("STANDING", now);
+                this.stillMs = 0;
+                return this._out("Listo");
+            }
+
+            return this._out("Bajando...");
+        }
+
+        // ====================================================
+        // FONDO
+        // ====================================================
+
+        if (this.phase === "BOTTOM") {
+
+            r.max = Math.max(r.max, depth);
+
+            if (this.bending) {
+                r.bend = true;
+            }
+
+            const rising = (r.max - depth) > c.RISE_DELTA && vel < -0.04;
+            r.riseMs = rising ? r.riseMs + dt : 0;
+
+            if (rising && r.riseMs >= c.RISE_CONFIRM_MS * cf) {
+                r.ascMin = depth;
+                this._enter("ASCENDING", now);
+                return this._out("Subiendo...");
+            }
+
+            if (now - this.phaseStart > c.MAX_BOTTOM_MS && Math.abs(vel) < 0.05) {
+                // Probablemente la calibracion quedo mal: empezar de nuevo.
+                this._recalibrate();
+                return this._out("Calibrando... recalibrando");
+            }
+
+            return this._out("Fondo");
+        }
+
+        // ====================================================
+        // SUBIENDO
+        // ====================================================
+
+        if (this.phase === "ASCENDING") {
+
+            r.ascMin = Math.min(r.ascMin, depth);
+
+            let counted = false;
+
+            if (
+                r.valid &&
+                !r.bend &&
+                !r.counted &&
+                depth <= r.max * c.COUNT_ASCENT_RATIO &&
+                now - r.start >= c.MIN_REP_MS &&
+                now - this.lastCount >= c.MIN_TIME_BETWEEN_SQUATS
+            ) {
+                r.counted = true;
+                this.lastCount = now;
+                counted = true;
+            }
+
+            // Volviste a bajar sin pararte del todo: nueva repeticion.
+            if (depth - r.ascMin > c.RISE_DELTA + 0.02 && vel > 0.05) {
+                this.rep = {
+                    start: now,
+                    max: depth,
+                    bottomMs: 0,
+                    riseMs: 0,
+                    ascMin: depth,
+                    valid: false,
+                    bend: false,
+                    counted: false
+                };
+                this._enter("DESCENDING", now);
+                return this._out(counted ? "Sentadilla" : "Bajando...", counted);
+            }
+
+            if (depth < c.DOWN_EXIT) {
+                this.rep = null;
+                this._enter("STANDING", now);
+                this.stillMs = 0;
+                return this._out(counted ? "Sentadilla" : "Listo", counted);
+            }
+
+            if (now - this.phaseStart > c.MAX_ASCENT_MS) {
+                this.rep = null;
+                this._enter("STANDING", now);
+                this.stillMs = 0;
+                return this._out("Listo", counted);
+            }
+
+            return this._out(counted ? "Sentadilla" : "Subiendo...", counted);
+        }
+
+        return this._out("Listo");
+    }
+
+
+    // --------------------------------------------------------
+    // Calibracion
+    // --------------------------------------------------------
+
+    _calibrate(d, dt, now) {
+
+        const c = this.cfg;
+
+        // Solo se rechaza si estas claramente agachado o moviendote mucho.
+        const kneeOk = d.knee === null || d.knee >= c.CALIBRATION_MIN_KNEE;
+        const still = this.motionEff < c.CALIBRATION_MAX_MOTION;
+
+        if (!kneeOk || !still) {
+            this.badMs = (this.badMs || 0) + dt;
+
+            if (this.badMs > c.CALIBRATION_GRACE_MS) {
+                this.cal = null;
+                this.calMs = 0;
+            }
+
+            return this._out(
+                !kneeOk
+                    ? "Calibrando: ponte de pie"
+                    : "Calibrando: qu\u00e9date quieto"
+            );
+        }
+
+        this.badMs = 0;
+
+        if (!this.cal) {
+            this.cal = { n: 0, sx: 0, sy: 0, hx: 0, hy: 0, hn: 0, hcx: 0, hcy: 0, hcn: 0, t: 0, sw: 0, k: 0, kn: 0, hipYs: 0 };
+        }
+
+        const k = this.cal;
+        k.n++;
+        k.sx += d.shoulders.x;
+        k.sy += d.shoulders.y;
+        k.sw += d.sw;
+
+        if (d.head) {
+            k.hcx += d.head.x;
+            k.hcy += d.head.y;
+            k.hcn++;
+        }
+
+        if (d.hips) {
+            k.hx += d.hips.x;
+            k.hy += d.hips.y;
+            k.t += d.torso;
+            k.hn++;
+            k.hipYs += d.hipY;
+        }
+
+        if (d.knee !== null) {
+            k.k += d.knee;
+            k.kn++;
+        }
+
+        this.calMs += dt;
+
+        if (this.calMs >= c.CALIBRATION_MS && k.n >= c.CALIBRATION_MIN_SAMPLES) {
+
+            const shoulders = { x: k.sx / k.n, y: k.sy / k.n };
+            const head = k.hcn >= k.n * 0.6 ? { x: k.hcx / k.hcn, y: k.hcy / k.hcn } : null;
+
+            // Modo caderas solo si se ven siempre y hay margen para bajar
+            // sin salirse del encuadre. Si no, modo torso (hombros + cabeza).
+            const hipsStable = k.hn >= k.n * 0.8 && (k.hipYs / k.hn) <= c.HIP_MAX_Y;
+
+            if (hipsStable) {
+                const hips = { x: k.hx / k.hn, y: k.hy / k.hn };
+                const torso = k.t / k.hn;
+
+                this.baseline = {
+                    mode: "hips",
+                    shoulders, head, hips, torso,
+                    sw: k.sw / k.n,
+                    unit: torso,
+                    knee: k.kn ? k.k / k.kn : null,
+                    axis: this._axis(shoulders, hips)
+                };
+            } else {
+                const sw = k.sw / k.n;
+
+                this.baseline = {
+                    mode: "torso",
+                    shoulders, head, hips: null, torso: null,
+                    sw,
+                    unit: sw * 1.25,
+                    knee: null,
+                    axis: { x: 0, y: 1 }
+                };
+            }
+
+            this.cal = null;
+            this.calMs = 0;
+            this.depth = 0;
+            this.vel = 0;
+            this.rawHist.length = 0;
+            this.depthHist.length = 0;
+            this.stillMs = 0;
+            this.downMs = 0;
+            this.bending = false;
+            this.sinceCalMs = 0;
+            this._enter("STANDING", now);
+
+            return this._out("Listo");
+        }
+
+        return this._out("Calibrando...");
+    }
+}
+
+
+    const detector = new SquatDetector();
+
+    // Estado de MediaPipe / bucle
+    let poseFailures = 0;
+    let lastCycleMs = 0;
+    let poseReady = false;
+    let poseInitFailed = false;
+    let currentComplexity = 1;
+    let poseSlowCount = 0;
+    let lastFrameAt = 0;
+    let fpsEMA = 0;
+
+    function resetDetector() {
+        detector.reset();
+    }
 
     /*
     ========================================================
@@ -1228,6 +2035,16 @@
         }
 
 
+        poseInitFailed = false;
+        currentComplexity = 1;
+        poseSlowCount = 0;
+
+        try {
+            if (pose && pose.close) {
+                pose.close();
+            }
+        } catch (_) {}
+
         pose =
             new Pose({
 
@@ -1256,10 +2073,10 @@
                 false,
 
             minDetectionConfidence:
-                0.55,
+                0.3,
 
             minTrackingConfidence:
-                0.55
+                0.4
 
         });
 
@@ -1267,6 +2084,23 @@
         pose.onResults(
             processPoseResults
         );
+
+        // Se carga el modelo una sola vez y de forma explicita. Asi la carga
+        // pesada no ocurre a mitad del bucle de frames (que congelaba el panel).
+        poseReady = false;
+
+        pose.initialize()
+            .then(() => {
+                poseReady = true;
+            })
+            .catch(error => {
+                poseInitFailed = true;
+                console.error("No se pudo iniciar MediaPipe:", error);
+                detectorStatus.textContent =
+                    "Detector: error iniciando MediaPipe (" +
+                    (error?.message || error) +
+                    "). Abre este panel en Chrome o activa la aceleraci\u00f3n por hardware de OBS.";
+            });
 
     }
 
@@ -1277,147 +2111,70 @@
     ========================================================
     */
 
+    function setDetectorText(text) {
+        // Prefijos pensados para el semaforo de estado de esta pagina.
+        const lower = text.toLowerCase();
+        detectorStatus.textContent =
+            lower.startsWith("calibrando")
+                ? "Detector: " + lower
+                : "Seguimiento activo: " + text;
+    }
+
+    function updateDebugLine(extra) {
+        const el = document.getElementById("detectorDebug");
+        if (!el) return;
+        const b = detector.baseline;
+        el.textContent =
+            "fase=" + detector.phase +
+            " | prof=" + detector.depth.toFixed(2) +
+            " (meta " + detector.cfg.BOTTOM_DEPTH + ")" +
+            " | vel=" + detector.vel.toFixed(2) +
+            " | modo=" + (b ? b.mode : "calibrando") +
+            " | " + fpsEMA.toFixed(1) + " fps" +
+            " | modelo=" + currentComplexity +
+            (extra ? " | " + extra : "");
+    }
+
     function processPoseResults(results) {
         if (detectorPaused) return;
 
+        const now = performance.now();
+
+        if (lastFrameAt) {
+            const inst = 1000 / Math.max(1, now - lastFrameAt);
+            fpsEMA = fpsEMA ? fpsEMA * 0.7 + inst * 0.3 : inst;
+        }
+        lastFrameAt = now;
         const landmarks = results && results.poseLandmarks;
-        if (!landmarks || landmarks.length < 29) {
-            lostFrames++;
-            detectorStatus.textContent = "Detector: cuerpo no encontrado; muestra el cuerpo completo";
-            bottomFrames = 0;
-            standingFrames = 0;
-            // Si se pierde el seguimiento, no permitir que un ciclo incompleto cuente.
-            if (lostFrames > MAX_LOST_FRAMES) {
-                state = "CALIBRATING";
-                calibrationFrames = 0;
-                calibrationSamples = [];
-            bodySizeSamples = [];
-            hipKneeSamples = [];
-                bodySizeSamples = [];
-                hipKneeSamples = [];
-                baselineHip = baselineBodySize = baselineHipKnee = null;
-                smoothedDepth = smoothedCompression = previousDepth = null;
-            }
-            return;
-        }
-        lostFrames = 0;
 
-        const point = i => landmarks[i];
-        const required = [point(11), point(12), point(23), point(24), point(25), point(26), point(27), point(28)];
-        if (required.some(p => !p || (typeof p.visibility === "number" && p.visibility < MIN_LANDMARK_VISIBILITY))) {
-            detectorStatus.textContent = "Detector: poca visibilidad; aléjate un poco y muestra torso y piernas";
-            bottomFrames = 0;
-            standingFrames = 0;
+        if (!landmarks || landmarks.length < 13) {
+            const lostResult = detector.lost(now, "Cuerpo no visible");
+            detectorStatus.textContent = "Detector: cuerpo no encontrado; muestra hombros y cabeza";
+            updateDebugLine("sin cuerpo");
             return;
         }
 
-        const avgY = (a, b) => (a.y + b.y) / 2;
-        const shoulderY = avgY(point(11), point(12));
-        const hipY = avgY(point(23), point(24));
-        const kneeY = avgY(point(25), point(26));
-        const ankleY = avgY(point(27), point(28));
-        const bodySize = Math.abs(ankleY - shoulderY);
-        const hipKnee = Math.abs(kneeY - hipY);
-        if (bodySize < 0.18 || hipKnee < 0.035) {
-            detectorStatus.textContent = "Detector: ajusta la cámara para que se vea casi todo el cuerpo";
+        const aspect =
+            canvas.width && canvas.height
+                ? canvas.width / canvas.height
+                : 16 / 9;
+
+        const result = detector.update(landmarks, now, aspect);
+
+        updateDebugLine(result.counted ? "CONTADA" : "");
+
+        if (result.counted) {
+            registerSquat();
+            detectorStatus.textContent = "Seguimiento activo: sentadilla contada";
             return;
         }
 
-        if (calibrationFrames < CALIBRATION_FRAMES || baselineHip === null || baselineBodySize === null || baselineHipKnee === null) {
-            calibrationSamples.push(hipY);
-            bodySizeSamples.push(bodySize);
-            hipKneeSamples.push(hipKnee);
-            calibrationFrames++;
-            if (calibrationFrames >= CALIBRATION_FRAMES) {
-                const median = arr => {
-                    const sorted = [...arr].sort((a, b) => a - b);
-                    return sorted[Math.floor(sorted.length / 2)];
-                };
-                baselineHip = median(calibrationSamples);
-                baselineBodySize = median(bodySizeSamples);
-                baselineHipKnee = median(hipKneeSamples);
-                smoothedDepth = 0;
-                smoothedCompression = 0;
-                previousDepth = 0;
-                state = "STANDING";
-                detectorStatus.textContent = "Detector listo: seguimiento corporal activo";
-            } else {
-                detectorStatus.textContent = `Calibrando ${calibrationFrames}/${CALIBRATION_FRAMES}: permanece de pie y quieto`;
-            }
+        if (result.lost) {
+            detectorStatus.textContent = "Detector: cuerpo no encontrado; muestra hombros y cabeza";
             return;
         }
 
-        // No se divide por el tamaño corporal actual: inclinar el torso no altera
-        // artificialmente la escala de profundidad del movimiento.
-        const rawDepth = (hipY - baselineHip) / baselineBodySize;
-        // En una sentadilla, la distancia vertical cadera-rodilla se comprime.
-        // Esta segunda señal ayuda a rechazar la inclinación del torso hacia delante.
-        const rawCompression = (baselineHipKnee - hipKnee) / Math.max(baselineHipKnee, 0.06);
-        smoothedDepth = smoothedDepth * 0.72 + rawDepth * 0.28;
-        smoothedCompression = smoothedCompression * 0.70 + rawCompression * 0.30;
-        const depth = smoothedDepth;
-        const compression = smoothedCompression;
-        const velocity = previousDepth === null ? 0 : depth - previousDepth;
-        previousDepth = depth;
-
-        switch (state) {
-            case "CALIBRATING":
-                state = "STANDING";
-                break;
-            case "STANDING":
-                detectorStatus.textContent = "Seguimiento activo: de pie";
-                if (depth >= DOWN_THRESHOLD && velocity > -0.01) {
-                    state = "DESCENDING";
-                    bottomFrames = 0;
-                    standingFrames = 0;
-                }
-                break;
-            case "DESCENDING":
-                detectorStatus.textContent = "Seguimiento activo: bajando";
-                // La profundidad por sí sola no basta: también debe haber flexión real de piernas.
-                if (depth >= BOTTOM_THRESHOLD && compression >= MIN_SQUAT_COMPRESSION) {
-                    bottomFrames++;
-                    if (bottomFrames >= REQUIRED_BOTTOM_FRAMES) state = "BOTTOM";
-                } else if (depth < DOWN_THRESHOLD * 0.55 && compression < MIN_SQUAT_COMPRESSION * 0.5) {
-                    state = "STANDING";
-                    bottomFrames = 0;
-                }
-                break;
-            case "BOTTOM":
-                detectorStatus.textContent = "Seguimiento activo: posición baja confirmada";
-                // Permanecer abajo no suma: solo se habilita el conteo al completar la subida.
-                if (depth < BOTTOM_THRESHOLD && velocity < -0.002) {
-                    state = "ASCENDING";
-                    standingFrames = 0;
-                }
-                break;
-            case "ASCENDING":
-                detectorStatus.textContent = "Seguimiento activo: subiendo; vuelve a estar de pie";
-                if (depth <= RETURN_THRESHOLD && compression <= 0.10) {
-                    standingFrames++;
-                    if (standingFrames >= REQUIRED_STANDING_FRAMES) {
-                        const now = Date.now();
-                        if (now - lastSquatTime >= MIN_TIME_BETWEEN_SQUATS) {
-                            lastSquatTime = now;
-                            registerSquat();
-                            console.log("SENTADILLA COMPLETA CONFIRMADA POR SEGUIMIENTO CORPORAL");
-                        }
-                        state = "STANDING";
-                        bottomFrames = 0;
-                        standingFrames = 0;
-                        // Recalibración lenta solo después de completar una repetición.
-                        baselineHip = baselineHip * 0.98 + hipY * 0.02;
-                        baselineHipKnee = baselineHipKnee * 0.98 + hipKnee * 0.02;
-                        smoothedDepth = 0;
-                        smoothedCompression = 0;
-                        previousDepth = 0;
-                    }
-                } else {
-                    standingFrames = 0;
-                    if (depth >= BOTTOM_THRESHOLD && compression >= MIN_SQUAT_COMPRESSION) state = "BOTTOM";
-                }
-                break;
-        }
+        setDetectorText(result.text);
     }
 
 
@@ -1461,11 +2218,9 @@
                         imageFormat:
                             "jpg",
 
-                        imageWidth:
-                            640,
-
-                        imageHeight:
-                            360
+                        imageWidth: 480,
+                        imageHeight: 270,
+                        imageCompressionQuality: 60
 
                     }
                 );
@@ -1605,15 +2360,80 @@
             );
 
 
-            if (
-                !detectorPaused &&
-                pose
-            ) {
+            if (poseInitFailed) {
 
-                await pose.send({
-                    image:
-                        canvas
-                });
+                // MediaPipe no pudo iniciar: no seguir pidiendo capturas.
+                cameraLoopRunning = false;
+
+                if (obsFrameTimer) {
+                    clearTimeout(obsFrameTimer);
+                    obsFrameTimer = null;
+                }
+
+            } else if (!detectorPaused && pose && !poseReady) {
+
+                detectorStatus.textContent =
+                    "Detector: esperando MediaPipe...";
+
+            } else if (!detectorPaused && pose && poseReady) {
+
+                const poseStart = performance.now();
+
+                try {
+
+                    await pose.send({
+                        image:
+                            canvas
+                    });
+
+                    poseFailures = 0;
+
+                } catch (poseError) {
+
+                    poseFailures++;
+
+                    console.error(
+                        "Error de MediaPipe:",
+                        poseError
+                    );
+
+                    detectorStatus.textContent =
+                        "Detector: error de MediaPipe (" +
+                        (poseError?.message || poseError) +
+                        ")";
+
+                    if (poseFailures >= 3) {
+
+                        // Detener el bucle: reintentar sin parar congela el panel.
+                        cameraLoopRunning = false;
+
+                        if (obsFrameTimer) {
+                            clearTimeout(obsFrameTimer);
+                            obsFrameTimer = null;
+                        }
+
+                        detectorStatus.textContent =
+                            "Detector: error de MediaPipe, detenido. " +
+                            "Abre este panel en Chrome o activa la aceleraci\u00f3n por hardware de OBS " +
+                            "y pulsa ACTIVAR C\u00c1MARA otra vez.";
+                    }
+
+                }
+
+                lastCycleMs =
+                    performance.now() - poseStart;
+
+                // Si MediaPipe tarda demasiado (panel de OBS sin GPU), pasar al
+                // modelo ligero: mas fotogramas por segundo = conteo fiable.
+                poseSlowCount = lastCycleMs > 300 ? poseSlowCount + 1 : 0;
+
+                if (poseSlowCount >= 3 && currentComplexity !== 0) {
+                    currentComplexity = 0;
+                    poseSlowCount = 0;
+                    try {
+                        pose.setOptions({ modelComplexity: 0 });
+                    } catch (_) {}
+                }
 
             }
 
@@ -1696,10 +2516,18 @@
                     cameraLoopRunning
                 ) {
 
+                    // Espera proporcional al tiempo que tardo MediaPipe, para que
+                    // el panel de OBS siga respondiendo (scroll y botones).
                     obsFrameTimer =
                         setTimeout(
                             loop,
-                            160
+                            Math.max(
+                                40,
+                                Math.min(
+                                    400,
+                                    lastCycleMs * 0.3
+                                )
+                            )
                         );
 
                 }
@@ -1725,6 +2553,11 @@
 
 
         try {
+
+            if (poseInitFailed || !pose) {
+                initializePose();
+            }
+
 
             btnCamera.disabled =
                 true;
@@ -1779,31 +2612,8 @@
                 false;
 
 
-            state =
-                "CALIBRATING";
-
-            calibrationFrames =
-                0;
-
-            baselineHip =
-                null;
-            baselineBodySize = null;
-            baselineHipKnee = null;
-            smoothedDepth = null;
-            smoothedCompression = null;
-
-            smoothedDepth = null;
-            smoothedCompression = null;
-
-            previousDepth = null;
-            bottomFrames = 0;
-            standingFrames = 0;
-            calibrationSamples = [];
-            bodySizeSamples = [];
-            hipKneeSamples = [];
-
-            lastSquatTime =
-                0;
+            resetDetector();
+            poseFailures = 0;
 
             detectorPaused =
                 false;
@@ -1970,24 +2780,8 @@
         detectorPaused =
             false;
 
-        state =
-            "CALIBRATING";
-
-        calibrationFrames =
-            0;
-
-        baselineHip = null;
-        baselineBodySize = null;
-        baselineHipKnee = null;
-        smoothedDepth = null;
-        smoothedCompression = null;
-        previousDepth = null;
-        bottomFrames = 0;
-        standingFrames = 0;
-        lostFrames = 0;
-        calibrationSamples = [];
-        bodySizeSamples = [];
-        hipKneeSamples = [];
+        resetDetector();
+            poseFailures = 0;
 
 
         btnCamera.disabled =
@@ -2339,10 +3133,21 @@
     if (!statusElement || !window.SQUAT_SESSION_READY) return;
     let statusSocket = null;
     let lastStatusText = "";
+    let lastPublishAt = 0;
+    let publishTimer = null;
     function publish() {
         if (!statusSocket || statusSocket.readyState !== WebSocket.OPEN) return;
         const text = (statusElement.textContent || "").trim();
         if (!text || text === lastStatusText) return;
+        // Maximo ~4 mensajes por segundo para no saturar el WebSocket.
+        const wait = 250 - (performance.now() - lastPublishAt);
+        if (wait > 0) {
+            if (!publishTimer) {
+                publishTimer = setTimeout(() => { publishTimer = null; publish(); }, wait);
+            }
+            return;
+        }
+        lastPublishAt = performance.now();
         lastStatusText = text;
         statusSocket.send(JSON.stringify({ type: "detector:status", data: { text } }));
     }
